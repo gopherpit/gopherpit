@@ -1,0 +1,30 @@
+[[/*
+  Copyright (c) 2016, Janoš Guljaš <janos@resenje.org>
+  All rights reserved.
+  Use of this source code is governed by a BSD-style
+  license that can be found in the LICENSE file.
+*/]]
+
+
+[[ define "title" ]]Email validation - GopherPit[[ end ]]
+
+[[ define "main" ]]
+<div class="column is-4 is-offset-4">
+  [[if .Valid]]
+  <h1 class="title is-1">E-mail validation</h1>
+  <div class="container">
+    <div class="notification is-success">
+      Your e-mail address <strong>[[ .User.Email ]]</strong> is validated.
+    </div>
+    <a class="button is-pulled-right" href="/">Continue</a>
+  </div>
+  [[else]]
+  <h1 class="title is-1">E-mail validation has failed</h1>
+  <div class="container">
+    <div class="notification is-danger">
+      This link for e-mail validation is not valid or it has been expired. You can request new link from e-mail settings page.
+    </div>
+  </div>
+  [[end]]
+</div>
+[[ end ]]

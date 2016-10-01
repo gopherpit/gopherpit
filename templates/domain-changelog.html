@@ -1,0 +1,77 @@
+[[/*
+  Copyright (c) 2016, Janoš Guljaš <janos@resenje.org>
+  All rights reserved.
+  Use of this source code is governed by a BSD-style
+  license that can be found in the LICENSE file.
+*/]]
+
+
+[[ define "title" ]][[ .Domain.FQDN ]] changelog - GopherPit[[ end ]]
+
+[[ define "script" ]]
+<script type="text/javascript">
+  "use strict";
+
+</script>
+[[ end ]]
+
+[[ define "hero" ]]
+<div class="hero-body has-text-centered">
+  <div class="container">
+    <h1 class="title">
+      [[ .Domain.FQDN ]]
+    </h1>
+  </div>
+</div>
+<div class="hero-foot">
+  <div class="tabs is-boxed">
+    <div class="container">
+      <ul>
+        <li><a href="/domain/[[ .Domain.FQDN ]]">Packages</a></li>
+        <li><a href="/domain/[[ .Domain.FQDN ]]/team">Team</a></li>
+        <li><a href="/domain/[[ .Domain.FQDN ]]/settings">Settings</a></li>
+        <li class="is-active"><a href="/domain/[[ .Domain.FQDN ]]/changelog">Changelog</a></li>
+      </ul>
+    </div>
+  </div>
+</div>
+[[ end ]]
+
+[[ define "main" ]]
+<div class="columns">
+  <div class="column is-3">
+    <aside class="menu">
+      <p class="menu-label">
+        Domain changelogs
+      </p>
+      <ul class="menu-list">
+      [[ range $domain := .Domains ]]
+        <a class="menu-block[[ if eq $domain.ID $.Domain.ID ]] is-active[[ end ]]" href="/domain/[[ $domain.FQDN ]]/changelog">[[ $domain.FQDN ]]</a>
+      [[ end ]]
+      </ul>
+    </aside>
+    <br>
+    <a class="button is-outlined is-fullwidth" href="/domain">Add domain</a>
+  </div>
+  <div class="column is-9">
+    [[ if .Next ]]
+    <p class="content">
+      <a href="/domain/[[ .Domain.FQDN ]]/changelog?start=[[ .Next | urlquery ]]" class="button"><span class="icon"><i class="fa fa-arrow-left"></i></span><span>Newer changes</span></a>
+    </p>
+    [[ end ]]
+    [[ range $record := .ChangelogRecords ]]
+    <div class="content">
+      [[ template "changelog-record" map "Record" $record "User" $.User ]]
+    </div>
+    [[ end ]]
+    <p class="content">
+      [[ if .Next ]]
+      <a href="/domain/[[ .Domain.FQDN ]]/changelog?start=[[ .Next | urlquery ]]" class="button"><span class="icon"><i class="fa fa-arrow-left"></i></span><span>Newer changes</span></a>
+      [[ end ]]
+      [[ if .Previous ]]
+      <a href="/domain/[[ .Domain.FQDN ]]/changelog?start=[[ .Previous | urlquery ]]" class="button"><span>Older changes</span><span class="icon"><i class="fa fa-arrow-right"></i></span></a>
+      [[ end ]]
+    </p>
+  </div>
+</div>
+[[ end ]]

@@ -1,0 +1,5 @@
+{
+    "listen": ":80",
+    "listen-tls": ":443",
+    "storage-dir": "/storage"
+}

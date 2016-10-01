@@ -1,0 +1,26 @@
+[[/*
+  Copyright (c) 2016, Janoš Guljaš <janos@resenje.org>
+  All rights reserved.
+  Use of this source code is governed by a BSD-style
+  license that can be found in the LICENSE file.
+*/]]
+
+
+[[ define "title" ]]GopherPit[[ end ]]
+
+[[ define "main" ]]
+<div class="column is-6 is-offset-3 content">
+  <h1 class="title is-1 has-text-centered">E-mail address validation is required</h1>
+  [[ if .OptedOut ]]
+  <p>Sending e-mail messages to address [[ .User.Email ]] is blocked! You can change your e-mail address in <a href="/settings/email">settings</a>.</p>
+  [[ else ]]
+  <p>Try the following steps:</p>
+  <ol>
+    <li>Check your e-mail inbox or junk/spam on your e-mail account: <strong>[[ .User.Email ]]</strong>.</li>
+    <li>Open message with subject "<i>GopherPit - E-mail address validation</i>" which should be sent during the registration process.</li>
+    <li>Visit the page specified for e-mail address validation. You must be logged in to this site for validation to be successful.</li>
+  </ol>
+  <p>If you haven't received the e-mail message, you can re-send it from <a href="/settings/email">settings</a>.</p>
+  [[ end ]]
+</div>
+[[ end ]]

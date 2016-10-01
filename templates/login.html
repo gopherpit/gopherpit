@@ -1,0 +1,72 @@
+[[/*
+  Copyright (c) 2016, Janoš Guljaš <janos@resenje.org>
+  All rights reserved.
+  Use of this source code is governed by a BSD-style
+  license that can be found in the LICENSE file.
+*/]]
+
+
+[[ define "title" ]]Login - GopherPit[[ end ]]
+
+[[ define "script" ]]
+[[ template "login-script" . ]]
+[[ end ]]
+
+[[ define "main" ]]
+<div class="column is-4 is-offset-4">
+  <h1 class="title is-1 has-text-centered"><img src="[[ "gopherpit.png" | asset ]]" alt="GopherPit" /></h1>
+  [[ template "login-form" . ]]
+</div>
+[[ end ]]
+
+[[ define "login-script" ]]
+<script type="text/javascript">
+  "use strict";
+
+  $(function(){
+    var $form = $(".login-form");
+    $form.ajaxform({
+      ok: function(data) {
+        window.location.reload()
+      },
+      err401: function() {
+        $form.prepend(newNotification("Invalid credentials.", 'is-danger'))
+      },
+    })
+  })
+</script>
+[[ end ]]
+
+[[ define "login-form" ]]
+<form class="login-form" method="post" action="/i/auth">
+  <p class="control has-icon">
+    <input class="input" name="username" type="text" placeholder="Email or username" autofocus />
+    <i class="fa fa-envelope"></i>
+  </p>
+  <p class="control has-icon">
+    <input class="input" name="password" type="password" placeholder="Password" />
+    <i class="fa fa-lock"></i>
+  </p>
+  <p class="control">
+    <label class="checkbox">
+      <input type="checkbox" name="remember-me" />
+      Remember me
+    </label>
+  </p>
+  <p class="control">
+    <nav class="level">
+      <div class="level-left">
+        <div class="level-item">
+          <a class="link" href="/password-reset">Forgot password?</a>
+        </div>
+      </div>
+      <div class="level-right">
+        <div class="level-item">
+          <a class="button" href="/registration">Register new accunt</a>
+          <button type="submit" class="button is-primary">Login</button>
+        </div>
+      </div>
+    </nav>
+  </p>
+</form>
+[[ end ]]

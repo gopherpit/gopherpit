@@ -1,0 +1,60 @@
+[[/*
+  Copyright (c) 2016, Janoš Guljaš <janos@resenje.org>
+  All rights reserved.
+  Use of this source code is governed by a BSD-style
+  license that can be found in the LICENSE file.
+*/]]
+
+
+[[ define "title" ]]Email - GopherPit[[ end ]]
+
+[[ define "script" ]]
+<script type="text/javascript">
+  "use strict";
+
+  $(function() {
+    $(".opt-out, .remove-opt-out").ajaxbutton({
+      ok: function() {
+        window.location.reload()
+      }
+    })
+  })
+</script>
+[[ end ]]
+
+[[ define "head" ]]
+<script type="text/html" id="opt-out-success">
+<div class="message">
+  <div class="header is-h3">You have opted out</div>
+  <p>No new messages will be sent to this e-mail address. If you change your mind in the future, you can opt in by visiting this page again.</p>
+</div>
+</script>
+<script type="text/html" id="remove-opt-out-success">
+<div class="message">
+  <div class="header is-h3">You have opted in</div>
+  <p>This site will send e-mail messages to this address freely.</p>
+</div>
+</script>
+[[ end ]]
+
+[[ define "main" ]]
+<div class="column is-8 is-offset-2 has-text-centered">
+  <h1 class="title is-1">[[ .Email ]]</h1>
+  <div id="opt-out-settings">
+    [[ if .OptedOut ]]
+    <div class="notification is-warning">
+      <p>Sending e-mail messages to this address is <strong>blocked</strong>!</p>
+      <p>By clicking on a button below you will <strong>allow</strong> sending new messages to address [[ .Email ]].</p>
+    </div>
+    <div>
+      <button class="button remove-opt-out" data-action="/i/email/opt-out/[[ .Token ]]" data-method="delete">I wish to be able to receive messages from this site</button>
+    </div>
+    [[ else ]]
+    <div class="notification is-info">By clicking on a button below you will <strong>block</strong> sending new messages to address [[ .Email ]].</div>
+    <div>
+      <button class="button opt-out" data-action="/i/email/opt-out/[[ .Token ]]" data-method="post">I wish to block sending messages from this site</button>
+    </div>
+    [[ end ]]
+  </div>
+</div>
+[[ end ]]

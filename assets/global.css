@@ -1,0 +1,45 @@
+.fa-pulse {
+  display: inline-block;
+  -moz-animation: pulse 3s infinite linear;
+  -o-animation: pulse 3s infinite linear;
+  -webkit-animation: pulse 3s infinite linear;
+  animation: pulse 3s infinite linear;
+}
+
+@-webkit-keyframes pulse {
+    0% {transform: scale(1);}
+    50% {transform: scale(1.1);}
+    100% {transform: scale(1);}
+}
+@-moz-keyframes pulse {
+    0% {transform: scale(1);}
+    50% {transform: scale(1.1);}
+    100% {transform: scale(1);}
+}
+@-o-keyframes pulse {
+    0% {transform: scale(1);}
+    50% {transform: scale(1.1);}
+    100% {transform: scale(1);}
+}
+@-ms-keyframes pulse {
+    0% {transform: scale(1);}
+    50% {transform: scale(1.1);}
+    100% {transform: scale(1);}
+}
+@keyframes pulse {
+    0% {transform: scale(1);}
+    50% {transform: scale(1.1);}
+    100% {transform: scale(1);}
+}
+
+.icon.is-small {
+  vertical-align: baseline!important;
+}
+
+p.control.help {
+  margin-top: -5px;
+}
+
+span.button {
+  cursor: default;
+}

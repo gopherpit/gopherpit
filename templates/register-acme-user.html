@@ -1,0 +1,68 @@
+[[/*
+  Copyright (c) 2016, Janoš Guljaš <janos@resenje.org>
+  All rights reserved.
+  Use of this source code is governed by a BSD-style
+  license that can be found in the LICENSE file.
+*/]]
+
+
+[[ define "title" ]]ACME User - GopherPit[[ end ]]
+
+[[ define "script" ]]
+<script type="text/javascript">
+  "use strict";
+
+  $(function(){
+    var $form = $(".register-acme-user-form");
+    $form.ajaxform({
+      ok: function(data) {
+        $form.replaceWith($('#register-acme-user-form-success').html())
+      }
+    })
+  })
+</script>
+[[ end ]]
+
+[[ define "head" ]]
+<script type="text/html" id="register-acme-user-form-success">
+<div class="notification is-success">
+  ACME User is successfully registered.
+</div>
+<a href="/" class="button is-pulled-right">Continue</a>
+</script>
+[[ end ]]
+
+[[ define "main" ]]
+<div class="column is-4 is-offset-4 content">
+  <h1 class="title is-1">ACME User</h1>
+  <form class="register-acme-user-form" method="post" action="/i/register-acme-user" autocomplete="off">
+    <p>Registration of ACME user is required to request new TLS/SSL certificates. E-mail address is optional, but if provided, notifications from ACME provider will be sent to it. Production directory generates valid certificates, while Staging is meant for testing and development.</p>
+    <label class="label">E-mail</label>
+    <p class="control has-icon">
+      <input class="input" type="email" name="email" placeholder="User email" value="[[ .User.Email ]]"/>
+      <i class="fa fa-envelope"></i>
+    </p>
+    <label class="label">Directory</label>
+    <p class="control">
+      <span class="select">
+        <select name="directory">
+          <option value="production">Production</option>
+          <option value="staging">Staging</option>
+        </select>
+      </span>
+      <span class="help">Production: &lt;[[ .ProductionDirectory ]]&gt; <br>Staging: &lt;[[ .StagingDirectory ]]&gt;</span>
+    </p>
+    <p class="control">
+      <nav class="level">
+        <div class="level-left">
+        </div>
+        <div class="level-right">
+          <div class="level-item">
+            <button type="submit" class="button is-primary">Register</button>
+          </div>
+        </div>
+      </nav>
+    </p>
+  </form>
+</div>
+[[ end ]]

@@ -1,0 +1,20 @@
+[[/*
+  Copyright (c) 2016, Janoš Guljaš <janos@resenje.org>
+  All rights reserved.
+  Use of this source code is governed by a BSD-style
+  license that can be found in the LICENSE file.
+*/]]
+
+
+[[ define "base" -]]
+<!doctype html>
+<html>
+    <head>[[ if .GoImport ]]
+        <meta name="go-import" content="[[ .GoImport ]]">[[ end ]][[ if .GoSource ]]
+        <meta name="go-source" content="[[ .GoSource ]]">[[ end ]][[ if .RedirectURL ]]
+        <meta http-equiv="refresh" content="0; url=[[ .RedirectURL ]]">[[ end ]]</head>
+    <body>
+    <code>[[ .GoImport ]]</code>
+    </body>
+</html>
+[[ end ]]

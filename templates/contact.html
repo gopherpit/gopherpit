@@ -1,0 +1,64 @@
+[[/*
+  Copyright (c) 2016, Janoš Guljaš <janos@resenje.org>
+  All rights reserved.
+  Use of this source code is governed by a BSD-style
+  license that can be found in the LICENSE file.
+*/]]
+
+
+[[ define "title" ]]Contact - GopherPit[[ end ]]
+
+[[ define "script" ]]
+<script type="text/javascript">
+  "use strict";
+
+  $(function(){
+    var $form = $(".contact-form");
+    $form.ajaxform({
+      ok: function(data) {
+        $form.replaceWith($('#contact-form-success').html())
+      }
+    })
+  })
+</script>
+[[ end ]]
+
+[[ define "head" ]]
+<script type="text/html" id="contact-form-success">
+<div class="notification is-success">
+  Thank you for your feedback.
+</div>
+</script>
+[[ end ]]
+
+[[ define "main" ]]
+<div class="column is-6 is-offset-3">
+  <h1 class="title is-1">Contact</h1>
+  <form class="contact-form" method="post" action="/i/contact">
+    [[ if not .User ]]
+    <p class="control has-icon">
+      <input class="input" type="text" name="contact-name" placeholder="Your name" />
+      <i class="fa fa-user"></i>
+    </p>
+    <p class="control has-icon">
+      <input class="input" type="email" name="contact-email" placeholder="Your email address" />
+      <i class="fa fa-envelope"></i>
+    </p>
+    [[ end ]]
+    <p class="control has-icon">
+      <textarea class="textarea" name="contact-message" placeholder="Type message here..."></textarea>
+    </p>
+    <p class="control">
+      <nav class="level">
+        <div class="level-left">
+        </div>
+        <div class="level-right">
+          <div class="level-item">
+            <button type="submit" class="button is-primary">Submit</button>
+          </div>
+        </div>
+      </nav>
+    </p>
+  </form>
+</div>
+[[ end ]]

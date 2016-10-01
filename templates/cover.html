@@ -1,0 +1,57 @@
+[[/*
+  Copyright (c) 2016, Janoš Guljaš <janos@resenje.org>
+  All rights reserved.
+  Use of this source code is governed by a BSD-style
+  license that can be found in the LICENSE file.
+*/]]
+
+
+[[ define "body" ]]
+<section class="hero is-fullheight [[ block "hero-class" . ]]is-light[[ end ]]">
+  <div class="hero-head">
+    <header class="nav">
+      <div class="container">
+        <div class="nav-left">
+          <a class="nav-item is-brand" href="/">
+            [[ block "brand" . ]]<img src="[[ "gopherpit-header-dark.png" | asset ]]" alt="GopherPit">[[ end ]]
+          </a>
+        </div>
+        <span class="nav-toggle">
+          <span></span>
+          <span></span>
+          <span></span>
+        </span>
+        <div class="nav-right nav-menu">
+          <a class="nav-item" href="/login">Login</a>
+          <span class="nav-item">
+            <a class="button is-primary" href="/registration">
+              <span class="icon">
+                <i class="fa fa-plus-circle"></i>
+              </span>
+              <span>Register</span>
+            </a>
+          </span>
+        </div>
+      </div>
+    </header>
+  </div>
+
+  <div class="hero-body">
+    <div class="container">
+      [[ block "main" . ]][[ end ]]
+    </div>
+  </div>
+
+  <div class="hero-foot">
+    <nav class="tabs">
+      <div class="container">
+        <ul>
+          <li><a href="/">Home</a></li>
+          <li><a href="/contact">Contact</a></li>
+          <li><a href="/about">Copyright</a></li>
+        </ul>
+      </div>
+    </nav>
+  </div>
+</section>
+[[ end ]]

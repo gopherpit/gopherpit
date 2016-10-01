@@ -1,0 +1,29 @@
+[[/*
+  Copyright (c) 2016, Janoš Guljaš <janos@resenje.org>
+  All rights reserved.
+  Use of this source code is governed by a BSD-style
+  license that can be found in the LICENSE file.
+*/]]
+
+
+[[ define "changelog-record" ]]
+<div class="box">
+  <article class="media">
+    <div class="media-content">
+      <div class="content">
+        <p>
+          [[ if .Record.User ]][[ if eq .Record.User.ID .User.ID ]]You[[ else ]][[ if .Record.User.Name ]]<a href="/user/[[ .Record.User.ID ]]">[[ .Record.User.Name ]]</a>[[ else ]]<i>[[ .Record.User.ID ]]</i>[[ end ]][[ end ]][[ else ]]Unknown user[[ end ]] <strong>[[ .Record.Action.Display ]]</strong> [[ if .Record.ImportPrefix ]]<a href="/package/[[ .Record.PackageID ]]">[[ .Record.ImportPrefix ]]</a>[[ end ]]
+          <i>[[ relative_time .Record.Time ]]</i>
+        </p>
+        <ul>
+        [[ range $change := .Record.Changes ]]
+          <li>
+            [[ $change.Field ]]:[[ if $change.From ]] [[ if $change.FromHref ]]<a href="[[ $change.FromHref ]]"[[ if $change.FromInfo ]] data-content="[[ $change.FromInfo ]]"[[ end ]]>[[ $change.From ]]</a>[[ else ]]<span[[ if $change.FromInfo ]] data-content="[[ $change.FromInfo ]]"[[ end ]]>[[ $change.From ]]</span>[[ end ]][[ end ]][[ if $change.To ]][[ if $change.From ]] <span class="icon is-small"><i class="fa fa-arrow-right"></i></span>[[ end ]] [[ if $change.ToHref ]]<a href="[[ $change.ToHref ]]"[[ if $change.ToInfo ]] data-content="[[ $change.ToInfo ]]"[[ end ]]>[[ $change.To ]]</a>[[ else ]]<span[[ if $change.ToInfo ]] data-content="[[ $change.ToInfo ]]"[[ end ]]>[[ $change.To ]]</span>[[ end ]][[ else ]] <span class="icon is-small"><i class="fa fa-arrow-right"></i></span> <span class="icon is-small"><i class="fa fa-remove"></i></span>[[ end ]]
+          </li>
+        [[ end ]]
+        </ul>
+      </div>
+    </div>
+  </article>
+</div>
+[[ end ]]

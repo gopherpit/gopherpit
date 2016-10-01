@@ -1,0 +1,95 @@
+[[/*
+  Copyright (c) 2016, Janoš Guljaš <janos@resenje.org>
+  All rights reserved.
+  Use of this source code is governed by a BSD-style
+  license that can be found in the LICENSE file.
+*/]]
+
+
+[[ define "title" ]]Settings - Notifications - GopherPit[[ end ]]
+
+[[ define "hero-class" ]]is-dark is-bold[[ end ]]
+
+[[ define "script" ]]
+<script type="text/javascript">
+  "use strict";
+
+  $(function(){
+    var $form = $(".notifications-form");
+    $form.ajaxform({
+      ok: function(data) {
+        $form.replaceWith($('#notifications-form-success').html())
+      }
+    });
+    $("body").on("click", ".notification.notifications-form-success .delete", function() {
+      window.location.reload()
+    })
+  })
+</script>
+[[ end ]]
+
+[[ define "head" ]]
+<script type="text/html" id="notifications-form-success">
+<div class="notification is-success notifications-form-success">
+  <div class="delete"></div>
+  Your notification settings is saved.
+</div>
+</script>
+[[ end ]]
+
+[[ define "hero" ]]
+<div class="hero-body has-text-centered">
+  <div class="container">
+    <h1 class="title">
+      Settings
+    </h1>
+    <h2 class="subtitle">
+      Notifications
+    </h2>
+  </div>
+</div>
+[[ end ]]
+
+[[ define "main" ]]
+<div class="column is-8 is-offset-2">
+  <div class="columns">
+    <div class="column is-one-quarter">
+      <aside class="menu">
+        <p class="menu-label">
+          Settings
+        </p>
+        <ul class="menu-list">
+          <li><a href="/settings">Basic information</a></li>
+          <li><a href="/settings/email">E-mail address</a></li>
+          <li><a class="is-active" href="/settings/notifications">Notifications</a></li>
+          <li><a href="/settings/password">Password</a></li>
+          <li><a href="/settings/delete-account">Delete account</a></li>
+        </ul>
+      </aside>
+    </div>
+    <div class="column">
+      [[ if .OptedOut ]]
+      <div class="notification is-warning">Sending e-mail messages to the address [[ .User.Email ]] is blocked!</div>
+      [[ else ]]
+      <form class="notifications-form" method="post" action="/i/user/notifications">
+        <label class="checkbox">
+          <input type="checkbox" [[ if not .User.NotificationsDisabled ]]checked[[ end ]] name="notifications-enabled">
+          I want to receive periodic messages from this site
+        </label>
+        <p class="control">
+          <nav class="level">
+            <div class="level-left">
+            </div>
+            <div class="level-right">
+              <div class="level-item">
+                <button type="submit" class="button is-primary">Save</button>
+              </div>
+            </div>
+          </nav>
+        </p>
+      </form>
+      [[ end ]]
+    </div>
+  </div>
+</div>
+[[ end ]]

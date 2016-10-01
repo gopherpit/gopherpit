@@ -1,0 +1,80 @@
+[[/*
+  Copyright (c) 2016, Janoš Guljaš <janos@resenje.org>
+  All rights reserved.
+  Use of this source code is governed by a BSD-style
+  license that can be found in the LICENSE file.
+*/]]
+
+
+[[ define "title" ]]Settings - Delete account - GopherPit[[ end ]]
+
+[[ define "hero-class" ]]is-danger is-bold[[ end ]]
+
+[[ define "script" ]]
+<script type="text/javascript">
+  "use strict";
+
+  $(function(){
+    var $form = $(".delete-account-form");
+    $form.ajaxform({
+      ok: function(data) {
+        window.location = "/"
+      }
+    })
+  })
+</script>
+[[ end ]]
+
+[[ define "hero" ]]
+<div class="hero-body has-text-centered">
+  <div class="container">
+    <h1 class="title">
+      Settings
+    </h1>
+    <h2 class="subtitle">
+      Delete account
+    </h2>
+  </div>
+</div>
+[[ end ]]
+
+[[ define "main" ]]
+<div class="column is-8 is-offset-2">
+  <div class="columns">
+    <div class="column is-one-quarter">
+      <aside class="menu">
+        <p class="menu-label">
+          Settings
+        </p>
+        <ul class="menu-list">
+          <li><a href="/settings">Basic information</a></li>
+          <li><a href="/settings/email">E-mail address</a></li>
+          <li><a href="/settings/notifications">Notifications</a></li>
+          <li><a href="/settings/password">Password</a></li>
+          <li><a class="is-active" href="/settings/delete-account">Delete account</a></li>
+        </ul>
+      </aside>
+    </div>
+    <div class="column">
+      <form class="delete-account-form" method="post" action="/i/user/delete">
+        <p class="content">Account deletion is irreversible and all your data will be lost.</p>
+        <label class="label">Enter password to confirm account deletion</label>
+        <p class="control">
+          <input class="input" name="password" type="password" autofocus />
+        </p>
+        <p class="control">
+          <nav class="level">
+            <div class="level-left">
+            </div>
+            <div class="level-right">
+              <div class="level-item">
+                <button type="submit" class="button is-danger">Yes, delete my account!</button>
+              </div>
+            </div>
+          </nav>
+        </p>
+      </form>
+    </div>
+  </div>
+</div>
+[[ end ]]

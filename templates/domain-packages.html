@@ -1,0 +1,103 @@
+[[/*
+  Copyright (c) 2016, Janoš Guljaš <janos@resenje.org>
+  All rights reserved.
+  Use of this source code is governed by a BSD-style
+  license that can be found in the LICENSE file.
+*/]]
+
+
+[[ define "title" ]][[ .Domain.FQDN ]] packages - GopherPit[[ end ]]
+
+[[ define "script" ]]
+<script type="text/javascript">
+  "use strict";
+
+</script>
+[[ end ]]
+
+[[ define "hero" ]]
+<div class="hero-body has-text-centered">
+  <div class="container">
+    <h1 class="title">
+      [[ .Domain.FQDN ]]
+    </h1>
+  </div>
+</div>
+<div class="hero-foot">
+  <div class="tabs is-boxed">
+    <div class="container">
+      <ul>
+        <li class="is-active"><a href="/domain/[[ .Domain.FQDN ]]">Packages</a></li>
+        <li><a href="/domain/[[ .Domain.FQDN ]]/team">Team</a></li>
+        <li><a href="/domain/[[ .Domain.FQDN ]]/settings">Settings</a></li>
+        <li><a href="/domain/[[ .Domain.FQDN ]]/changelog">Changelog</a></li>
+      </ul>
+    </div>
+  </div>
+</div>
+[[ end ]]
+
+[[ define "main" ]]
+<div class="columns">
+  <div class="column is-3">
+    <aside class="menu">
+      <p class="menu-label">
+        Domain packages
+      </p>
+      <ul class="menu-list">
+      [[ range $domain := .Domains ]]
+        <a class="menu-block[[ if eq $domain.ID $.Domain.ID ]] is-active[[ end ]]" href="/domain/[[ $domain.FQDN ]]">[[ $domain.FQDN ]]</a>
+      [[ end ]]
+      </ul>
+    </aside>
+    <br>
+    <a class="button is-outlined is-fullwidth" href="/domain">Add domain</a>
+  </div>
+  <div class="column is-9">
+    <div class="columns">
+      <div class="column is-12">
+        [[ if .Packages ]]
+        <div class="ui basic segment">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Path</th>
+                <th>Repository</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              [[ range $package := .Packages ]]
+              <tr [[ if $package.Disabled ]]class="negative"[[ end ]]>
+                <td><a href="/package/[[ $package.ID ]]"><code>[[ $package.Path ]]</code></a>[[ if $package.Disabled ]] (disabled)[[ end ]] </td>
+                <td>[[ $package.RepoRoot ]]</td>
+                <td class="has-text-right"><a href="/package/[[ $package.ID ]]"><span class="icon"><i class="fa fa-pencil"></i></span></a> <a href="https://[[ $.Domain.FQDN ]][[ $package.Path ]]?go-get=1" target="_blank"><span class="icon"><i class="fa fa-external-link"></i></span></a></td></td>
+              </tr>
+              [[ end ]]
+            </tbody>
+          </table>
+        </div>
+        <div>
+          [[ if .Previous ]]
+          <a href="/domain/[[ .Domain.FQDN ]]?start=[[ .Previous | base32encode ]]" class="button"><span class="icon"><i class="fa fa-arrow-left"></i></span><span>Previous</span></a>
+          [[ end ]]
+          [[ if .Next ]]
+          <a href="/domain/[[ .Domain.FQDN ]]?start=[[ .Next | base32encode ]]" class="button"><span>Next</span><span class="icon"><i class="fa fa-arrow-right"></i></span></a>
+          [[ end ]]
+        </div>
+        [[ end ]]
+      </div>
+    </div>
+    <div class="columns">
+      <div class="column">
+        <div class="column is-8 content has-text-centered">
+          [[ if not .Packages ]]
+          <p>Go packages are referenced by paths.<br>Package paths under domain [[ .Domain.FQDN ]] can be managed here.</p>
+          [[ end ]]
+          <a class="button is-large is-outlined" href="/domain/[[ .Domain.FQDN ]]/package">Add package</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+[[ end ]]

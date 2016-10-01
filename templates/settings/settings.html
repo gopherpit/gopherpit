@@ -1,0 +1,96 @@
+[[/*
+  Copyright (c) 2016, Janoš Guljaš <janos@resenje.org>
+  All rights reserved.
+  Use of this source code is governed by a BSD-style
+  license that can be found in the LICENSE file.
+*/]]
+
+
+[[ define "title" ]]Settings - Basic information - GopherPit[[ end ]]
+
+[[ define "hero-class" ]]is-dark is-bold[[ end ]]
+
+[[ define "script" ]]
+<script type="text/javascript">
+  "use strict";
+
+  $(function(){
+    var $form = $(".basic-information-form");
+    $form.ajaxform({
+      ok: function(data) {
+        $form.replaceWith($('#basic-information-form-success').html())
+      }
+    });
+    $("body").on("click", ".notification.basic-information-form-success .delete", function() {
+      window.location.reload()
+    })
+  })
+</script>
+[[ end ]]
+
+[[ define "head" ]]
+<script type="text/html" id="basic-information-form-success">
+<div class="notification is-success basic-information-form-success">
+  <div class="delete"></div>
+  Your basic information is saved.
+</div>
+</script>
+[[ end ]]
+
+[[ define "hero" ]]
+<div class="hero-body has-text-centered">
+  <div class="container">
+    <h1 class="title">
+      Settings
+    </h1>
+    <h2 class="subtitle">
+      Basic information
+    </h2>
+  </div>
+</div>
+[[ end ]]
+
+[[ define "main" ]]
+<div class="column is-8 is-offset-2">
+  <div class="columns">
+    <div class="column is-one-quarter">
+      <aside class="menu">
+        <p class="menu-label">
+          Settings
+        </p>
+        <ul class="menu-list">
+          <li><a class="is-active" href="/settings">Basic information</a></li>
+          <li><a href="/settings/email">E-mail address</a></li>
+          <li><a href="/settings/notifications">Notifications</a></li>
+          <li><a href="/settings/password">Password</a></li>
+          <li><a href="/settings/delete-account">Delete account</a></li>
+        </ul>
+      </aside>
+    </div>
+    <div class="column">
+      <form class="basic-information-form" method="post" action="/i/user">
+        <label class="label">Your name</label>
+        <p class="control">
+          <input class="input" name="name" type="text" value="[[ .User.Name ]]" placeholder="" autofocus />
+        </p>
+        <label class="label">Username</label>
+        <p class="control">
+          <input class="input" name="username" type="text" value="[[ .User.Username ]]" placeholder="" />
+        </p>
+        <p class="control">
+          <nav class="level">
+            <div class="level-left">
+            </div>
+            <div class="level-right">
+              <div class="level-item">
+                <button type="reset" class="button">Reset</button>
+                <button type="submit" class="button is-primary">Save</button>
+              </div>
+            </div>
+          </nav>
+        </p>
+      </form>
+    </div>
+  </div>
+</div>
+[[ end ]]

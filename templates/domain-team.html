@@ -1,0 +1,91 @@
+[[/*
+  Copyright (c) 2016, Janoš Guljaš <janos@resenje.org>
+  All rights reserved.
+  Use of this source code is governed by a BSD-style
+  license that can be found in the LICENSE file.
+*/]]
+
+
+[[ define "title" ]][[ .Domain.FQDN ]] team - GopherPit[[ end ]]
+
+[[ define "script" ]]
+<script type="text/javascript">
+  "use strict";
+
+</script>
+[[ end ]]
+
+[[ define "hero" ]]
+<div class="hero-body has-text-centered">
+  <div class="container">
+    <h1 class="title">
+      [[ .Domain.FQDN ]]
+    </h1>
+  </div>
+</div>
+<div class="hero-foot">
+  <div class="tabs is-boxed">
+    <div class="container">
+      <ul>
+        <li><a href="/domain/[[ .Domain.FQDN ]]">Packages</a></li>
+        <li class="is-active"><a href="/domain/[[ .Domain.FQDN ]]/team">Team</a></li>
+        <li><a href="/domain/[[ .Domain.FQDN ]]/settings">Settings</a></li>
+        <li><a href="/domain/[[ .Domain.FQDN ]]/changelog">Changelog</a></li>
+      </ul>
+    </div>
+  </div>
+</div>
+[[ end ]]
+
+[[ define "main" ]]
+<div class="columns">
+  <div class="column is-3">
+    <aside class="menu">
+      <p class="menu-label">
+        Domain teams
+      </p>
+      <ul class="menu-list">
+      [[ range $domain := .Domains ]]
+        <a class="menu-block[[ if eq $domain.ID $.Domain.ID ]] is-active[[ end ]]" href="/domain/[[ $domain.FQDN ]]/team">[[ $domain.FQDN ]]</a>
+      [[ end ]]
+      </ul>
+    </aside>
+    <br>
+    <a class="button is-outlined is-fullwidth" href="/domain">Add domain</a>
+  </div>
+  <div class="column is-6">
+    [[ if .Forbidden ]]
+    <div class="notification has-text-centered is-warning">Only owner of the domain can manage the team.</div>
+    [[ else ]]
+    [[ if .Users ]]
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>ID</th>
+          <th class="right aligned">Revoke</th>
+        </tr>
+      </thead>
+      <tbody>
+        [[ range $user := .Users ]]
+        <tr>
+          <td><a href="/user/[[ $user.ID ]]">[[ $user.Name ]]</a></td>
+          <td><code>[[ $user.ID ]]</code></td>
+          <td class="right aligned"><a href="/domain/[[ $.Domain.FQDN ]]/user/[[ $user.ID ]]/revoke"><span class="icon is-small"><i class="fa fa-remove"></i></span></a></td></td>
+        </tr>
+        [[ end ]]
+      </tbody>
+    </table>
+    [[ end ]]
+    <div class="has-text-centered">
+      [[ if not .Users ]]
+      <p class="content">Team is a set of users, associated with this domain, which can add, change and remove packages. They are also able to see domain changelog.</p>
+      <p class="content">Domain settings and team management are only available for a single user called owner, which is you for this domain. This privileges are transferable to another user.</p>
+      [[ end ]]
+      <a class="button" href="/domain/[[ .Domain.FQDN ]]/user">Grant access to a user</a>
+      <a class="button" href="/domain/[[ .Domain.FQDN ]]/owner">Change owner of the domain</a>
+    </div>
+  </div>
+  [[ end ]]
+</div>
+[[ end ]]

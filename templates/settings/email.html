@@ -1,0 +1,130 @@
+[[/*
+  Copyright (c) 2016, Janoš Guljaš <janos@resenje.org>
+  All rights reserved.
+  Use of this source code is governed by a BSD-style
+  license that can be found in the LICENSE file.
+*/]]
+
+
+[[ define "title" ]]Settings - E-mail address - GopherPit[[ end ]]
+
+[[ define "hero-class" ]]is-dark is-bold[[ end ]]
+
+[[ define "script" ]]
+<script type="text/javascript">
+  "use strict";
+
+  $(function(){
+    var $form = $(".email-change-form");
+    $form.ajaxform({
+      ok: function(data) {
+        $form.replaceWith($('#email-change-form-success').html())
+      }
+    });
+    var $btn = $(".send-validation-email");
+    $btn.ajaxbutton({
+      ok: function() {
+        $btn.replaceWith($('#send-validation-email-success').html())
+      }
+    })
+  })
+</script>
+[[ end ]]
+
+[[ define "head" ]]
+<script type="text/html" id="email-change-form-success">
+<div class="notification">
+  <p>Validation e-mail messages is sent.</p>
+  <p>To complete e-mail change you need to verify that you are the owner of that address. Until then, your current e-mail address will be used for identification and notifications.</p>
+</div>
+</script>
+<script type="text/html" id="send-validation-email-success">
+<div class="notification">
+  <p>Validation e-mail message is sent.</p>
+</div>
+</script>
+[[ end ]]
+
+[[ define "hero" ]]
+<div class="hero-body has-text-centered">
+  <div class="container">
+    <h1 class="title">
+      Settings
+    </h1>
+    <h2 class="subtitle">
+      E-mail address
+    </h2>
+  </div>
+</div>
+[[ end ]]
+
+[[ define "main" ]]
+<div class="column is-8 is-offset-2">
+  <div class="columns">
+    <div class="column is-one-quarter">
+      <aside class="menu">
+        <p class="menu-label">
+          Settings
+        </p>
+        <ul class="menu-list">
+          <li><a href="/settings">Basic information</a></li>
+          <li><a class="is-active" href="/settings/email">E-mail address</a></li>
+          <li><a href="/settings/notifications">Notifications</a></li>
+          <li><a href="/settings/password">Password</a></li>
+          <li><a href="/settings/delete-account">Delete account</a></li>
+        </ul>
+      </aside>
+    </div>
+    <div class="column">
+      <div class="content">
+      <div class="notification [[ if .User.EmailUnvalidated ]]is-warning[[ else ]]is-info[[ end ]]">
+        <p>[[ .User.Email ]]</p>
+        [[ if .User.EmailUnvalidated ]]
+        <p>E-mail adress is not validated!</p>
+        [[ else ]]
+        <p>E-mail adress is validated.</p>
+        [[ end ]]
+      </div>
+
+      [[ if .OptedOut ]]
+      <div class="notification is-warning">Sending e-mail messages to this address is blocked!</div>
+      [[ else ]]
+      [[ if .User.EmailUnvalidated ]]
+      <div class="notification is-info">Check if you received a message to [[ .User.Email ]] and open the page that is specified to confirm the ownership. If you did not receive such messag, you can re-send it by clicking o the button below.</div>
+      <nav class="level">
+        <div class="level-left">
+        </div>
+        <div class="level-right">
+          <div class="level-item">
+            <button class="button send-validation-email" data-action="/i/user/email/validation-email" data-method="post">Send e-mail validation message</button>
+          </div>
+        </div>
+      </nav>
+      [[ end ]]
+      [[ end ]]
+      </div>
+
+      <div class="title is-h3">Change</div>
+      <form class="email-change-form" method="post" action="/i/user/email">
+        <p class="content">E-mail address change requires validation of ownership.</p>
+        <label class="label">New e-mail address</label>
+        <p class="control">
+          <input class="input" name="email" type="email" autofocus />
+          <span class="help">It will never be revealed to other user or visitors.</span>
+        </p>
+        <p class="control">
+          <nav class="level">
+            <div class="level-left">
+            </div>
+            <div class="level-right">
+              <div class="level-item">
+                <button type="submit" class="button is-primary">Change</button>
+              </div>
+            </div>
+          </nav>
+        </p>
+      </form>
+    </div>
+  </div>
+</div>
+[[ end ]]

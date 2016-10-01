@@ -1,0 +1,181 @@
+{
+	"comment": "",
+	"ignore": "test golang.org/x/sys/unix/ github.com/gorilla/context/ gopkg.in/alexcesaro/quotedprintable.v3/",
+	"package": [
+		{
+			"checksumSHA1": "YS8bEVfFyH1TGxgXJCSeVV7cJiU=",
+			"path": "github.com/boltdb/bolt",
+			"revision": "fff57c100f4dea1905678da7e90d92429dff2904",
+			"revisionTime": "2016-09-13T16:53:39Z"
+		},
+		{
+			"checksumSHA1": "6/9VW/AyJyjRXLu+nbhqGYvOO2k=",
+			"path": "github.com/gorilla/handlers",
+			"revision": "a5775781a543af3c6b9f5baf10995e4d14168950",
+			"revisionTime": "2016-08-16T18:47:29Z"
+		},
+		{
+			"checksumSHA1": "urMd7A9QPAJYY0GZJL9qBhlUmD8=",
+			"path": "github.com/gorilla/mux",
+			"revision": "757bef944d0f21880861c2dd9c871ca543023cba",
+			"revisionTime": "2016-09-20T23:08:13Z"
+		},
+		{
+			"checksumSHA1": "h4g74tgdQOndlNYFFhY9vCxmThU=",
+			"path": "github.com/kelseyhightower/envconfig",
+			"revision": "13674b2d056fb658a00ba3f36e78043ced07c924",
+			"revisionTime": "2016-09-21T17:42:30Z"
+		},
+		{
+			"checksumSHA1": "OUZ1FFXyKs+Cfg9M9rmXqqweQck=",
+			"path": "github.com/miekg/dns",
+			"revision": "db96a2b759cdef4f11a34506a42eb8d1290c598e",
+			"revisionTime": "2016-07-26T03:20:27Z"
+		},
+		{
+			"checksumSHA1": "v6ToceMW0VIE6vH5tPe5drOQqRM=",
+			"path": "github.com/xenolf/lego/acme",
+			"revision": "f3cd0bfdeebbf2fff1893beafc156f979c3c1e41",
+			"revisionTime": "2016-09-30T11:51:00Z"
+		},
+		{
+			"checksumSHA1": "yJN5UmgRWdebM23vMyVNbcw+YgQ=",
+			"path": "golang.org/x/crypto/ocsp",
+			"revision": "568507f56e5b05b3c219ffd7fba12655c07bcc86",
+			"revisionTime": "2016-09-29T08:49:23Z"
+		},
+		{
+			"checksumSHA1": "1MGpGDQqnUoRpv7VEcQrXOBydXE=",
+			"path": "golang.org/x/crypto/pbkdf2",
+			"revision": "568507f56e5b05b3c219ffd7fba12655c07bcc86",
+			"revisionTime": "2016-09-29T08:49:23Z"
+		},
+		{
+			"checksumSHA1": "E8pDMGySfy5Mw+jzXOkOxo35bww=",
+			"path": "golang.org/x/crypto/scrypt",
+			"revision": "568507f56e5b05b3c219ffd7fba12655c07bcc86",
+			"revisionTime": "2016-09-29T08:49:23Z"
+		},
+		{
+			"checksumSHA1": "GJTCcc2D40HMhKcBVZCQumPK3yA=",
+			"path": "golang.org/x/crypto/sha3",
+			"revision": "568507f56e5b05b3c219ffd7fba12655c07bcc86",
+			"revisionTime": "2016-09-29T08:49:23Z"
+		},
+		{
+			"checksumSHA1": "9jjO5GjLa0XF/nfWihF02RoH4qc=",
+			"path": "golang.org/x/net/context",
+			"revision": "0d8126fc6144eb5257485c59148128691e8ff849",
+			"revisionTime": "2016-09-30T20:34:21Z"
+		},
+		{
+			"checksumSHA1": "T89tXiSpvn412U+PDEhR5JasFMQ=",
+			"path": "golang.org/x/net/http2",
+			"revision": "0d8126fc6144eb5257485c59148128691e8ff849",
+			"revisionTime": "2016-09-30T20:34:21Z"
+		},
+		{
+			"checksumSHA1": "HzuGD7AwgC0p1az1WAQnEFnEk98=",
+			"path": "golang.org/x/net/http2/hpack",
+			"revision": "0d8126fc6144eb5257485c59148128691e8ff849",
+			"revisionTime": "2016-09-30T20:34:21Z"
+		},
+		{
+			"checksumSHA1": "GIGmSrYACByf5JDIP9ByBZksY80=",
+			"path": "golang.org/x/net/idna",
+			"revision": "0d8126fc6144eb5257485c59148128691e8ff849",
+			"revisionTime": "2016-09-30T20:34:21Z"
+		},
+		{
+			"checksumSHA1": "3xyuaSNmClqG4YWC7g0isQIbUTc=",
+			"path": "golang.org/x/net/lex/httplex",
+			"revision": "0d8126fc6144eb5257485c59148128691e8ff849",
+			"revisionTime": "2016-09-30T20:34:21Z"
+		},
+		{
+			"checksumSHA1": "6thYfOqbpn607QljSl+jOXbuqio=",
+			"path": "golang.org/x/net/publicsuffix",
+			"revision": "0d8126fc6144eb5257485c59148128691e8ff849",
+			"revisionTime": "2016-09-30T20:34:21Z"
+		},
+		{
+			"checksumSHA1": "iq5WdjScmTU+LfNoerLuwcnXpdM=",
+			"path": "gopkg.in/gomail.v2",
+			"revision": "81ebce5c23dfd25c6c67194b37d3dd3f338c98b1",
+			"revisionTime": "2016-04-11T21:29:32Z"
+		},
+		{
+			"checksumSHA1": "4FonadPMjBW33hDoyy+ZtBmU/bc=",
+			"path": "gopkg.in/square/go-jose.v1",
+			"revision": "aa2e30fdd1fe9dd3394119af66451ae790d50e0d",
+			"revisionTime": "2016-09-23T00:08:11Z"
+		},
+		{
+			"checksumSHA1": "vSlztt3rfYwwDDKEiqUDWXl2LGw=",
+			"path": "gopkg.in/square/go-jose.v1/cipher",
+			"revision": "aa2e30fdd1fe9dd3394119af66451ae790d50e0d",
+			"revisionTime": "2016-09-23T00:08:11Z"
+		},
+		{
+			"checksumSHA1": "UYvcpB3og7YJHbRu4feZFxXAU/A=",
+			"path": "gopkg.in/square/go-jose.v1/json",
+			"revision": "aa2e30fdd1fe9dd3394119af66451ae790d50e0d",
+			"revisionTime": "2016-09-23T00:08:11Z"
+		},
+		{
+			"checksumSHA1": "jkRRvDtwrqNRG2cGSAKZwSzSuow=",
+			"path": "resenje.org/antixsrf",
+			"revision": "213365cb7b3492cef4e2d70d9d1e8657cc42b5ab",
+			"revisionTime": "2015-07-18T14:14:43Z"
+		},
+		{
+			"checksumSHA1": "lJFVjvAOr1/dq7UqGcTG9h9jdvI=",
+			"path": "resenje.org/boltdbpool",
+			"revision": "97ebf71918a698521f0beff08702293fe6d37cca",
+			"revisionTime": "2016-02-17T22:48:23Z"
+		},
+		{
+			"checksumSHA1": "RA89HH8De0aBCL0EGB7jNSalu0c=",
+			"path": "resenje.org/boltdbpool/timed",
+			"revision": "97ebf71918a698521f0beff08702293fe6d37cca",
+			"revisionTime": "2016-02-17T22:48:23Z"
+		},
+		{
+			"checksumSHA1": "Xhm3zL3nkB/tlctWPRBNTzzj07U=",
+			"path": "resenje.org/daemon",
+			"revision": "cfa6e4909d48d82fc5e95c1d6edaee4521dc4400",
+			"revisionTime": "2016-09-12T15:47:39Z"
+		},
+		{
+			"checksumSHA1": "L2WPkqB+fjWxw8iwghe09D73EAE=",
+			"path": "resenje.org/httphandlers",
+			"revision": "8ca43b4c2ea447bc6f7875bcae3c9670862e6553",
+			"revisionTime": "2016-09-25T18:47:42Z"
+		},
+		{
+			"checksumSHA1": "bswmBdGa8Ngaum2Snl/cApLuL1w=",
+			"path": "resenje.org/httphandlers/file-server",
+			"revision": "8ca43b4c2ea447bc6f7875bcae3c9670862e6553",
+			"revisionTime": "2016-09-25T18:47:42Z"
+		},
+		{
+			"checksumSHA1": "h/SLL66vtRsYFpWEwDNxJvinkhU=",
+			"path": "resenje.org/jsonresponse",
+			"revision": "0925d626885d154fe01c7e60e8104988bd68a118",
+			"revisionTime": "2015-10-25T22:28:27Z"
+		},
+		{
+			"checksumSHA1": "UmN75TADcbGhM5LvwFehmsE7psQ=",
+			"path": "resenje.org/logging",
+			"revision": "3921af8c56ccae749ec4eea949b6d27bfe5417e9",
+			"revisionTime": "2016-09-19T18:17:25Z"
+		},
+		{
+			"checksumSHA1": "UNpaxsGFzmtK7MGWRAIloAc9ONY=",
+			"path": "resenje.org/marshal",
+			"revision": "bd17c4bd170bcbde90b0c6c3eaf2ab574428a188",
+			"revisionTime": "2016-09-19T17:02:59Z"
+		}
+	],
+	"rootPath": "gopherpit.com/gopherpit"
+}

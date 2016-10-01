@@ -1,0 +1,82 @@
+[[/*
+  Copyright (c) 2016, Janoš Guljaš <janos@resenje.org>
+  All rights reserved.
+  Use of this source code is governed by a BSD-style
+  license that can be found in the LICENSE file.
+*/]]
+
+
+[[ define "title" ]]GopherPit[[ end ]]
+
+[[ define "main" ]]
+[[ if not .Domains ]]
+<div class="column is-6 is-offset-3 has-text-centered content">
+  <h1 class="title is-1">Domains and packages</h1>
+  <p>Your list of domains and packages is empty, so feel free to add a new domain and afterward to add packages under it.</p>
+  <a class="button is-pulled-right is-primary" href="/domain">Add Domain</a>
+</div>
+[[ else ]]
+<div class="columns">
+  <div class="column is-3">
+    <aside class="menu">
+      <p class="menu-label">
+        Your domains
+      </p>
+      <ul class="menu-list">
+      [[ range $domain := .Domains ]]
+        <a class="menu-block" href="/domain/[[ $domain.FQDN ]]">[[ $domain.FQDN ]]</a>
+      [[ end ]]
+      </ul>
+    </aside>
+    <br>
+    <a class="button is-outlined is-fullwidth" href="/domain">Add domain</a>
+  </div>
+  <div class="column is-9">
+    <div class="ui basic segment">
+      [[ range $changelog := .Changelogs ]]
+        <nav class="level">
+          <div class="level-left">
+            <div class="level-item">
+              <h2 class="title">[[- $changelog.Domain.FQDN -]]</h2>
+            </div>
+            <div class="level-item">
+              <a href="/domain/[[ $changelog.Domain.FQDN ]]"><span class="icon is-small"><i class="fa fa-cubes"></i></span></a>
+            </div>
+            [[ if eq $changelog.Domain.OwnerUserID $.User.ID ]]
+            <div class="level-item">
+              <a href="/domain/[[ $changelog.Domain.FQDN ]]/team"><span class="icon is-small"><i class="fa fa-users"></i></span></a>
+            </div>
+            <div class="level-item">
+              <a href="/domain/[[ $changelog.Domain.FQDN ]]/settings"><span class="icon is-small"><i class="fa fa-gears"></i></span></a>
+            </div>
+            [[ end ]]
+            <div class="level-item">
+              <a href="/domain/[[ $changelog.Domain.FQDN ]]/changelog"><span class="icon is-small"><i class="fa fa-history"></i></span></a>
+            </div>
+            [[ if $changelog.Domain.Disabled ]]
+            <div class="level-item">
+              <span>disabled</span>
+            </div>
+            [[ end ]]
+          </div>
+          <div class="level-right">
+          </div>
+        </nav>
+        [[ if $changelog.Records ]]
+          [[ range $record := $changelog.Records ]]
+          <div class="content">
+            [[ template "changelog-record" map "Record" $record "User" $.User ]]
+          </div>
+          [[ end ]]
+          [[ if $changelog.Previous ]]
+          <div class="content">
+            <a class="button" href="/domain/[[ $changelog.Domain.FQDN ]]/changelog"><span>More changes</span><span class="icon is-small"><i class="fa fa-arrow-right"></i></span></i></a>
+          </div>
+          [[ end ]]
+        [[ end ]]
+      [[ end ]]
+    </div>
+  </div>
+</div>
+[[ end ]]
+[[ end ]]

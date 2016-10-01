@@ -1,0 +1,85 @@
+[[/*
+  Copyright (c) 2016, Janoš Guljaš <janos@resenje.org>
+  All rights reserved.
+  Use of this source code is governed by a BSD-style
+  license that can be found in the LICENSE file.
+*/]]
+
+
+[[ define "title" ]][[ .Domain.FQDN ]] revoke user [[ .DomainUser ]] - GopherPit[[ end ]]
+
+[[ define "script" ]]
+<script type="text/javascript">
+  "use strict";
+
+  $(function(){
+    var $form = $(".domain-user-form");
+    $form.ajaxform({
+      ok: function(data) {
+        window.location = encodeURI("/domain/[[ .Domain.FQDN ]]/team")
+      }
+    })
+  })
+</script>
+[[ end ]]
+
+[[ define "hero" ]]
+<div class="hero-body has-text-centered">
+  <div class="container">
+    <h1 class="title">
+      [[ .Domain.FQDN ]]
+    </h1>
+  </div>
+</div>
+<div class="hero-foot">
+  <div class="tabs is-boxed">
+    <div class="container">
+      <ul>
+        <li><a href="/domain/[[ .Domain.FQDN ]]">Packages</a></li>
+        <li class="is-active"><a href="/domain/[[ .Domain.FQDN ]]/team">Team</a></li>
+        <li><a href="/domain/[[ .Domain.FQDN ]]/settings">Settings</a></li>
+        <li><a href="/domain/[[ .Domain.FQDN ]]/changelog">Changelog</a></li>
+      </ul>
+    </div>
+  </div>
+</div>
+[[ end ]]
+
+[[ define "main" ]]
+<div class="columns">
+  <div class="column is-3">
+    <aside class="menu">
+      <p class="menu-label">
+        Domain teams
+      </p>
+      <ul class="menu-list">
+      [[ range $domain := .Domains ]]
+        <a class="menu-block[[ if eq $domain.ID $.Domain.ID ]] is-active[[ end ]]" href="/domain/[[ $domain.FQDN ]]/team">[[ $domain.FQDN ]]</a>
+      [[ end ]]
+      </ul>
+    </aside>
+    <br>
+    <a class="button is-outlined is-fullwidth" href="/domain">Add domain</a>
+  </div>
+  <div class="column is-6">
+    <div class="content"><a href="/domain/[[ .Domain.FQDN ]]/team"><span class="icon is-small"><i class="fa fa-arrow-left"></i></span> Team</a></div>
+
+    <p>Are you sure that you want to revoke access to user <strong>[[ .DomainUser.Name ]]</strong> GopherPit ID <code>[[ .DomainUser.ID ]]</code>[[ if .DomainUser.Username ]] and username <strong>[[ .DomainUser.Username ]]</strong>[[ end ]]?</p>
+    <form class="domain-user-form" method="delete" action="/i/domain/[[ .Domain.ID ]]/user" autocomplete="off">
+      <input type="hidden" name="id" value="[[ .DomainUser.ID ]]" />
+      <p class="control">
+        <nav class="level">
+          <div class="level-left">
+          </div>
+          <div class="level-right">
+            <div class="level-item">
+              <a class="ui button" href="/domain/[[ .Domain.FQDN ]]/team">Cancel</a> 
+              <button type="submit" class="button is-primary">Revoke access from user [[ .DomainUser ]]</button>
+            </div>
+          </div>
+        </nav>
+      </p>
+    </form>
+  </div>
+</div>
+[[ end ]]

@@ -1,0 +1,153 @@
+[[/*
+  Copyright (c) 2016, Janoš Guljaš <janos@resenje.org>
+  All rights reserved.
+  Use of this source code is governed by a BSD-style
+  license that can be found in the LICENSE file.
+*/]]
+
+
+[[ define "title" ]][[ .Domain.FQDN ]] package - GopherPit[[ end ]]
+
+[[ define "script" ]]
+<script type="text/javascript">
+  "use strict";
+
+  $(function(){
+    var $form = $(".package-form");
+    $form.ajaxform({
+      ok: function(data) {
+        window.location = encodeURI("/domain/[[ .Domain.ID | js ]]")
+      }
+    });
+    $(".button.delete-package").ajaxbutton({
+      ok: function() {
+        window.location = encodeURI("/domain/[[ .Domain.ID | js ]]")
+      }
+    })
+  })
+</script>
+[[ end ]]
+
+[[ define "hero" ]]
+<div class="hero-body has-text-centered">
+  <div class="container">
+    <h1 class="title">
+      [[ .Domain.FQDN ]]
+    </h1>
+  </div>
+</div>
+<div class="hero-foot">
+  <div class="tabs is-boxed">
+    <div class="container">
+      <ul>
+        <li class="is-active"><a href="/domain/[[ .Domain.FQDN ]]">Packages</a></li>
+        <li><a href="/domain/[[ .Domain.FQDN ]]/team">Team</a></li>
+        <li><a href="/domain/[[ .Domain.FQDN ]]/settings">Settings</a></li>
+        <li><a href="/domain/[[ .Domain.FQDN ]]/changelog">Changelog</a></li>
+      </ul>
+    </div>
+  </div>
+</div>
+[[ end ]]
+
+[[ define "main" ]]
+<div class="columns">
+  <div class="column is-3">
+    <aside class="menu">
+      <p class="menu-label">
+        Domain packages
+      </p>
+      <ul class="menu-list">
+      [[ range $domain := .Domains ]]
+        <a class="menu-block[[ if eq $domain.ID $.Domain.ID ]] is-active[[ end ]]" href="/domain/[[ $domain.FQDN ]]">[[ $domain.FQDN ]]</a>
+      [[ end ]]
+      </ul>
+    </aside>
+    <br>
+    <a class="button is-outlined is-fullwidth" href="/domain">Add domain</a>
+  </div>
+  <div class="column is-9">
+    <div class="content"><a href="/domain/[[ .Domain.FQDN ]]"><span class="icon is-small"><i class="fa fa-arrow-left"></i></span> Packages</a></div>
+
+    <form class="package-form" method="post" action="[[ if .Package.ID ]]/i/package/[[ .Package.ID ]][[ else ]]/i/package[[ end ]]">
+
+      <label class="label">Path</label>
+      <p class="control has-addons">
+        <span class="button is-unselectable">
+          [[ .Domain.FQDN ]]
+        </span>
+        <input class="input is-expanded" type="text" name="path" value="[[ .Package.Path ]]" autofocus />
+      </p>
+
+      <label class="label">Repository</label>
+      <p class="control has-addons">
+        <input class="input is-expanded" type="text" name="repo-root" value="[[ .Package.RepoRoot ]]" />
+        <span class="select">
+          <select name="vcs">
+            [[ range $vcs := .VCSInfos ]]
+            <option value="[[ $vcs.VCS ]]"[[ if eq $.Package.VCS $vcs.VCS ]] selected[[ end ]]>[[ $vcs.Name ]]</option>
+            [[ end ]]
+          </select>
+        </span>
+      </p>
+
+      <label class="label">Go Source</label>
+      <p class="control">
+        <input class="input" type="text" name="go-source" value="[[ .Package.GoSource ]]" />
+      </p>
+
+      <label class="label">Redirect URL</label>
+      <p class="control">
+        <input class="input" type="text" name="redirect-url" value="[[ .Package.RedirectURL ]]" />
+      </p>
+
+      <p class="control">
+        <label class="checkbox">
+          <input type="checkbox" name="disabled"[[ if .Package.Disabled ]] checked[[ end ]]>
+          Disabled
+        </label>
+      </p>
+
+      <input type="hidden" name="domain-id" value="[[ .Domain.ID ]]">
+
+      <p class="control">
+        <nav class="level">
+          <div class="level-left">
+            [[ if .Package.ID ]]
+            <a class="button is-danger is-outlined modal-button" data-target=".modal.delete-package" tabindex="1">Delete</a>
+            [[ end ]]
+          </div>
+          <div class="level-right">
+            <div class="level-item">
+              <a class="ui button" href="/domain/[[ .Domain.FQDN ]]">Cancel</a> 
+              <button type="submit" class="button is-primary">Save</button>
+            </div>
+          </div>
+        </nav>
+      </p>
+    </form>
+  </div>
+</div>
+
+[[ if .Package.ID ]]
+<div class="modal delete-package">
+  <div class="modal-background"></div>
+  <div class="modal-container">
+    <div class="modal-content box">
+      <div class="title">Delete package [[ .Domain.FQDN ]][[ .Package.Path ]]?</div>
+      <nav class="level">
+        <div class="level-left">
+        </div>
+        <div class="level-right">
+          <div class="level-item">
+            <button class="button modal-close-button">No</button>
+            <button class="button delete-package is-danger" data-method="delete" data-action="/i/package/[[ .Package.ID ]]">Yes, delete it!</button>
+          </div>
+        </div>
+      </nav>
+    </div>
+  </div>
+  <button class="modal-close"></button>
+</div>
+[[ end ]]
+[[ end ]]

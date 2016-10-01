@@ -1,0 +1,20 @@
+[[/*
+  Copyright (c) 2016, Janoš Guljaš <janos@resenje.org>
+  All rights reserved.
+  Use of this source code is governed by a BSD-style
+  license that can be found in the LICENSE file.
+*/]]
+
+
+[[ define "title" ]]GopherPit[[ end ]]
+
+[[ define "main" ]]
+<div class="column is-6 is-offset-3 content has-text-centered">
+  <h1 class="title is-1">[[ if eq .PageUser.ID .User.ID ]]You[[ else ]]User[[ end ]]</h1>
+  <p>Name: <code>[[ .PageUser.Name ]]</code></p>
+  [[ if .PageUser.Username ]]
+  <p>Username: <code>[[ .PageUser.Username ]]</code></p>
+  [[ end ]]
+  <p>ID: <code>[[ .PageUser.ID ]]</code></p>
+</div>
+[[ end ]]

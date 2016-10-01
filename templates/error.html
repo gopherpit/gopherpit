@@ -1,0 +1,24 @@
+[[/*
+  Copyright (c) 2016, Janoš Guljaš <janos@resenje.org>
+  All rights reserved.
+  Use of this source code is governed by a BSD-style
+  license that can be found in the LICENSE file.
+*/]]
+
+
+[[ define "brand" ]]<img src="[[ "gopherpit-header-dark.png" | asset ]]" alt="GopherPit">[[ end ]]
+
+[[ define "hero-class" ]]is-warning is-bold has-text-centered[[ end ]]
+
+[[ define "main" ]]
+<div class="hero-body">
+  <div class="container">
+    <p class="title">
+      [[ block "code" . ]]Error[[ end ]]
+    </p>
+    <p class="subtitle">
+      [[ block "error" . ]]An unexpected error occured[[ end ]]
+    </p>
+  </div>
+</div>
+[[ end ]]

@@ -1,0 +1,65 @@
+[[/*
+  Copyright (c) 2016, Janoš Guljaš <janos@resenje.org>
+  All rights reserved.
+  Use of this source code is governed by a BSD-style
+  license that can be found in the LICENSE file.
+*/]]
+
+
+[[ define "base-style" ]]
+<link rel="stylesheet" href="[[ "app.css" | asset ]]">
+[[ end ]]
+
+[[ define "body" ]]
+<section class="hero [[ block "hero-class" . ]]is-dark is-bold[[ end ]]">
+  <div class="hero-head">
+    <header class="nav">
+      <div class="container">
+        <div class="nav-left">
+          <a class="nav-item is-brand" href="/">
+            [[ block "brand" . ]]<img src="[[ "gopherpit-header.png" | asset ]]" alt="GopherPit">[[ end ]]
+          </a>
+        </div>
+        [[ if .User.EmailUnvalidated ]]
+        <div class="nav-center">
+          <a class="nav-item" href="/settings/email">
+            <span class="icon">
+              <i class="fa fa-envelope-o fa-pulse"></i>
+            </span>
+          </a>
+        </div>
+        [[ end ]]
+        <span class="nav-toggle">
+          <span></span>
+          <span></span>
+          <span></span>
+        </span>
+        <div class="nav-right nav-menu">
+          <a class="nav-item" href="/user/[[ .User.ID ]]">[[ .User.Name ]]</a>
+          <a class="nav-item" href="/settings">Settings</a>
+          <a class="nav-item" href="/logout">Logout</a>
+        </div>
+      </div>
+    </header>
+  </div>
+  [[ block "hero" . ]][[ end ]]
+</section>
+
+<section class="main section">
+  <div class="container">
+    [[ block "main" . ]][[ end ]]
+  </div>
+</section>
+
+<section class="section">
+  <nav class="tabs">
+    <div class="container">
+      <ul>
+        <li><a href="/">Home</a></li>
+        <li><a href="/contact">Contact</a></li>
+        <li><a href="/about">Copyright</a></li>
+      </ul>
+    </div>
+  </nav>
+</section>
+[[ end ]]
