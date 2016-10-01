@@ -163,7 +163,7 @@ package-darwin-amd64: dist/version dist/assets dist/static dist/templates dist/d
 .PHONY: package-freebsd-amd64
 package-freebsd-amd64: dist/version dist/assets dist/static dist/templates dist/docker
 	GOOS=freebsd GOARCH=amd64 $(GO) build -ldflags "$(LDFLAGS)" -o dist/$(NAME) ./cli/$(NAME)
-	tar -C dist -czf dist/$(NAME)-$(VERSION).freebsd-amd64.tar.gz $(NAME) version assets static templates
+	tar -C dist -czf dist/$(NAME)-$(VERSION)-freebsd-amd64.tar.gz $(NAME) version assets static templates
 	cd dist && zip $(NAME)-$(VERSION)-freebsd-amd64.zip $(NAME) version assets/* static/* templates/*
 
 .PHONY: package-in-docker
