@@ -19,6 +19,8 @@ $ cd dist
 
 All files for distribution are located under `dist` directory.
 
+Docker image `gopherpit/gopherpit` is also provided, with a few examples on [Docker Hub](https://hub.docker.com/r/gopherpit/gopherpit/). 
+
 Starting the service with default settings in the foreground is done by executing the binary:
 
 ```text
