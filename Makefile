@@ -30,7 +30,7 @@ BULMA_VERSION ?= 0.2.1
 FONTAWESOME_VERSION ?= 4.6.3
 JQUERY_VERSION ?= 3.1.1
 
-NPM ?= docker run -it --rm -v $$(pwd):/usr/src/app -w /usr/src/app node npm
+NODEJS ?= docker run -it --rm -v $$(pwd):/usr/src/app -w /usr/src/app node
 
 .PHONY: all
 all: dist/$(NAME) dist/version dist/assets dist/static dist/templates dist/docker
@@ -64,22 +64,22 @@ dist/docker: FORCE
 dist/version: dist FORCE
 	echo $(VERSION) > $@
 
-.PHONY: frontend
-frontend:
-	mkdir -p dist/frontend
-	cd dist/frontend && \
-		$(NPM) install bulma@$(BULMA_VERSION)
-	echo "$$(cat frontend/bulma.sass)\n$$(cat dist/frontend/node_modules/bulma/bulma.sass)" > dist/frontend/node_modules/bulma/bulma.sass
-	cd dist/frontend/node_modules/bulma && \
-		$(NPM) install && \
-		$(NPM) run build
-	cp dist/frontend/node_modules/bulma/css/* frontend/.
-
 .PHONY: assets
 assets:
+	mkdir -p dist/frontend
+	cd dist/frontend && \
+		$(NODEJS) npm install bulma@$(BULMA_VERSION)
+	echo "$$(cat frontend/bulma.sass)\n$$(cat dist/frontend/node_modules/bulma/bulma.sass)" > dist/frontend/node_modules/bulma/bulma.sass
+	cd dist/frontend/node_modules/bulma && \
+		$(NODEJS) npm install && \
+		$(NODEJS) npm run build
+	cd dist/frontend/node_modules/bulma && \
+		$(NODEJS) npm install clean-css && \
+		$(NODEJS) ./node_modules/clean-css/bin/cleancss -o css/bulma.min.css css/bulma.css
+
 	mkdir -p assets
 	echo "" > assets/vendor.css
-	cat frontend/bulma.css >> assets/vendor.css
+	cat dist/frontend/node_modules/bulma/css/bulma.min.css >> assets/vendor.css
 	curl -sSL https://raw.githubusercontent.com/FortAwesome/Font-Awesome/v$(FONTAWESOME_VERSION)/css/font-awesome.min.css | sed 's/\.\.\/fonts\///g' >> assets/vendor.css
 
 	cd assets && \
