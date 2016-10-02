@@ -137,7 +137,6 @@ It is not required to use ACME provider for TLS certificates. If you already hav
 
 ```json
 {
-    ...
     "tls-cert": "/path/to/certificate-chain.pem",
     "tls-key": "/path/to/certificate-key.key"
 }
@@ -166,7 +165,6 @@ Beside other options, the following are important for production deployments.
 
 ```json
 {
-    ...
     "internal-cidrs": [
         "127.0.0.0/8",
         "::1/128"
@@ -189,7 +187,6 @@ E-mails with content from the contact form is sent to address specified under "c
 
 ```json
 {
-    ...
     "default-from": "gopherpit@localhost"
 }
 ```
