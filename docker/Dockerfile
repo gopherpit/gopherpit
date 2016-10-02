@@ -9,6 +9,7 @@ RUN apt-get update && \
 COPY gopherpit /app/gopherpit
 COPY version /app/version
 COPY assets /app/assets
+COPY static /app/static
 COPY templates /app/templates
 COPY docker/defaults /app/defaults
 
