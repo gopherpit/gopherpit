@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"regexp"
 	"strings"
 	"time"
@@ -26,7 +27,8 @@ import (
 )
 
 var (
-	fqdnRegex = regexp.MustCompile(`^([a-z0-9]+(-[a-z0-9]+)*\.)+[a-z]{2,}$`)
+	fqdnRegex        = regexp.MustCompile(`^([a-z0-9]+(-[a-z0-9]+)*\.)+[a-z]{2,}$`)
+	hostAndPortRegex = regexp.MustCompile(`^([a-z0-9]+[\-a-z0-9\.]*)(?:\:\d+)?$`)
 )
 
 func (s Server) certificateFEAPIHandler(w http.ResponseWriter, r *http.Request) {
@@ -159,7 +161,7 @@ func (s Server) domainFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			if fqdn == publicSuffix {
-				jsonresponse.BadRequest(w, webutils.NewFieldError("fqdn", fmt.Sprintf("The domain %s is a an ICANN domain.", publicSuffix)))
+				jsonresponse.BadRequest(w, webutils.NewFieldError("fqdn", fmt.Sprintf("The domain %s is an ICANN domain.", publicSuffix)))
 				return
 			}
 
@@ -548,6 +550,13 @@ type packageFEAPIRequest struct {
 	Disabled    marshal.Checkbox `json:"disabled"`
 }
 
+var vcsSchemas = map[packages.VCS][]string{
+	packages.VCSGit:        []string{"https", "http", "git", "git+ssh", "ssh"},
+	packages.VCSMercurial:  []string{"https", "http", "ssh"},
+	packages.VCSBazaar:     []string{"https", "http", "bzr", "bzr+ssh"},
+	packages.VCSSubversion: []string{"https", "http", "svn", "svn+ssh"},
+}
+
 func (s Server) packageFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 	u, r, err := s.user(r)
 	if err != nil {
@@ -582,6 +591,38 @@ func (s Server) packageFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 	request.RepoRoot = strings.TrimSpace(request.RepoRoot)
 	if request.RepoRoot == "" {
 		errors.AddFieldError("repo-root", "Repository is required.")
+	} else {
+		repoRoot, err := url.Parse(request.RepoRoot)
+		switch {
+		case err != nil:
+			s.logger.Warningf("package fe api: %s %s: invalid repository url: %s: %s", request.DomainID, request.Path, request.RepoRoot, err)
+			errors.AddFieldError("repo-root", "Invalid Repository URL.")
+		case request.VCS != "":
+			if repoRoot.Scheme == "" {
+				errors.AddFieldError("repo-root", fmt.Sprintf("Repository URL requires a URL scheme (%s).", strings.Join(vcsSchemas[request.VCS], ", ")))
+				break
+			}
+			ok := false
+			for _, s := range vcsSchemas[request.VCS] {
+				if repoRoot.Scheme == s {
+					ok = true
+					break
+				}
+			}
+			if !ok {
+				vcs := string(request.VCS)
+				for _, i := range vcsInfos {
+					if i.VCS == request.VCS {
+						vcs = i.Name
+						break
+					}
+				}
+				errors.AddFieldError("repo-root", fmt.Sprintf("Invalid scheme \"%s\". For %s repository it should be one of (%s).", repoRoot.Scheme, vcs, strings.Join(vcsSchemas[request.VCS], ", ")))
+			}
+			if !hostAndPortRegex.MatchString(repoRoot.Host) {
+				errors.AddFieldError("repo-root", fmt.Sprintf("Invalid domain and port \"%s\".", repoRoot.Host))
+			}
+		}
 	}
 
 	if errors.HasErrors() {
@@ -591,10 +632,6 @@ func (s Server) packageFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 
 	if !strings.HasPrefix(request.Path, "/") {
 		request.Path = "/" + request.Path
-	}
-
-	if strings.HasPrefix(request.RepoRoot, "ssh://") && request.VCS == packages.VCSGit {
-		request.RepoRoot = "git+" + request.RepoRoot
 	}
 
 	disabled := request.Disabled.Bool()
