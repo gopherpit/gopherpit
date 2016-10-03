@@ -29,6 +29,7 @@ import (
 var (
 	fqdnRegex        = regexp.MustCompile(`^([a-z0-9]+(-[a-z0-9]+)*\.)+[a-z]{2,}$`)
 	hostAndPortRegex = regexp.MustCompile(`^([a-z0-9]+[\-a-z0-9\.]*)(?:\:\d+)?$`)
+	urlRegex         = regexp.MustCompile(`^((([A-Za-z]{3,9}:(?:\/\/)?)(?:[\-;:&=\+\$,\w]+@)?[A-Za-z0-9\.\-]+|(?:www\.|[\-;:&=\+\$,\w]+@)[A-Za-z0-9\.\-]+)((?:\/[\+~%\/\.\w\-_]*)?\??(?:[\-\+=&;%@\.\w_]*)#?(?:[\.\!\/\\\w]*))?)$`)
 )
 
 func (s Server) certificateFEAPIHandler(w http.ResponseWriter, r *http.Request) {
@@ -623,6 +624,10 @@ func (s Server) packageFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 				errors.AddFieldError("repo-root", fmt.Sprintf("Invalid domain and port \"%s\".", repoRoot.Host))
 			}
 		}
+	}
+
+	if request.RedirectURL != "" && !urlRegex.MatchString(request.RedirectURL) {
+		errors.AddFieldError("redirect-url", "Invalid URL.")
 	}
 
 	if errors.HasErrors() {

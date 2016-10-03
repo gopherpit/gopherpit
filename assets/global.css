@@ -37,7 +37,11 @@
 }
 
 p.control.help {
-  margin-top: -5px;
+  margin-top: -8px;
+}
+
+p.help {
+  margin-bottom: 12px;
 }
 
 span.button {
