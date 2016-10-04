@@ -26,7 +26,7 @@ type SendEmailResponse struct {
 	ID string `json:"id"`
 }
 
-// SendEmail sends an e-mail message and retuns it's ID. Expected response
+// SendEmail sends an e-mail message and returns it's ID. Expected response
 // body is a JSON-encoded instance of SendEmailResponse.
 func (s Service) SendEmail(email notification.Email) (id string, err error) {
 	body, err := json.Marshal(email)

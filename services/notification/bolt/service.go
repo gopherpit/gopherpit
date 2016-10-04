@@ -62,7 +62,7 @@ func NewDB(filename string, fileMode os.FileMode, boltOptions *bolt.Options) (db
 	return
 }
 
-// SendEmail sends an e-mail message and retuns it's ID.
+// SendEmail sends an e-mail message and returns it's ID.
 func (s Service) SendEmail(email notification.Email) (id string, err error) {
 	idb := make([]byte, 10)
 	now := time.Now()

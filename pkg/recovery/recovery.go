@@ -22,7 +22,7 @@ type Service struct {
 	EmailService *email.Service
 }
 
-// Recover is a fucntion that recovers from panic, logs and notifies event.
+// Recover is a function that recovers from panic, logs and notifies event.
 // It should be used as an argument to defer statement:
 //     recoveryService := &recovery.Service{...}
 //     go func() {

@@ -20,7 +20,7 @@ type Email struct {
 
 // Service defines functions that Notification Service must implement.
 type Service interface {
-	// SendEmail sends an e-mail message and retuns it's ID.
+	// SendEmail sends an e-mail message and returns it's ID.
 	SendEmail(email Email) (id string, err error)
 	// IsEmailOptedOut returns true or false if e-mail address
 	// is marked not to send any e-mail messages to.

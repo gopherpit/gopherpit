@@ -208,11 +208,11 @@ func (s *Server) templateInternalServerErrorPrivate() *template.Template {
 }
 
 func (s *Server) templateServiceUnavailable() *template.Template {
-	return s.getTemplate("base.html", "cover.html", "error.html", "error/service-unavaliable.html")
+	return s.getTemplate("base.html", "cover.html", "error.html", "error/service-unavailable.html")
 }
 
 func (s *Server) templateServiceUnavailablePrivate() *template.Template {
-	return s.getTemplate("base.html", "app.html", "error-private.html", "error/service-unavaliable.html")
+	return s.getTemplate("base.html", "app.html", "error-private.html", "error/service-unavailable.html")
 }
 
 func (s Server) newTemplate(files ...string) (*template.Template, error) {

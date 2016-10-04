@@ -334,7 +334,7 @@ func (s Server) userEmailFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if err == user.EmailChangeEmailNotAvaliable {
 			s.logger.Debugf("user email fe api: request email change: email %s is not available %s", request.Email, u.ID)
-			errors.AddFieldError("email", "This e-mail address is not avaliable.")
+			errors.AddFieldError("email", "This e-mail address is not available.")
 			jsonresponse.BadRequest(w, errors)
 			return
 		}
