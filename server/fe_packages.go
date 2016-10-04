@@ -633,10 +633,10 @@ type vcsInfo struct {
 }
 
 var vcsInfos = []vcsInfo{
-	vcsInfo{packages.VCSGit, "Git"},
-	vcsInfo{packages.VCSMercurial, "Mercurial"},
-	vcsInfo{packages.VCSBazaar, "Bazaar"},
-	vcsInfo{packages.VCSSubversion, "Subversion"},
+	{packages.VCSGit, "Git"},
+	{packages.VCSMercurial, "Mercurial"},
+	{packages.VCSBazaar, "Bazaar"},
+	{packages.VCSSubversion, "Subversion"},
 }
 
 func (s Server) domainPackageEditHandler(w http.ResponseWriter, r *http.Request) {

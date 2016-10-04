@@ -583,7 +583,7 @@ func (s Service) ResolvePackage(path string) (resolution *packages.PackageResolu
 		fqdn = path
 	} else {
 		fqdn = path[:i]
-		path = path[i:len(path)]
+		path = path[i:]
 	}
 
 	err = s.DB.View(func(tx *bolt.Tx) (err error) {

@@ -552,10 +552,10 @@ type packageFEAPIRequest struct {
 }
 
 var vcsSchemas = map[packages.VCS][]string{
-	packages.VCSGit:        []string{"https", "http", "git", "git+ssh", "ssh"},
-	packages.VCSMercurial:  []string{"https", "http", "ssh"},
-	packages.VCSBazaar:     []string{"https", "http", "bzr", "bzr+ssh"},
-	packages.VCSSubversion: []string{"https", "http", "svn", "svn+ssh"},
+	packages.VCSGit:        {"https", "http", "git", "git+ssh", "ssh"},
+	packages.VCSMercurial:  {"https", "http", "ssh"},
+	packages.VCSBazaar:     {"https", "http", "bzr", "bzr+ssh"},
+	packages.VCSSubversion: {"https", "http", "svn", "svn+ssh"},
 }
 
 func (s Server) packageFEAPIHandler(w http.ResponseWriter, r *http.Request) {

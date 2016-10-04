@@ -82,31 +82,31 @@ func respondText(w http.ResponseWriter, tmpl *template.Template, data interface{
 
 func (s *Server) errorHandler(w http.ResponseWriter, r *http.Request, c int) {
 	errorTemplates := map[int][]func() *template.Template{
-		http.StatusBadRequest: []func() *template.Template{
+		http.StatusBadRequest: {
 			s.templateBadRequest,
 			s.templateBadRequestPrivate,
 		},
-		http.StatusUnauthorized: []func() *template.Template{
+		http.StatusUnauthorized: {
 			s.templateUnauthorized,
 			s.templateUnauthorizedPrivate,
 		},
-		http.StatusForbidden: []func() *template.Template{
+		http.StatusForbidden: {
 			s.templateForbidden,
 			s.templateForbiddenPrivate,
 		},
-		http.StatusNotFound: []func() *template.Template{
+		http.StatusNotFound: {
 			s.templateNotFound,
 			s.templateNotFoundPrivate,
 		},
-		http.StatusRequestEntityTooLarge: []func() *template.Template{
+		http.StatusRequestEntityTooLarge: {
 			s.templateRequestEntityTooLarge,
 			s.templateRequestEntityTooLargePrivate,
 		},
-		http.StatusInternalServerError: []func() *template.Template{
+		http.StatusInternalServerError: {
 			s.templateInternalServerError,
 			s.templateInternalServerErrorPrivate,
 		},
-		http.StatusServiceUnavailable: []func() *template.Template{
+		http.StatusServiceUnavailable: {
 			s.templateServiceUnavailable,
 			s.templateServiceUnavailablePrivate,
 		},
