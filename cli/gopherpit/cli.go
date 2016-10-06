@@ -43,6 +43,7 @@ import (
 	"gopherpit.com/gopherpit/services/user"
 	"gopherpit.com/gopherpit/services/user/bolt"
 	"gopherpit.com/gopherpit/services/user/http"
+	"gopherpit.com/gopherpit/services/user/ldap"
 )
 
 var (
@@ -113,6 +114,7 @@ COPYRIGHT
 	gopherpitOptions := config.NewGopherPitOptions()
 	loggingOptions := config.NewLoggingOptions()
 	emailOptions := config.NewEmailOptions()
+	ldapOptions := config.NewLDAPOptions()
 	sessionOptions := config.NewSessionOptions()
 	userOptions := config.NewUserOptions()
 	certificateOptions := config.NewCertificateOptions()
@@ -123,6 +125,7 @@ COPYRIGHT
 		gopherpitOptions,
 		loggingOptions,
 		emailOptions,
+		ldapOptions,
 		sessionOptions,
 		userOptions,
 		certificateOptions,
@@ -188,6 +191,7 @@ COPYRIGHT
 		fmt.Println("gopherpit:", gopherpitOptions.String())
 		fmt.Println("logging:", loggingOptions.String())
 		fmt.Println("email:", emailOptions.String())
+		fmt.Println("ldap:", ldapOptions.String())
 		fmt.Println("session:", sessionOptions.String())
 		fmt.Println("user:", userOptions.String())
 		fmt.Println("certificate:", certificateOptions.String())
@@ -337,6 +341,31 @@ COPYRIGHT
 			DB: db,
 			PasswordNoReuseMonths: userOptions.PasswordNoReuseMonths,
 		}
+	}
+	if ldapOptions.Enabled {
+		userService = ldapUser.NewService(
+			userService,
+			logger,
+			ldapUser.Options{
+				Enabled:              ldapOptions.Enabled,
+				Host:                 ldapOptions.Host,
+				Port:                 ldapOptions.Port,
+				Secure:               ldapOptions.Secure,
+				Username:             ldapOptions.Username,
+				Password:             ldapOptions.Password,
+				DN:                   ldapOptions.DN,
+				DNUsers:              ldapOptions.DNUsers,
+				DNGroups:             ldapOptions.DNGroups,
+				AttributeUsername:    ldapOptions.AttributeUsername,
+				AttributeName:        ldapOptions.AttributeName,
+				AttributeEmail:       ldapOptions.AttributeEmail,
+				AttributeGroupID:     ldapOptions.AttributeGroupID,
+				AttributeGroupMember: ldapOptions.AttributeGroupMember,
+				Groups:               ldapOptions.Groups,
+				MaxConnections:       ldapOptions.MaxConnections,
+				Timeout:              ldapOptions.Timeout.Duration(),
+			},
+		)
 	}
 	var notificationService notification.Service
 	if servicesOptions.NotificationEndpoint != "" {
