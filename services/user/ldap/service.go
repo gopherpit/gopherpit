@@ -31,12 +31,9 @@ func (l ldapError) Error() string {
 }
 
 var (
-	errBindTimeout          = ldapError("bind request timeout")
-	errBindUnauthorized     = ldapError("bind request unauthorized")
-	errUserBindUnauthorized = ldapError("user bind request unauthorized")
-	errUserSearchResults    = ldapError("user search returned no results")
-	errUserUsernameMissing  = ldapError("user username is missing")
-	errUserGroupSearch      = ldapError("user not found in group search")
+	errUserSearchResults   = ldapError("user search returned no results")
+	errUserUsernameMissing = ldapError("user username is missing")
+	errUserGroupSearch     = ldapError("user not found in group search")
 )
 
 // Options are holds LDAP specific parameters.
@@ -108,7 +105,8 @@ func (s Service) Authenticate(ref, password string) (u *user.User, err error) {
 	}
 	newUserOptions, err := s.ldapAuth(u, password, "")
 	if err != nil {
-		if _, ok := err.(ldapError); ok {
+		switch err.(type) {
+		case ldapError, *ldap.Error:
 			s.logger.Debugf("ldap auth: %s: %s: continuing with alternative auth methods", ref, err)
 			return s.Service.Authenticate(ref, password)
 		}
@@ -199,14 +197,6 @@ func (s Service) ldapAuthSingle(u *user.User, password, group string) (newUserOp
 
 	if s.Username != "" && s.Password != "" {
 		if _, err = l.SimpleBind(ldap.NewSimpleBindRequest(s.Username, s.Password, nil)); err != nil {
-			if errt, ok := err.(*ldap.Error); ok {
-				switch errt.ResultCode {
-				case ldap.LDAPResultInvalidCredentials:
-					err = errBindUnauthorized
-				case ldap.ErrorNetwork:
-					err = errBindTimeout
-				}
-			}
 			return
 		}
 	}
@@ -221,14 +211,6 @@ func (s Service) ldapAuthSingle(u *user.User, password, group string) (newUserOp
 		return
 	}
 	if _, err = l.SimpleBind(bindRequest); err != nil {
-		if errt, ok := err.(*ldap.Error); ok {
-			switch errt.ResultCode {
-			case ldap.LDAPResultInvalidCredentials:
-				err = errBindUnauthorized
-			case ldap.ErrorNetwork:
-				err = errBindTimeout
-			}
-		}
 		return
 	}
 
