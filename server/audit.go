@@ -19,6 +19,7 @@ type auditRecord struct {
 	Time     time.Time   `json:"time,omitempty"`
 	UserID   string      `json:"user-id,omitempty"`
 	Username string      `json:"username,omitempty"`
+	Email    string      `json:"email,omitempty"`
 	Info     interface{} `json:"info,omitempty"`
 	IPs      string      `json:"ips,omitempty"`
 	Action   string      `json:"action,omitempty"`
@@ -29,7 +30,7 @@ func (s Server) audit(r *http.Request, info interface{}, action, message string)
 	if s.auditLogger == nil {
 		return
 	}
-	var userID, email string
+	var userID, username, email string
 	u, _, err := s.user(r)
 	if err != nil && err != user.UserNotFound {
 		s.logger.Errorf("audit: get user: %s", err)
@@ -37,12 +38,14 @@ func (s Server) audit(r *http.Request, info interface{}, action, message string)
 	}
 	if u != nil {
 		userID = u.ID
+		username = u.Username
 		email = u.Email
 	}
 	record, err := json.Marshal(auditRecord{
 		Time:     time.Now().UTC(),
 		UserID:   userID,
-		Username: email,
+		Username: username,
+		Email:    email,
 		Info:     info,
 		IPs:      webutils.GetIPs(r),
 		Action:   action,
