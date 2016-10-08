@@ -177,6 +177,12 @@ func (s Server) htmlNotFoundHandler(w http.ResponseWriter, r *http.Request) {
 	s.respondNotFound(w, r)
 }
 
+func textNotFoundHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	w.WriteHeader(http.StatusNotFound)
+	fmt.Fprintln(w, http.StatusText(http.StatusNotFound))
+}
+
 func jsonNotFoundHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(http.StatusNotFound)
@@ -352,43 +358,4 @@ func noCacheHeaderHandler(h http.Handler) http.Handler {
 		w.Header().Set("Cache-Control", "no-cache")
 		h.ServeHTTP(w, r)
 	})
-}
-
-// Handler that allows requests made only from IPs form CIDRs defined in
-// configuration as Internal CIDRs, to be used in HTML frontend routers.
-func (s *Server) htmlIPAccessHandler(h http.Handler) http.Handler {
-	return httphandlers.IPAccessHandler{
-		Handler: h,
-		UnauthorizedHandler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			s.respondUnauthorized(w, r)
-		}),
-		CIDRs: &s.InternalCIDRs,
-	}
-}
-
-// Handler that allows requests made only from IPs form CIDRs defined in
-// configuration as Internal CIDRs, to be used in routers that returns
-// plain text responses.
-func (s Server) textIPAccessHandler(h http.Handler) http.Handler {
-	return httphandlers.IPAccessHandler{
-		Handler: h,
-		UnauthorizedHandler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-			w.WriteHeader(http.StatusUnauthorized)
-			fmt.Fprintln(w, "Unauthorized")
-		}),
-		CIDRs: &s.InternalCIDRs,
-	}
-}
-
-// Handler that allows requests made only from IPs form CIDRs defined in
-// configuration as Internal CIDRs, to be used in JSON API routers.
-func (s Server) jsonIPAccessHandler(h http.Handler) http.Handler {
-	return httphandlers.IPAccessHandler{
-		Handler: h,
-		UnauthorizedHandler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			jsonresponse.Unauthorized(w, nil)
-		}),
-		CIDRs: &s.InternalCIDRs,
-	}
 }

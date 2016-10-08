@@ -15,7 +15,7 @@ COPY docker/defaults /app/defaults
 
 VOLUME /log /config /storage
 
-EXPOSE 80 443
+EXPOSE 80 443 6060
 
 ENV GOPHERPIT_CONFIGDIR=/config
 

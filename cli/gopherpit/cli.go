@@ -470,7 +470,6 @@ COPYRIGHT
 			Headers:                 gopherpitOptions.Headers,
 			XSRFCookieName:          gopherpitOptions.XSRFCookieName,
 			SessionCookieName:       gopherpitOptions.SessionCookieName,
-			InternalCIDRs:           gopherpitOptions.InternalCIDRs,
 			AssetsDir:               gopherpitOptions.AssetsDir,
 			StaticDir:               gopherpitOptions.StaticDir,
 			TemplatesDir:            gopherpitOptions.TemplatesDir,
@@ -506,10 +505,11 @@ COPYRIGHT
 	// They will be executed in the same goroutine in the same order.
 	s.Functions = append(s.Functions, func() error {
 		return srv.Serve(server.ServeOptions{
-			Listen:    gopherpitOptions.Listen,
-			ListenTLS: gopherpitOptions.ListenTLS,
-			TLSKey:    gopherpitOptions.TLSKey,
-			TLSCert:   gopherpitOptions.TLSCert,
+			Listen:         gopherpitOptions.Listen,
+			ListenTLS:      gopherpitOptions.ListenTLS,
+			ListenInternal: gopherpitOptions.ListenInternal,
+			TLSKey:         gopherpitOptions.TLSKey,
+			TLSCert:        gopherpitOptions.TLSCert,
 		})
 	})
 	if service, ok := sessionService.(*boltSession.Service); ok {

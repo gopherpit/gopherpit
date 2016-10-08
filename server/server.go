@@ -44,7 +44,8 @@ type Server struct {
 	logger      *logging.Logger
 	auditLogger *logging.Logger
 
-	handler http.Handler
+	handler         http.Handler
+	internalHandler http.Handler
 
 	startTime    time.Time
 	assetsServer *fileServer.Server
@@ -601,51 +602,6 @@ func NewServer(o Options) (s *Server, err error) {
 	// Frontend API routes end
 
 	//
-	// Internal router
-	//
-	internalRouter := http.NewServeMux()
-	baseRouter.Handle("/-/", chainHandlers(
-		handlers.CompressHandler,
-		s.htmlRecoveryHandler,
-		accessLogHandler,
-		s.htmlMaxBodyBytesHandler,
-		httphandlers.NoCacheHeadersHandler,
-		s.htmlIPAccessHandler,
-		func(h http.Handler) http.Handler {
-			return internalRouter
-		},
-	))
-	internalRouter.Handle("/-/", http.HandlerFunc(s.htmlNotFoundHandler))
-	internalRouter.Handle("/-/debug/", httphandlers.DebugIndexHandler{Path: "/-/debug/"})
-	internalRouter.Handle("/-/status", http.HandlerFunc(s.statusHandler))
-	internalRouter.Handle("/-/panic", http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
-		panic("panicking")
-	}))
-
-	//
-	// Internal API router
-	//
-	internalAPIRouter := http.NewServeMux()
-	baseRouter.Handle("/-/api/", chainHandlers(
-		handlers.CompressHandler,
-		s.jsonRecoveryHandler,
-		accessLogHandler,
-		jsonMaxBodyBytesHandler,
-		httphandlers.NoCacheHeadersHandler,
-		s.jsonIPAccessHandler,
-		func(h http.Handler) http.Handler {
-			return internalAPIRouter
-		},
-	))
-	internalAPIRouter.Handle("/-/api/", http.HandlerFunc(jsonNotFoundHandler))
-	internalAPIRouter.Handle("/-/api/status", http.HandlerFunc(s.statusAPIHandler))
-	internalAPIRouter.Handle("/-/api/maintenance", jsonMethodHandler{
-		"GET":    http.HandlerFunc(s.maintenanceStatusAPIHandler),
-		"POST":   http.HandlerFunc(s.maintenanceOnAPIHandler),
-		"DELETE": http.HandlerFunc(s.maintenanceOffAPIHandler),
-	})
-
-	//
 	// Final handler
 	//
 	s.handler = chainHandlers(
@@ -657,16 +613,69 @@ func NewServer(o Options) (s *Server, err error) {
 			return baseRouter
 		},
 	)
+
+	//
+	// Top level internal router
+	//
+	internalBaseRouter := http.NewServeMux()
+
+	//
+	// Internal router
+	//
+	internalRouter := http.NewServeMux()
+	internalBaseRouter.Handle("/", chainHandlers(
+		handlers.CompressHandler,
+		httphandlers.NoCacheHeadersHandler,
+		func(h http.Handler) http.Handler {
+			return internalRouter
+		},
+	))
+	internalRouter.Handle("/", http.HandlerFunc(textNotFoundHandler))
+	internalRouter.Handle("/status", http.HandlerFunc(s.statusHandler))
+	internalRouter.Handle("/debug/", httphandlers.DebugIndexHandler{Path: "/debug/"})
+
+	//
+	// Internal API router
+	//
+	internalAPIRouter := http.NewServeMux()
+	internalBaseRouter.Handle("/api/", chainHandlers(
+		handlers.CompressHandler,
+		s.jsonRecoveryHandler,
+		httphandlers.NoCacheHeadersHandler,
+		func(h http.Handler) http.Handler {
+			return internalAPIRouter
+		},
+	))
+	internalAPIRouter.Handle("/api/", http.HandlerFunc(jsonNotFoundHandler))
+	internalAPIRouter.Handle("/api/status", http.HandlerFunc(s.statusAPIHandler))
+	internalAPIRouter.Handle("/api/maintenance", jsonMethodHandler{
+		"GET":    http.HandlerFunc(s.maintenanceStatusAPIHandler),
+		"POST":   http.HandlerFunc(s.maintenanceOnAPIHandler),
+		"DELETE": http.HandlerFunc(s.maintenanceOffAPIHandler),
+	})
+
+	//
+	// Final internal handler
+	//
+	s.internalHandler = chainHandlers(
+		func(h http.Handler) http.Handler {
+			return httphandlers.SetHeadersHandler(h, &o.Headers)
+		},
+		func(h http.Handler) http.Handler {
+			return internalBaseRouter
+		},
+	)
 	return
 }
 
 // ServeOptions structure contains options for HTTP servers
 // when invoking Server.Serve.
 type ServeOptions struct {
-	Listen    string
-	ListenTLS string
-	TLSKey    string
-	TLSCert   string
+	Listen         string
+	ListenTLS      string
+	ListenInternal string
+	TLSKey         string
+	TLSCert        string
 }
 
 // Serve starts HTTP servers based on provided ServeOptions properties.
@@ -838,6 +847,27 @@ func (s *Server) Serve(o ServeOptions) error {
 
 			if err := server.Serve(ln); err != nil {
 				s.logger.Errorf("Serve '%v': %s", o.Listen, err)
+			}
+		}()
+	}
+	if o.ListenInternal != "" {
+		ln, err := net.Listen("tcp", o.ListenInternal)
+		if err != nil {
+			return fmt.Errorf("listen internal '%v': %s", o.ListenInternal, err)
+		}
+
+		server := &http.Server{
+			Addr:    o.ListenInternal,
+			Handler: s.nilRecoveryHandler(s.internalHandler),
+		}
+
+		go func() {
+			defer s.RecoveryService.Recover()
+
+			s.logger.Infof("Internal plain HTTP Listening on %v", o.ListenInternal)
+
+			if err := server.Serve(ln); err != nil {
+				s.logger.Errorf("Serve internal '%v': %s", o.ListenInternal, err)
 			}
 		}()
 	}

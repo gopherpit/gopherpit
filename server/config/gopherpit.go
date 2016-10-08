@@ -21,12 +21,12 @@ import (
 type GopherPitOptions struct {
 	Listen                 string            `json:"listen" envconfig:"LISTEN"`
 	ListenTLS              string            `json:"listen-tls" envconfig:"LISTEN_TLS"`
+	ListenInternal         string            `json:"listen-internal" envconfig:"LISTEN_INTERNAL"`
 	TLSCert                string            `json:"tls-cert" envconfig:"TLS_CERT"`
 	TLSKey                 string            `json:"tls-key" envconfig:"TLS_KEY"`
 	Brand                  string            `json:"brand" envconfig:"BRAND"`
 	Domain                 string            `json:"domain" envconfig:"DOMAIN"`
 	Headers                map[string]string `json:"headers" envconfig:"HEADERS"`
-	InternalCIDRs          []string          `json:"internal-cidrs" envconfig:"INTERNAL_CIDRS"`
 	SessionCookieName      string            `json:"session-cookie-name" envconfig:"SESSION_COOKIE_NAME"`
 	XSRFCookieName         string            `json:"xsrf-cookie-name" envconfig:"XSRF_COOKIE_NAME"`
 	XSRFHeader             string            `json:"xsrf-header" envconfig:"XSRF_HEADER"`
@@ -50,20 +50,17 @@ type GopherPitOptions struct {
 // NewGopherPitOptions initializes GopherPitOptions with default values.
 func NewGopherPitOptions() *GopherPitOptions {
 	return &GopherPitOptions{
-		Listen:    ":8080",
-		ListenTLS: "",
-		TLSCert:   "",
-		TLSKey:    "",
-		Brand:     "GopherPit",
-		Domain:    "localhost",
+		Listen:         ":8080",
+		ListenTLS:      "",
+		ListenInternal: "",
+		TLSCert:        "",
+		TLSKey:         "",
+		Brand:          "GopherPit",
+		Domain:         "localhost",
 		Headers: map[string]string{
 			"Server":           Name + "/" + Version + "-" + BuildInfo,
 			"X-Frame-Options":  "SAMEORIGIN",
 			"X-XSS-Protection": "1; mode=block",
-		},
-		InternalCIDRs: []string{
-			"127.0.0.0/8",
-			"::1/128",
 		},
 		SessionCookieName:      "sesid",
 		XSRFCookieName:         "secid",

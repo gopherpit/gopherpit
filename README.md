@@ -167,17 +167,14 @@ Beside other options, the following are important for production deployments.
 
 ```json
 {
-    "internal-cidrs": [
-        "127.0.0.0/8",
-        "::1/128"
-    ],
+    "listen-internal": ":6060",
     "pid-file": "/path/to/gopherpit.pid",
     "google-analytics-id": "",
     "contact-recipient-email": "gopherpit@localhost"
 }
 ```
 
-Option "internal-cidrs" defines CIDRs from which are requests to https://gopherpit.my-domain.com/-/* are allowed. You may extend this list, if you want to access debug and statistics information from other networks except loopback. Or make sure to set it to empty list if you plan to proxy requests through local web server.
+Option "listen-internal" defines a listening address for "internal" debug and management server. It used for inspecting debug profiles, server status and handling maintenance mode.
 
 By default `pid-file` is in the same directory as `gopherpit` executable, and  for production installations it should be changed to other location, for example `/var/run/gopherpit.pid`.
 
