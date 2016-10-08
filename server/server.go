@@ -56,7 +56,7 @@ type Server struct {
 
 	templateFunctions template.FuncMap
 	templateCache     map[string]*template.Template
-	mu                *sync.Mutex
+	mu                *sync.RWMutex
 }
 
 // Options structure contains optional properties for the Server.
@@ -126,7 +126,7 @@ func NewServer(o Options) (s *Server, err error) {
 		certificateCache: certificateCache.NewCache(o.CertificateService, 15*time.Minute, time.Minute),
 		startTime:        time.Now(),
 		templateCache:    map[string]*template.Template{},
-		mu:               &sync.Mutex{},
+		mu:               &sync.RWMutex{},
 	}
 	// Load or generate a salt value.
 	saltFilename := filepath.Join(s.StorageDir, s.Name+".salt")

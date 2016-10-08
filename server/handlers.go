@@ -157,7 +157,7 @@ func (s Server) nilRecoveryHandler(h http.Handler) http.Handler {
 }
 
 func (s *Server) htmlMaxBodyBytesHandler(h http.Handler) http.Handler {
-	m, err := renderToString(s.templateRequestEntityTooLarge(), "", nil)
+	m, err := renderToString(s.template(tidRequestEntityTooLarge), "", nil)
 	if err != nil {
 		s.logger.Errorf("htmlMaxBodyBytesHandler Template413 error: %s", err)
 		m = "Request Entity Too Large"
@@ -239,7 +239,7 @@ func (s *Server) htmlLoginRequiredHandler(h http.Handler) http.Handler {
 			if r.Header.Get(s.SessionCookieName) != "" {
 				s.logout(w, r)
 			}
-			respond(w, s.templateLogin(), nil)
+			respond(w, s.template(tidLogin), nil)
 			return
 		}
 		h.ServeHTTP(w, r)
@@ -311,7 +311,7 @@ func (s *Server) htmlValidatedEmailRequiredHandler(h http.Handler) http.Handler 
 			return
 		}
 		if u.EmailUnvalidated {
-			respond(w, s.templateEmailUnvalidated(), map[string]interface{}{
+			respond(w, s.template(tidEmailUnvalidated), map[string]interface{}{
 				"User": u,
 			})
 			return

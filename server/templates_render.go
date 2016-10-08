@@ -14,31 +14,31 @@ import (
 )
 
 func (s *Server) respondBadRequest(w http.ResponseWriter, r *http.Request) {
-	s.errorHandler(w, r, http.StatusBadRequest)
+	s.respondError(w, r, http.StatusBadRequest)
 }
 
 func (s *Server) respondUnauthorized(w http.ResponseWriter, r *http.Request) {
-	s.errorHandler(w, r, http.StatusUnauthorized)
+	s.respondError(w, r, http.StatusUnauthorized)
 }
 
 func (s *Server) respondForbidden(w http.ResponseWriter, r *http.Request) {
-	s.errorHandler(w, r, http.StatusForbidden)
+	s.respondError(w, r, http.StatusForbidden)
 }
 
 func (s *Server) respondNotFound(w http.ResponseWriter, r *http.Request) {
-	s.errorHandler(w, r, http.StatusNotFound)
+	s.respondError(w, r, http.StatusNotFound)
 }
 
 func (s *Server) respondRequestEntityTooLarge(w http.ResponseWriter, r *http.Request) {
-	s.errorHandler(w, r, http.StatusRequestEntityTooLarge)
+	s.respondError(w, r, http.StatusRequestEntityTooLarge)
 }
 
 func (s *Server) respondInternalServerError(w http.ResponseWriter, r *http.Request) {
-	s.errorHandler(w, r, http.StatusInternalServerError)
+	s.respondError(w, r, http.StatusInternalServerError)
 }
 
 func (s *Server) respondServiceUnavailable(w http.ResponseWriter, r *http.Request) {
-	s.errorHandler(w, r, http.StatusServiceUnavailable)
+	s.respondError(w, r, http.StatusServiceUnavailable)
 }
 
 func renderToResponse(w http.ResponseWriter, tmpl *template.Template, name string, status int, data interface{}, contentType string) (err error) {
@@ -80,62 +80,42 @@ func respondText(w http.ResponseWriter, tmpl *template.Template, data interface{
 	}
 }
 
-func (s *Server) errorHandler(w http.ResponseWriter, r *http.Request, c int) {
-	errorTemplates := map[int][]func() *template.Template{
-		http.StatusBadRequest: {
-			s.templateBadRequest,
-			s.templateBadRequestPrivate,
-		},
-		http.StatusUnauthorized: {
-			s.templateUnauthorized,
-			s.templateUnauthorizedPrivate,
-		},
-		http.StatusForbidden: {
-			s.templateForbidden,
-			s.templateForbiddenPrivate,
-		},
-		http.StatusNotFound: {
-			s.templateNotFound,
-			s.templateNotFoundPrivate,
-		},
-		http.StatusRequestEntityTooLarge: {
-			s.templateRequestEntityTooLarge,
-			s.templateRequestEntityTooLargePrivate,
-		},
-		http.StatusInternalServerError: {
-			s.templateInternalServerError,
-			s.templateInternalServerErrorPrivate,
-		},
-		http.StatusServiceUnavailable: {
-			s.templateServiceUnavailable,
-			s.templateServiceUnavailablePrivate,
-		},
-	}
-	var tpl func() *template.Template
+var errorTemplates = map[int][]tid{
+	http.StatusBadRequest:            {tidBadRequest, tidBadRequestPrivate},
+	http.StatusUnauthorized:          {tidUnauthorized, tidUnauthorizedPrivate},
+	http.StatusForbidden:             {tidForbidden, tidForbiddenPrivate},
+	http.StatusNotFound:              {tidNotFound, tidNotFoundPrivate},
+	http.StatusRequestEntityTooLarge: {tidRequestEntityTooLarge, tidRequestEntityTooLargePrivate},
+	http.StatusInternalServerError:   {tidInternalServerError, tidInternalServerErrorPrivate},
+	http.StatusServiceUnavailable:    {tidServiceUnavailable, tidServiceUnavailablePrivate},
+}
+
+func (s *Server) respondError(w http.ResponseWriter, r *http.Request, c int) {
 	var ctx map[string]interface{}
 	u, r, err := s.user(r)
 	if err != nil {
 		s.logger.Errorf("get user: %s", err)
 		if _, ok := err.(net.Error); ok {
-			if err := renderToResponse(w, s.templateServiceUnavailable(), "", http.StatusServiceUnavailable, nil, "text/html; charset=utf-8"); err != nil {
+			if err := renderToResponse(w, s.template(tidServiceUnavailable), "", http.StatusServiceUnavailable, nil, "text/html; charset=utf-8"); err != nil {
 				s.logger.Errorf("render service unavailable response: %s", err)
 			}
 			return
 		}
-		if err := renderToResponse(w, s.templateInternalServerError(), "", http.StatusServiceUnavailable, nil, "text/html; charset=utf-8"); err != nil {
+		if err := renderToResponse(w, s.template(tidInternalServerError), "", http.StatusServiceUnavailable, nil, "text/html; charset=utf-8"); err != nil {
 			s.logger.Errorf("render internal server error response: %s", err)
 		}
 		return
 	}
+	var tpl *template.Template
 	if u != nil {
-		tpl = errorTemplates[c][1]
+		tpl = s.template(errorTemplates[c][1])
 		ctx = map[string]interface{}{
 			"User": u,
 		}
 	} else {
-		tpl = errorTemplates[c][0]
+		tpl = s.template(errorTemplates[c][0])
 	}
-	if err := renderToResponse(w, tpl(), "", c, ctx, "text/html; charset=utf-8"); err != nil {
+	if err := renderToResponse(w, tpl, "", c, ctx, "text/html; charset=utf-8"); err != nil {
 		s.logger.Errorf("render http code %v response: %s", s, err)
 	}
 }

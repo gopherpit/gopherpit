@@ -83,7 +83,7 @@ func (s Server) dashboardHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sort.Sort(cls)
-	respond(w, s.templateDashboard(), map[string]interface{}{
+	respond(w, s.template(tidDashboard), map[string]interface{}{
 		"User":       u,
 		"Domains":    domains,
 		"Users":      users,
@@ -92,7 +92,7 @@ func (s Server) dashboardHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s Server) landingPageHandler(w http.ResponseWriter, r *http.Request) {
-	respond(w, s.templateLandingPage(), nil)
+	respond(w, s.template(tidLandingPage), nil)
 }
 
 func (s Server) aboutHandler(w http.ResponseWriter, r *http.Request) {
@@ -102,13 +102,13 @@ func (s Server) aboutHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if u != nil {
-		respond(w, s.templateAboutPrivate(), map[string]interface{}{
+		respond(w, s.template(tidAboutPrivate), map[string]interface{}{
 			"User":    u,
 			"Version": s.Version(),
 		})
 		return
 	}
-	respond(w, s.templateAbout(), map[string]interface{}{
+	respond(w, s.template(tidAbout), map[string]interface{}{
 		"Version": s.Version(),
 	})
 }
@@ -119,12 +119,12 @@ func (s Server) contactHandler(w http.ResponseWriter, r *http.Request) {
 		u = nil
 	}
 	if u != nil {
-		respond(w, s.templateContactPrivate(), map[string]interface{}{
+		respond(w, s.template(tidContactPrivate), map[string]interface{}{
 			"User": u,
 		})
 		return
 	}
-	respond(w, s.templateContact(), nil)
+	respond(w, s.template(tidContact), nil)
 }
 
 func (s Server) licenseHandler(w http.ResponseWriter, r *http.Request) {
@@ -134,10 +134,10 @@ func (s Server) licenseHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if u != nil {
-		respond(w, s.templateLicensePrivate(), map[string]interface{}{
+		respond(w, s.template(tidLicensePrivate), map[string]interface{}{
 			"User": u,
 		})
 		return
 	}
-	respond(w, s.templateLicense(), nil)
+	respond(w, s.template(tidLicense), nil)
 }
