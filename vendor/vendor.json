@@ -99,10 +99,22 @@
 			"revisionTime": "2016-09-30T20:34:21Z"
 		},
 		{
+			"checksumSHA1": "wSu8owMAP7GixsYoSZ4CmKUVhnU=",
+			"path": "gopkg.in/asn1-ber.v1",
+			"revision": "4e86f4367175e39f69d9358a5f17b4dda270378d",
+			"revisionTime": "2015-09-24T05:17:56Z"
+		},
+		{
 			"checksumSHA1": "iq5WdjScmTU+LfNoerLuwcnXpdM=",
 			"path": "gopkg.in/gomail.v2",
 			"revision": "81ebce5c23dfd25c6c67194b37d3dd3f338c98b1",
 			"revisionTime": "2016-04-11T21:29:32Z"
+		},
+		{
+			"checksumSHA1": "7jPSjzw3mckHVQ2SjY4NvtIJR4g=",
+			"path": "gopkg.in/ldap.v2",
+			"revision": "d0a5ced67b4dc310b9158d63a2c6f9c5ec13f105",
+			"revisionTime": "2016-08-08T14:54:09Z"
 		},
 		{
 			"checksumSHA1": "4FonadPMjBW33hDoyy+ZtBmU/bc=",
