@@ -20,7 +20,7 @@ endif
 ifdef SALT
 LDFLAGS += -X $(GO_PACKAGE_PATH)/server/config.Salt="$(SALT)"
 endif
-LDFLAGS += -X $(GO_PACKAGE_PATH)/server/config.BuildInfo="$(shell git describe --tags --long --dirty --always || true)"
+LDFLAGS += -X $(GO_PACKAGE_PATH)/server/config.BuildInfo="$(shell git describe --long --dirty --always || true)"
 
 ifndef CGO_ENABLED
 export CGO_ENABLED=0

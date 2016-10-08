@@ -31,7 +31,7 @@ var (
 	// Set the version on build with: go build -ldflags "-X gopherpit.com/gopherpit/server/config.Version=$(VERSION)"
 	Version = "0"
 	// BuildInfo is usually a git commit short hash.
-	// Set the version on build with: go build -ldflags "-X gopherpit.com/gopherpit/server/config.BuildInfo=$(shell git describe --tags --long --dirty --always)"
+	// Set the version on build with: go build -ldflags "-X gopherpit.com/gopherpit/server/config.BuildInfo=$(shell git describe --long --dirty --always)"
 	BuildInfo = ""
 
 	// UserAgent is a value for User-Agent HTTP request header value.
