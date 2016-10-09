@@ -57,7 +57,7 @@ type Options struct {
 	LogDir string
 	// Log files mode.
 	LogFileMode os.FileMode
-	// Log direcotries mode.
+	// Log directories mode.
 	LogDirectoryMode os.FileMode
 	// LogLevel is the lowest level of log messages that will be logged.
 	LogLevel logging.Level
@@ -66,7 +66,7 @@ type Options struct {
 	SyslogFacility logging.SyslogFacility
 	// Syslog tag for sysylog messages.
 	SyslogTag string
-	// LogLevel is the lowest level of HTTP access log messages that will
+	// AccessLogLevel is the lowest level of HTTP access log messages that will
 	// be logged.
 	AccessLogLevel logging.Level
 	// Syslog facility for syslog messages of HTTP requests. If it is not set,
@@ -74,6 +74,14 @@ type Options struct {
 	AccessSyslogFacility logging.SyslogFacility
 	// Syslog tag for sysylog messages of HTTP requests.
 	AccessSyslogTag string
+	// PackageAccessLogLevel is the lowest level of HTTP access log messages
+	// that will be logged for package resolutions.
+	PackageAccessLogLevel logging.Level
+	// Syslog facility for syslog messages of package resolution requests.
+	// If it is not set, no logging to syslog will be done.
+	PackageAccessSyslogFacility logging.SyslogFacility
+	// Syslog tag for sysylog messages of package resolution requests.
+	PackageAccessSyslogTag string
 	// Is logging of audit messages completely disabled.
 	AuditLogDisabled bool
 	// Syslog facility for syslog audit messages. If it is not set,
@@ -133,6 +141,7 @@ func NewService(name string, o Options) (s *Service, err error) {
 	// Setup logging.
 	logHandlers := []logging.Handler{}
 	accessLogHandlers := []logging.Handler{}
+	packageAccessLogHandlers := []logging.Handler{}
 	auditLogHandlers := []logging.Handler{}
 	if o.LogDir == "" || o.ForceLogToStderr {
 		logHandler := &logging.WriteHandler{
@@ -142,6 +151,7 @@ func NewService(name string, o Options) (s *Service, err error) {
 		}
 		logHandlers = append(logHandlers, logHandler)
 		accessLogHandlers = append(accessLogHandlers, logHandler)
+		packageAccessLogHandlers = append(packageAccessLogHandlers, logHandler)
 		auditLogHandlers = append(auditLogHandlers, logHandler)
 	} else {
 		logHandlers = append(logHandlers, &logging.TimedFileHandler{
@@ -157,6 +167,14 @@ func NewService(name string, o Options) (s *Service, err error) {
 			Formatter:      &logging.StandardFormatter{TimeFormat: logging.StandardTimeFormat},
 			Directory:      o.LogDir,
 			FilenameLayout: "2006/01/02/access.log",
+			FileMode:       logFileMode,
+			DirectoryMode:  logDirectoryMode,
+		})
+		packageAccessLogHandlers = append(packageAccessLogHandlers, &logging.TimedFileHandler{
+			Level:          o.PackageAccessLogLevel,
+			Formatter:      &logging.StandardFormatter{TimeFormat: logging.StandardTimeFormat},
+			Directory:      o.LogDir,
+			FilenameLayout: "2006/01/02/package-access.log",
 			FileMode:       logFileMode,
 			DirectoryMode:  logDirectoryMode,
 		})
@@ -181,11 +199,19 @@ func NewService(name string, o Options) (s *Service, err error) {
 			})
 		}
 		if o.AccessSyslogFacility != "" && o.AccessSyslogTag != "" {
-			auditLogHandlers = append(auditLogHandlers, &logging.SyslogHandler{
+			accessLogHandlers = append(accessLogHandlers, &logging.SyslogHandler{
 				Formatter: &logging.MessageFormatter{},
 				Tag:       o.AccessSyslogTag,
 				Facility:  o.AccessSyslogFacility.Priority(),
 				Severity:  syslog.Priority(o.AccessLogLevel),
+			})
+		}
+		if o.PackageAccessSyslogFacility != "" && o.PackageAccessSyslogTag != "" {
+			packageAccessLogHandlers = append(packageAccessLogHandlers, &logging.SyslogHandler{
+				Formatter: &logging.MessageFormatter{},
+				Tag:       o.PackageAccessSyslogTag,
+				Facility:  o.PackageAccessSyslogFacility.Priority(),
+				Severity:  syslog.Priority(o.PackageAccessLogLevel),
 			})
 		}
 		if o.AuditSyslogFacility != "" && o.AuditSyslogTag != "" && !o.AuditLogDisabled {
@@ -208,6 +234,10 @@ func NewService(name string, o Options) (s *Service, err error) {
 	log.SetFlags(0)
 	if _, err = logging.NewLogger("access", logging.DEBUG, accessLogHandlers, 0); err != nil {
 		err = fmt.Errorf("access logger error: %s", err)
+		return
+	}
+	if _, err = logging.NewLogger("package-access", logging.DEBUG, packageAccessLogHandlers, 0); err != nil {
+		err = fmt.Errorf("package access logger error: %s", err)
 		return
 	}
 	if _, err = logging.NewLogger("audit", logging.DEBUG, auditLogHandlers, 0); err != nil {

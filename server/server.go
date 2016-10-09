@@ -41,8 +41,9 @@ import (
 type Server struct {
 	Options
 
-	logger      *logging.Logger
-	auditLogger *logging.Logger
+	logger              *logging.Logger
+	auditLogger         *logging.Logger
+	packageAccessLogger *logging.Logger
 
 	handler         http.Handler
 	internalHandler http.Handler
@@ -118,10 +119,15 @@ func NewServer(o Options) (s *Server, err error) {
 	if err != nil {
 		logger.Warningf("get audit logger: %s", err)
 	}
+	packageAccessLogger, err := logging.GetLogger("package-access")
+	if err != nil {
+		logger.Warningf("get package access logger: %s", err)
+	}
 	s = &Server{
-		Options:     o,
-		logger:      logger,
-		auditLogger: auditLogger,
+		Options:             o,
+		logger:              logger,
+		auditLogger:         auditLogger,
+		packageAccessLogger: packageAccessLogger,
 		// internal
 		certificateCache: certificateCache.NewCache(o.CertificateService, 15*time.Minute, time.Minute),
 		startTime:        time.Now(),

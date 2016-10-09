@@ -19,39 +19,45 @@ import (
 
 // LoggingOptions defines parameters related to service's core functionality.
 type LoggingOptions struct {
-	LogDir               string                 `json:"log-dir" envconfig:"LOG_DIR"`
-	LogLevel             logging.Level          `json:"log-level" envconfig:"LOG_LEVEL"`
-	LogFileMode          marshal.Mode           `json:"log-file-mode" envconfig:"LOG_FILE_MODE"`
-	LogDirectoryMode     marshal.Mode           `json:"log-directory-mode" envconfig:"LOG_DIRECTORY_MODE"`
-	SyslogFacility       logging.SyslogFacility `json:"syslog-facility" envconfig:"SYSLOG_FACILITY"`
-	SyslogTag            string                 `json:"syslog-tag" envconfig:"SYSLOG_TAG"`
-	AccessLogLevel       logging.Level          `json:"access-log-level" envconfig:"ACCESS_LOG_LEVEL"`
-	AccessSyslogFacility logging.SyslogFacility `json:"access-syslog-facility" envconfig:"ACCESS_SYSLOG_FACILITY"`
-	AccessSyslogTag      string                 `json:"access-syslog-tag" envconfig:"ACCESS_SYSLOG_TAG"`
-	AuditLogDisabled     bool                   `json:"audit-log-disabled" envconfig:"AUDIT_LOG_DISABLED"`
-	AuditSyslogFacility  logging.SyslogFacility `json:"audit-syslog-facility" envconfig:"AUDIT_SYSLOG_FACILITY"`
-	AuditSyslogTag       string                 `json:"audit-syslog-tag" envconfig:"AUDIT_SYSLOG_TAG"`
-	DaemonLogFileName    string                 `json:"daemon-log-file" envconfig:"DAEMON_LOG_FILE"`
-	DaemonLogFileMode    marshal.Mode           `json:"daemon-log-file-mode" envconfig:"DAEMON_LOG_FILE_MODE"`
+	LogDir                      string                 `json:"log-dir" envconfig:"LOG_DIR"`
+	LogLevel                    logging.Level          `json:"log-level" envconfig:"LOG_LEVEL"`
+	LogFileMode                 marshal.Mode           `json:"log-file-mode" envconfig:"LOG_FILE_MODE"`
+	LogDirectoryMode            marshal.Mode           `json:"log-directory-mode" envconfig:"LOG_DIRECTORY_MODE"`
+	SyslogFacility              logging.SyslogFacility `json:"syslog-facility" envconfig:"SYSLOG_FACILITY"`
+	SyslogTag                   string                 `json:"syslog-tag" envconfig:"SYSLOG_TAG"`
+	AccessLogLevel              logging.Level          `json:"access-log-level" envconfig:"ACCESS_LOG_LEVEL"`
+	AccessSyslogFacility        logging.SyslogFacility `json:"access-syslog-facility" envconfig:"ACCESS_SYSLOG_FACILITY"`
+	AccessSyslogTag             string                 `json:"access-syslog-tag" envconfig:"ACCESS_SYSLOG_TAG"`
+	PackageAccessLogLevel       logging.Level          `json:"package-access-log-level" envconfig:"PACKAGE_ACCESS_LOG_LEVEL"`
+	PackageAccessSyslogFacility logging.SyslogFacility `json:"package-access-syslog-facility" envconfig:"PACKAGE_ACCESS_SYSLOG_FACILITY"`
+	PackageAccessSyslogTag      string                 `json:"package-access-syslog-tag" envconfig:"PACKAGE_ACCESS_SYSLOG_TAG"`
+	AuditLogDisabled            bool                   `json:"audit-log-disabled" envconfig:"AUDIT_LOG_DISABLED"`
+	AuditSyslogFacility         logging.SyslogFacility `json:"audit-syslog-facility" envconfig:"AUDIT_SYSLOG_FACILITY"`
+	AuditSyslogTag              string                 `json:"audit-syslog-tag" envconfig:"AUDIT_SYSLOG_TAG"`
+	DaemonLogFileName           string                 `json:"daemon-log-file" envconfig:"DAEMON_LOG_FILE"`
+	DaemonLogFileMode           marshal.Mode           `json:"daemon-log-file-mode" envconfig:"DAEMON_LOG_FILE_MODE"`
 }
 
 // NewLoggingOptions initializes LoggingOptions with default values.
 func NewLoggingOptions() *LoggingOptions {
 	return &LoggingOptions{
-		LogDir:               filepath.Join(BaseDir, "log"),
-		LogLevel:             logging.DEBUG,
-		LogFileMode:          0644,
-		LogDirectoryMode:     0755,
-		SyslogFacility:       "",
-		SyslogTag:            Name,
-		AccessLogLevel:       logging.DEBUG,
-		AccessSyslogFacility: "",
-		AuditLogDisabled:     false,
-		AccessSyslogTag:      Name + "-access",
-		AuditSyslogFacility:  "",
-		AuditSyslogTag:       Name + "-audit",
-		DaemonLogFileName:    "daemon.log",
-		DaemonLogFileMode:    0644,
+		LogDir:                      filepath.Join(BaseDir, "log"),
+		LogLevel:                    logging.DEBUG,
+		LogFileMode:                 0644,
+		LogDirectoryMode:            0755,
+		SyslogFacility:              "",
+		SyslogTag:                   Name,
+		AccessLogLevel:              logging.DEBUG,
+		AccessSyslogFacility:        "",
+		AccessSyslogTag:             Name + "-access",
+		PackageAccessLogLevel:       logging.DEBUG,
+		PackageAccessSyslogFacility: "",
+		PackageAccessSyslogTag:      Name + "-package-access",
+		AuditLogDisabled:            false,
+		AuditSyslogFacility:         "",
+		AuditSyslogTag:              Name + "-audit",
+		DaemonLogFileName:           "daemon.log",
+		DaemonLogFileMode:           0644,
 	}
 }
 

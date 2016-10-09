@@ -10,10 +10,12 @@ import (
 	"net"
 	"net/http"
 	"strings"
+	"time"
 
 	"resenje.org/antixsrf"
 	"resenje.org/logging"
 
+	"gopherpit.com/gopherpit/pkg/webutils"
 	"gopherpit.com/gopherpit/services/certificate"
 	"gopherpit.com/gopherpit/services/packages"
 	"gopherpit.com/gopherpit/services/user"
@@ -123,6 +125,45 @@ func (s Server) acmeUserHandler(h http.Handler) http.Handler {
 }
 
 func (s Server) packageResolverHandler(w http.ResponseWriter, r *http.Request) {
+	var code int
+	defer func(startTime time.Time) {
+		referrer := r.Referer()
+		if referrer == "" {
+			referrer = "-"
+		}
+		userAgent := r.UserAgent()
+		if userAgent == "" {
+			userAgent = "-"
+		}
+		ips := []string{}
+		xfr := r.Header.Get("X-Forwarded-For")
+		if xfr != "" {
+			ips = append(ips, xfr)
+		}
+		xri := r.Header.Get("X-Real-Ip")
+		if xri != "" {
+			ips = append(ips, xri)
+		}
+		xips := "-"
+		if len(ips) > 0 {
+			xips = strings.Join(ips, ", ")
+		}
+		var level logging.Level
+		switch {
+		case code >= 500:
+			level = logging.ERROR
+		case code >= 400:
+			level = logging.WARNING
+		case code >= 300:
+			level = logging.INFO
+		case code >= 200:
+			level = logging.INFO
+		default:
+			level = logging.DEBUG
+		}
+		s.packageAccessLogger.Logf(level, "%s \"%s\" %s %s %s %d %f \"%s\" \"%s\"", r.RemoteAddr, xips, r.Method, webutils.GetHost(r)+r.URL.String(), r.Proto, code, time.Since(startTime).Seconds(), referrer, userAgent)
+	}(time.Now())
+
 	domain, _, err := net.SplitHostPort(r.Host)
 	if err != nil {
 		domain = r.Host
@@ -132,23 +173,27 @@ func (s Server) packageResolverHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if err == packages.DomainNotFound || err == packages.PackageNotFound {
 			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-			w.WriteHeader(http.StatusNotFound)
+			code = http.StatusNotFound
+			w.WriteHeader(code)
 			fmt.Fprintln(w, fmt.Sprintf("No packages found for path %s", path))
 			return
 		}
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-		w.WriteHeader(http.StatusInternalServerError)
+		code = http.StatusInternalServerError
+		w.WriteHeader(code)
 		fmt.Fprintln(w, http.StatusText(http.StatusInternalServerError))
 		return
 	}
 
 	if resolution.Disabled {
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-		w.WriteHeader(http.StatusNotFound)
+		code = http.StatusNotFound
+		w.WriteHeader(code)
 		fmt.Fprintln(w, fmt.Sprintf("No packages found for path %s", path))
 		return
 	}
 
+	code = 200
 	respond(w, s.template(tidPackageResolution), map[string]interface{}{
 		"GoImport":    fmt.Sprintf("%s %s %s", resolution.ImportPrefix, resolution.VCS, resolution.RepoRoot),
 		"GoSource":    resolution.GoSource,

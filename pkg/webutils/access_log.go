@@ -7,6 +7,7 @@ package webutils
 
 import (
 	"net/http"
+	"strings"
 	"time"
 
 	"resenje.org/logging"
@@ -61,6 +62,8 @@ func (l *responseLogger) Size() int {
 func AccessLogHandler(h http.Handler, logger *logging.Logger) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		startTime := time.Now()
+		rl := &responseLogger{w, 0, 0}
+		h.ServeHTTP(rl, r)
 		referrer := r.Referer()
 		if referrer == "" {
 			referrer = "-"
@@ -69,15 +72,19 @@ func AccessLogHandler(h http.Handler, logger *logging.Logger) http.Handler {
 		if userAgent == "" {
 			userAgent = "-"
 		}
-		xip := r.Header.Get("X-Forwarded-For")
-		if xip == "" {
-			xip = r.Header.Get("X-Real-Ip")
-			if xip == "" {
-				xip = "-"
-			}
+		ips := []string{}
+		xfr := r.Header.Get("X-Forwarded-For")
+		if xfr != "" {
+			ips = append(ips, xfr)
 		}
-		rl := &responseLogger{w, 0, 0}
-		h.ServeHTTP(rl, r)
+		xri := r.Header.Get("X-Real-Ip")
+		if xri != "" {
+			ips = append(ips, xri)
+		}
+		xips := "-"
+		if len(ips) > 0 {
+			xips = strings.Join(ips, ", ")
+		}
 		var level logging.Level
 		switch {
 		case rl.status >= 500:
@@ -91,6 +98,6 @@ func AccessLogHandler(h http.Handler, logger *logging.Logger) http.Handler {
 		default:
 			level = logging.DEBUG
 		}
-		logger.Logf(level, "%s \"%s\" \"%v %s %v\" %d %d %f \"%s\" \"%s\"", r.RemoteAddr, xip, r.Method, r.RequestURI, r.Proto, rl.status, rl.size, time.Since(startTime).Seconds(), referrer, userAgent)
+		logger.Logf(level, "%s \"%s\" \"%v %s %v\" %d %d %f \"%s\" \"%s\"", r.RemoteAddr, xips, r.Method, r.RequestURI, r.Proto, rl.status, rl.size, time.Since(startTime).Seconds(), referrer, userAgent)
 	})
 }
