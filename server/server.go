@@ -639,6 +639,7 @@ func NewServer(o Options) (s *Server, err error) {
 	))
 	internalRouter.Handle("/", http.HandlerFunc(textNotFoundHandler))
 	internalRouter.Handle("/status", http.HandlerFunc(s.statusHandler))
+	internalRouter.Handle("/data", http.HandlerFunc(s.dataDumpHandler))
 
 	internalRouter.Handle("/debug/pprof/", http.HandlerFunc(pprof.Index))
 	internalRouter.Handle("/debug/pprof/cmdline", http.HandlerFunc(pprof.Cmdline))
