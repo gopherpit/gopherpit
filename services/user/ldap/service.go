@@ -17,6 +17,7 @@ import (
 	ldap "gopkg.in/ldap.v2"
 	"resenje.org/logging"
 
+	"gopherpit.com/gopherpit/pkg/data-dump"
 	"gopherpit.com/gopherpit/services/user"
 )
 
@@ -296,6 +297,15 @@ func (s Service) ldapAuth(u *user.User, password, group string) (newUserOptions 
 			continue
 		}
 		break
+	}
+	return
+}
+
+// DataDump proxies encapsulated User service's DataDump method if it implements
+// dataDump.Interface interface.
+func (s Service) DataDump(ifModifiedSince *time.Time) (dump *dataDump.Dump, err error) {
+	if dd, ok := s.Service.(dataDump.Interface); ok {
+		return dd.DataDump(ifModifiedSince)
 	}
 	return
 }
