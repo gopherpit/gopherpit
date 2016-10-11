@@ -13,6 +13,7 @@ import (
 	"io/ioutil"
 	"net"
 	"net/http"
+	"net/http/pprof"
 	"os"
 	"path/filepath"
 	"strings"
@@ -638,7 +639,12 @@ func NewServer(o Options) (s *Server, err error) {
 	))
 	internalRouter.Handle("/", http.HandlerFunc(textNotFoundHandler))
 	internalRouter.Handle("/status", http.HandlerFunc(s.statusHandler))
-	internalRouter.Handle("/debug/", httphandlers.DebugIndexHandler{Path: "/debug/"})
+
+	internalRouter.Handle("/debug/pprof/", http.HandlerFunc(pprof.Index))
+	internalRouter.Handle("/debug/pprof/cmdline", http.HandlerFunc(pprof.Cmdline))
+	internalRouter.Handle("/debug/pprof/profile", http.HandlerFunc(pprof.Profile))
+	internalRouter.Handle("/debug/pprof/symbol", http.HandlerFunc(pprof.Symbol))
+	internalRouter.Handle("/debug/pprof/trace", http.HandlerFunc(pprof.Trace))
 
 	//
 	// Internal API router
