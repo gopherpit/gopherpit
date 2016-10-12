@@ -22,6 +22,7 @@ type GopherPitOptions struct {
 	Listen                 string            `json:"listen" envconfig:"LISTEN"`
 	ListenTLS              string            `json:"listen-tls" envconfig:"LISTEN_TLS"`
 	ListenInternal         string            `json:"listen-internal" envconfig:"LISTEN_INTERNAL"`
+	ListenInternalTLS      string            `json:"listen-internal-tls" envconfig:"LISTEN_INTERNAL_TLS"`
 	TLSCert                string            `json:"tls-cert" envconfig:"TLS_CERT"`
 	TLSKey                 string            `json:"tls-key" envconfig:"TLS_KEY"`
 	Brand                  string            `json:"brand" envconfig:"BRAND"`
@@ -50,13 +51,14 @@ type GopherPitOptions struct {
 // NewGopherPitOptions initializes GopherPitOptions with default values.
 func NewGopherPitOptions() *GopherPitOptions {
 	return &GopherPitOptions{
-		Listen:         ":8080",
-		ListenTLS:      "",
-		ListenInternal: "",
-		TLSCert:        "",
-		TLSKey:         "",
-		Brand:          "GopherPit",
-		Domain:         "localhost",
+		Listen:            ":8080",
+		ListenTLS:         "",
+		ListenInternal:    "",
+		ListenInternalTLS: "",
+		TLSCert:           "",
+		TLSKey:            "",
+		Brand:             "GopherPit",
+		Domain:            "localhost",
 		Headers: map[string]string{
 			"Server":           Name + "/" + Version + "-" + BuildInfo,
 			"X-Frame-Options":  "SAMEORIGIN",
