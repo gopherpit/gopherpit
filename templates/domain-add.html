@@ -106,7 +106,8 @@ server {
         if ($args ~ go-get=1) {
             include /etc/nginx/proxy_params;
             proxy_pass http://[[ context "AliasCNAME" ]];
-        } else {
+        }
+        if ($args !~ go-get=1) {
             # Configuration for your service
             ...
         }
