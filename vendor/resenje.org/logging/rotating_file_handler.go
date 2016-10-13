@@ -1,3 +1,8 @@
+// Copyright (c) 2015, 2016 Janoš Guljaš <janos@resenje.org>
+// All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package logging
 
 import (
@@ -107,9 +112,8 @@ func (handler *RotatingFileHandler) needsRotation(msg string) bool {
 				return os.IsNotExist(err)
 			}
 			return false
-		} else {
-			return true
 		}
+		return true
 	}
 
 	if handler.MaxFileSize < 1024 {

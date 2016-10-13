@@ -1,3 +1,8 @@
+// Copyright (c) 2015, 2016 Janoš Guljaš <janos@resenje.org>
+// All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 /*
 Package boltdbpool implements a pool container for BoltDB github.com/boltdb/bolt databases.
 Pool elements called connections keep reference counts for each database to close it

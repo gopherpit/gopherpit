@@ -1,3 +1,8 @@
+// Copyright (c) 2015, 2016 Janoš Guljaš <janos@resenje.org>
+// All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package antixsrf // import "resenje.org/antixsrf"
 
 import (
@@ -10,12 +15,16 @@ import (
 )
 
 var (
-	XSRFCookieName    = "secid"
-	XSRFHeaderName    = "X-Secid"
+	// XSRFCookieName is an HTTP cookie name to store anti-XSRF token.
+	XSRFCookieName = "secid"
+	// XSRFHeaderName is an HTTP header name to check the token.
+	XSRFHeaderName = "X-Secid"
+	// XSRFFormFieldName is an HTTP form field name to check the token.
 	XSRFFormFieldName = "secid"
+)
 
-	safeMethods = []string{"GET", "HEAD", "OPTIONS", "TRACE"}
-
+// Errors related to invalid or missing anti-XSRF token value.
+var (
 	ErrNoReferer      = errors.New("antixsrf: missing referer header")
 	ErrInvalidReferer = errors.New("antixsrf: invalid referer header")
 	ErrInvalidToken   = errors.New("antixsrf: invalid xsrf token")
@@ -23,6 +32,11 @@ var (
 	ErrMissingHeader  = errors.New("antixsrf: missing xsrf header")
 )
 
+var safeMethods = []string{"GET", "HEAD", "OPTIONS", "TRACE"}
+
+// Verify check for a valid token in request Cookie, form field or header.
+// It also checks if header "Referer" is present and that host values of
+// the request and referrer are the same
 func Verify(r *http.Request) error {
 	if contains(safeMethods, r.Method) {
 		return nil
@@ -68,6 +82,7 @@ func Verify(r *http.Request) error {
 	return ErrInvalidToken
 }
 
+// Generate generates an anti-XSRF token and sets it as a cookie value.
 func Generate(w http.ResponseWriter, r *http.Request, path string) {
 	if _, err := r.Cookie(XSRFCookieName); err != nil {
 		http.SetCookie(w, &http.Cookie{
@@ -80,10 +95,10 @@ func Generate(w http.ResponseWriter, r *http.Request, path string) {
 }
 
 func newKey() string {
-	return strings.TrimRight(base32.StdEncoding.EncodeToString(GenerateRandomKey(16)), "=")
+	return strings.TrimRight(base32.StdEncoding.EncodeToString(generateRandomKey(16)), "=")
 }
 
-func GenerateRandomKey(length int) []byte {
+func generateRandomKey(length int) []byte {
 	k := make([]byte, length)
 	if _, err := io.ReadFull(rand.Reader, k); err != nil {
 		return nil

@@ -1,3 +1,8 @@
+// Copyright (c) 2015, 2016 Janoš Guljaš <janos@resenje.org>
+// All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 // Package logging is async logger library. It is based on idea that
 // log messages are created when client wants to log something, but
 // actual processing is done is designated goroutine. This means that

@@ -1,3 +1,8 @@
+// Copyright (c) 2015, 2016 Janoš Guljaš <janos@resenje.org>
+// All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package logging // import "resenje.org/logging"
 
 import (
@@ -299,12 +304,12 @@ func (logger *Logger) Emergency(a ...interface{}) {
 	logger.log(EMERGENCY, "", a...)
 }
 
-// Aleftf logs provided message with formatting in ALERT level.
+// Alertf logs provided message with formatting in ALERT level.
 func (logger *Logger) Alertf(format string, a ...interface{}) {
 	logger.log(ALERT, format, a...)
 }
 
-// Aleft logs provided message in ALERT level.
+// Alert logs provided message in ALERT level.
 func (logger *Logger) Alert(a ...interface{}) {
 	logger.log(ALERT, "", a...)
 }

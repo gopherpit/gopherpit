@@ -1,3 +1,8 @@
+// Copyright (c) 2015, 2016 Janoš Guljaš <janos@resenje.org>
+// All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package logging
 
 import (
@@ -43,7 +48,7 @@ func (handler *NullHandler) Close() error {
 	return nil
 }
 
-// Write handler requires io.Writer and sends all messages to this writer.
+// WriteHandler requires io.Writer and sends all messages to this writer.
 type WriteHandler struct {
 	NullHandler
 

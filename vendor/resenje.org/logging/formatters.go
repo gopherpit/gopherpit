@@ -1,3 +1,8 @@
+// Copyright (c) 2015, 2016 Janoš Guljaš <janos@resenje.org>
+// All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package logging
 
 import (
@@ -7,6 +12,7 @@ import (
 )
 
 const (
+	// StandardTimeFormat defines a representaion of timestamps in log lines.
 	StandardTimeFormat = "2006-01-02 15:04:05.000Z07:00"
 	tolerance          = 25 * time.Millisecond
 )
@@ -37,11 +43,11 @@ func (formatter *StandardFormatter) Format(record *Record) string {
 	return fmt.Sprintf("[%v] %v %v", now.Format(formatter.TimeFormat), record.Level, message)
 }
 
-// JsonFormatter creates JSON struct with provided record.
-type JsonFormatter struct{}
+// JSONFormatter creates JSON struct with provided record.
+type JSONFormatter struct{}
 
 // Format creates JSON struct from provided record and returns it.
-func (formatter *JsonFormatter) Format(record *Record) string {
+func (formatter *JSONFormatter) Format(record *Record) string {
 	data, _ := json.Marshal(record)
 	return string(data)
 }
@@ -53,4 +59,3 @@ type MessageFormatter struct{}
 func (formatter *MessageFormatter) Format(record *Record) string {
 	return record.Message
 }
-

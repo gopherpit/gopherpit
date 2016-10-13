@@ -1,3 +1,8 @@
+// Copyright (c) 2015, 2016 Janoš Guljaš <janos@resenje.org>
+// All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 // +build !windows
 
 package logging
@@ -17,6 +22,7 @@ type SyslogHandler struct {
 	writter   *syslog.Writer
 }
 
+// Handle sends a record message to syslog Writer.
 func (handler *SyslogHandler) Handle(record *Record) error {
 
 	if handler.writter == nil {
@@ -50,6 +56,7 @@ func (handler *SyslogHandler) Handle(record *Record) error {
 	}
 }
 
+// Close closes an associated syslog Writer.
 func (handler *SyslogHandler) Close() error {
 	if handler.writter == nil {
 		return nil
@@ -57,6 +64,7 @@ func (handler *SyslogHandler) Close() error {
 	return handler.writter.Close()
 }
 
+// GetLevel returns a Level from handler's Severity.
 func (handler *SyslogHandler) GetLevel() Level {
 	return Level(handler.Severity)
 }

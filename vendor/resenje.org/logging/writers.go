@@ -1,3 +1,8 @@
+// Copyright (c) 2015, 2016 Janoš Guljaš <janos@resenje.org>
+// All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package logging
 
 import (
@@ -5,32 +10,38 @@ import (
 	"unicode"
 )
 
-type infoLogWriter struct {
-	logger *Logger
+// InfoLogWriter is a Logger with Write method what writes
+// all messages with Info level.
+type InfoLogWriter struct {
+	*Logger
 }
 
-func NewInfoLogWriter(logger *Logger) infoLogWriter {
-	return infoLogWriter{
-		logger: logger,
-	}
+// NewInfoLogWriter creates a writer object that will send messages
+// with Info log level to a logger.
+func NewInfoLogWriter(logger *Logger) InfoLogWriter {
+	return InfoLogWriter{logger}
 }
 
-func (lw infoLogWriter) Write(p []byte) (int, error) {
-	lw.logger.Info(string(bytes.TrimRightFunc(p, unicode.IsSpace)))
+// Write logs an Info message to a logger.
+func (lw InfoLogWriter) Write(p []byte) (int, error) {
+	lw.Info(string(bytes.TrimRightFunc(p, unicode.IsSpace)))
 	return 0, nil
 }
 
-type errorLogWriter struct {
-	logger *Logger
+// ErrorLogWriter is a Logger with Write method what writes
+// all messages with Error level.
+type ErrorLogWriter struct {
+	*Logger
 }
 
-func NewErrorLogWriter(logger *Logger) errorLogWriter {
-	return errorLogWriter{
-		logger: logger,
-	}
+// NewErrorLogWriter creates a writer object that will send messages
+// with Error log level to a logger.
+func NewErrorLogWriter(logger *Logger) ErrorLogWriter {
+	return ErrorLogWriter{logger}
 }
 
-func (lw errorLogWriter) Write(p []byte) (int, error) {
-	lw.logger.Error(string(bytes.TrimRightFunc(p, unicode.IsSpace)))
+// Write logs an Error message to a logger.
+func (lw ErrorLogWriter) Write(p []byte) (int, error) {
+	lw.Error(string(bytes.TrimRightFunc(p, unicode.IsSpace)))
 	return 0, nil
 }

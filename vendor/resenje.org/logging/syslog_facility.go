@@ -1,3 +1,8 @@
+// Copyright (c) 2015, 2016 Janoš Guljaš <janos@resenje.org>
+// All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package logging
 
 import (
@@ -5,6 +10,7 @@ import (
 	"strings"
 )
 
+// SyslogFacility is a string representation of syslog facility.
 type SyslogFacility string
 
 var syslogPriorities = map[string]syslog.Priority{
@@ -31,14 +37,17 @@ var syslogPriorities = map[string]syslog.Priority{
 	"local7": syslog.LOG_LOCAL7,
 }
 
+// String returns a string representation of SyslogFacility.
 func (s SyslogFacility) String() string {
 	return string(s)
 }
 
+// Priority returns a syslog.Priority representation of SyslogFacility.
 func (s SyslogFacility) Priority() syslog.Priority {
 	return syslogPriorities[strings.ToLower(s.String())]
 }
 
+// OK checks if SyslogFacility is valid.
 func (s SyslogFacility) OK() (ok bool) {
 	_, ok = syslogPriorities[strings.ToLower(s.String())]
 	return

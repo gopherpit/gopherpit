@@ -1,3 +1,8 @@
+// Copyright (c) 2015, 2016 Janoš Guljaš <janos@resenje.org>
+// All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package logging
 
 import (
@@ -62,6 +67,7 @@ func SetLevel(level Level) {
 	}
 }
 
+// SetBufferLength sets default buffer length for default logger.
 func SetBufferLength(length int) {
 	if logger := getDefaultLogger(); logger != nil {
 		logger.SetBufferLength(length)

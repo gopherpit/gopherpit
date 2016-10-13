@@ -1,3 +1,8 @@
+// Copyright (c) 2015, 2016 Janoš Guljaš <janos@resenje.org>
+// All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package timed // import "resenje.org/boltdbpool/timed"
 
 import (
@@ -11,12 +16,15 @@ import (
 )
 
 var (
-	ErrUnknownDB     = errors.New("unknown database")
+	// ErrUnknownDB is error that is returned when database file can not be found.
+	ErrUnknownDB = errors.New("unknown database")
+	// ErrUnknownPeriod is returned if provided database period is not valid.
 	ErrUnknownPeriod = errors.New("unknown period")
 )
 
 type period int
 
+// Periods for database partitioning.
 const (
 	_             = iota
 	Hourly period = iota
@@ -25,6 +33,7 @@ const (
 	Yearly
 )
 
+// Pool holds database connections and database information.
 type Pool struct {
 	pool   *boltdbpool.Pool
 	series []string
@@ -33,6 +42,8 @@ type Pool struct {
 	mu     *sync.Mutex
 }
 
+// New returns a new instance of Pool with database files in dir,
+// partitioned by period and each database connection created with options.
 func New(dir string, p period, options *boltdbpool.Options) (*Pool, error) {
 	series := []string{}
 	switch p {
@@ -132,6 +143,9 @@ func (p Pool) connFromPath(path string) (c *boltdbpool.Connection, err error) {
 	return p.pool.Get(path)
 }
 
+// NewConnection returns a Connection either from the pool, or
+// creates a new one for a database that should hold or holds
+// data for a provided time.
 func (p *Pool) NewConnection(t time.Time) (conn *Connection, err error) {
 	series := p.seriesFromTime(t)
 	path := p.pathFromSeries(series)
@@ -160,6 +174,8 @@ func (p *Pool) NewConnection(t time.Time) (conn *Connection, err error) {
 	}, nil
 }
 
+// GetConnection returns a Connection if the database for the provided
+// time exists.
 func (p *Pool) GetConnection(t time.Time) (conn *Connection, err error) {
 	series := p.seriesFromTime(t)
 	path := p.pathFromSeries(series)
@@ -188,6 +204,8 @@ func (p *Pool) GetConnection(t time.Time) (conn *Connection, err error) {
 	}, nil
 }
 
+// NextConnection returns a Connection to a database that holds data
+// newer related to the provided time.
 func (p *Pool) NextConnection(t time.Time) (conn *Connection, err error) {
 	path := ""
 	series := p.seriesFromTime(t)
@@ -222,6 +240,8 @@ func (p *Pool) NextConnection(t time.Time) (conn *Connection, err error) {
 	}, nil
 }
 
+// PrevConnection returns a Connection to a database that holds data
+// older related to the provided time.
 func (p *Pool) PrevConnection(t time.Time) (conn *Connection, err error) {
 	path := ""
 	series := p.seriesFromTime(t)
@@ -256,12 +276,16 @@ func (p *Pool) PrevConnection(t time.Time) (conn *Connection, err error) {
 	}, nil
 }
 
+// Connection represents a boltdbpool.Connection for a particular
+// time partition.
 type Connection struct {
 	*boltdbpool.Connection
 	pool   *Pool
 	series string
 }
 
+// Next returns a connection that holds newer data relative to the
+// data partition of the current connection.
 func (c Connection) Next() (*Connection, error) {
 	c.pool.mu.Lock()
 	defer c.pool.mu.Unlock()
@@ -284,6 +308,8 @@ func (c Connection) Next() (*Connection, error) {
 	return nil, ErrUnknownDB
 }
 
+// Prev returns a connection that holds older data relative to the
+// data partition of the current connection.
 func (c Connection) Prev() (*Connection, error) {
 	c.pool.mu.Lock()
 	defer c.pool.mu.Unlock()
