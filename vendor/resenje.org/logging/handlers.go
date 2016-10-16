@@ -16,7 +16,7 @@ import (
 type Handler interface {
 	// Handle should accept log record instance and process it.
 	Handle(record *Record) error
-	// HandleError should process errors that occured during calls to Handle method
+	// HandleError should process errors that occurred during calls to Handle method
 	HandleError(error) error
 	// GetLevel should return level that this handler is processing.
 	GetLevel() Level

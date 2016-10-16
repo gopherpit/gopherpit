@@ -243,6 +243,8 @@ COPYRIGHT
 			LogDirectoryMode:            loggingOptions.LogDirectoryMode.FileMode(),
 			SyslogFacility:              loggingOptions.SyslogFacility,
 			SyslogTag:                   loggingOptions.SyslogTag,
+			SyslogNetwork:               loggingOptions.SyslogNetwork,
+			SyslogAddress:               loggingOptions.SyslogAddress,
 			AccessLogLevel:              loggingOptions.AccessLogLevel,
 			AccessSyslogFacility:        loggingOptions.AccessSyslogFacility,
 			AccessSyslogTag:             loggingOptions.AccessSyslogTag,

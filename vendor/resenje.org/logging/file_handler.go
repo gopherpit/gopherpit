@@ -15,7 +15,7 @@ import (
 // If file on provided path does not exist it will be created.
 //
 // Note that this handler does not perform any kind of file rotation or
-// truncation, so files will grow indefinitly. You might want to check out
+// truncation, so files will grow indefinitely. You might want to check out
 // RotatingFileHandler and
 type FileHandler struct {
 	NullHandler

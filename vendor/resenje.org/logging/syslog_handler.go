@@ -11,7 +11,7 @@ import (
 	"log/syslog"
 )
 
-// SyslogHandler sends all messages to syslog daemon.
+// SyslogHandler sends all messages to syslog.
 type SyslogHandler struct {
 	NullHandler
 
@@ -19,14 +19,28 @@ type SyslogHandler struct {
 	Tag       string
 	Facility  syslog.Priority
 	Severity  syslog.Priority
-	writter   *syslog.Writer
+	// Network is a named network to connect to syslog.
+	// Known networks are "tcp", "tcp4" (IPv4-only), "tcp6" (IPv6-only),
+	// "udp", "udp4" (IPv4-only), "udp6" (IPv6-only), "ip", "ip4" (IPv4-only),
+	// "ip6" (IPv6-only), "unix", "unixgram" and "unixpacket".
+	// If network is empty, SyslogHandler will connect to the local
+	// syslog server.
+	Network string
+	// Address is a network address to connect to syslog.
+	Address string
+	writter *syslog.Writer
 }
 
 // Handle sends a record message to syslog Writer.
 func (handler *SyslogHandler) Handle(record *Record) error {
 
 	if handler.writter == nil {
-		writter, err := syslog.New(handler.Facility|handler.Severity, handler.Tag)
+		writter, err := syslog.Dial(
+			handler.Network,
+			handler.Address,
+			handler.Facility|handler.Severity,
+			handler.Tag,
+		)
 
 		if err != nil {
 			return err

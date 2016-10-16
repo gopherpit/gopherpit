@@ -66,6 +66,10 @@ type Options struct {
 	SyslogFacility logging.SyslogFacility
 	// Syslog tag for sysylog messages.
 	SyslogTag string
+	// Syslog named network.
+	SyslogNetwork string
+	// Syslog network address.
+	SyslogAddress string
 	// AccessLogLevel is the lowest level of HTTP access log messages that will
 	// be logged.
 	AccessLogLevel logging.Level
@@ -196,6 +200,8 @@ func NewService(name string, o Options) (s *Service, err error) {
 				Tag:       o.SyslogTag,
 				Facility:  o.SyslogFacility.Priority(),
 				Severity:  syslog.Priority(o.LogLevel),
+				Network:   o.SyslogNetwork,
+				Address:   o.SyslogAddress,
 			})
 		}
 		if o.AccessSyslogFacility != "" && o.AccessSyslogTag != "" {
@@ -204,6 +210,8 @@ func NewService(name string, o Options) (s *Service, err error) {
 				Tag:       o.AccessSyslogTag,
 				Facility:  o.AccessSyslogFacility.Priority(),
 				Severity:  syslog.Priority(o.AccessLogLevel),
+				Network:   o.SyslogNetwork,
+				Address:   o.SyslogAddress,
 			})
 		}
 		if o.PackageAccessSyslogFacility != "" && o.PackageAccessSyslogTag != "" {
@@ -212,6 +220,8 @@ func NewService(name string, o Options) (s *Service, err error) {
 				Tag:       o.PackageAccessSyslogTag,
 				Facility:  o.PackageAccessSyslogFacility.Priority(),
 				Severity:  syslog.Priority(o.PackageAccessLogLevel),
+				Network:   o.SyslogNetwork,
+				Address:   o.SyslogAddress,
 			})
 		}
 		if o.AuditSyslogFacility != "" && o.AuditSyslogTag != "" && !o.AuditLogDisabled {
@@ -220,6 +230,8 @@ func NewService(name string, o Options) (s *Service, err error) {
 				Tag:       o.AuditSyslogTag,
 				Facility:  o.AuditSyslogFacility.Priority(),
 				Severity:  syslog.LOG_DEBUG,
+				Network:   o.SyslogNetwork,
+				Address:   o.SyslogAddress,
 			})
 		}
 	}

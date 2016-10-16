@@ -25,6 +25,8 @@ type LoggingOptions struct {
 	LogDirectoryMode            marshal.Mode           `json:"log-directory-mode" envconfig:"LOG_DIRECTORY_MODE"`
 	SyslogFacility              logging.SyslogFacility `json:"syslog-facility" envconfig:"SYSLOG_FACILITY"`
 	SyslogTag                   string                 `json:"syslog-tag" envconfig:"SYSLOG_TAG"`
+	SyslogNetwork               string                 `json:"syslog-network" envconfig:"SYSLOG_NETWORK"`
+	SyslogAddress               string                 `json:"syslog-address" envconfig:"SYSLOG_ADDRESS"`
 	AccessLogLevel              logging.Level          `json:"access-log-level" envconfig:"ACCESS_LOG_LEVEL"`
 	AccessSyslogFacility        logging.SyslogFacility `json:"access-syslog-facility" envconfig:"ACCESS_SYSLOG_FACILITY"`
 	AccessSyslogTag             string                 `json:"access-syslog-tag" envconfig:"ACCESS_SYSLOG_TAG"`
@@ -47,6 +49,8 @@ func NewLoggingOptions() *LoggingOptions {
 		LogDirectoryMode:            0755,
 		SyslogFacility:              "",
 		SyslogTag:                   Name,
+		SyslogNetwork:               "",
+		SyslogAddress:               "",
 		AccessLogLevel:              logging.DEBUG,
 		AccessSyslogFacility:        "",
 		AccessSyslogTag:             Name + "-access",
