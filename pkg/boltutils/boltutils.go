@@ -16,8 +16,8 @@ import (
 // will be created as buckets if any of them do not exist.
 func BoltDeepPut(tx *bolt.Tx, elements ...[]byte) (err error) {
 	length := len(elements)
-	if length < 2 {
-		return fmt.Errorf("insufficient number of elements %d < 2", length)
+	if length < 3 {
+		return fmt.Errorf("insufficient number of elements %d < 3", length)
 	}
 	path := elements[0]
 	bucket, err := tx.CreateBucketIfNotExists(elements[0])
@@ -42,8 +42,8 @@ func BoltDeepPut(tx *bolt.Tx, elements ...[]byte) (err error) {
 // arguments in nested buckets named as previous elements.
 func BoltDeepDelete(tx *bolt.Tx, elements ...[]byte) (err error) {
 	length := len(elements)
-	if length < 1 {
-		return fmt.Errorf("insufficient number of elements %d < 1", length)
+	if length < 2 {
+		return fmt.Errorf("insufficient number of elements %d < 2", length)
 	}
 	path := elements[0]
 	bucket := tx.Bucket(elements[0])
