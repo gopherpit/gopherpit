@@ -7,7 +7,6 @@ package logging // import "resenje.org/logging"
 
 import (
 	"container/ring"
-	"errors"
 	"fmt"
 	"runtime"
 	"sync"
@@ -42,16 +41,11 @@ type Logger struct {
 
 // NewLogger creates and returns new logger instance with provided name, log level,
 // handlers and buffer length.
-// Name of logger has to be unique when it is created or error will be returned.
+// If a logger with the same name already exists, it will be replaced with a new one.
 // Log level is lowest level or log record that this logger will handle.
 // Log records (above defined log level) will be passed to all log handlers for processing.
-func NewLogger(name string, level Level, handlers []Handler, bufferLength int) (*Logger, error) {
-	lock.Lock()
-	defer lock.Unlock()
-	if _, ok := loggers[name]; ok {
-		return nil, errors.New("Logger with that name already exists")
-	}
-	logger := &Logger{
+func NewLogger(name string, level Level, handlers []Handler, bufferLength int) (l *Logger) {
+	l = &Logger{
 		Name:          name,
 		Level:         level,
 		Handlers:      handlers,
@@ -62,9 +56,14 @@ func NewLogger(name string, level Level, handlers []Handler, bufferLength int) (
 		countOut:      0,
 		countIn:       0,
 	}
-	go logger.run()
-	loggers[name] = logger
-	return logger, nil
+	go l.run()
+	if name == "default" {
+		defaultLogger = l
+	}
+	lock.Lock()
+	loggers[name] = l
+	lock.Unlock()
+	return
 }
 
 // GetLogger returns logger instance based on provided name.
@@ -83,6 +82,9 @@ func GetLogger(name string) (*Logger, error) {
 func RemoveLogger(name string) {
 	lock.Lock()
 	delete(loggers, name)
+	if name == "default" {
+		defaultLogger = nil
+	}
 	lock.Unlock()
 }
 
@@ -207,7 +209,7 @@ func (logger *Logger) Stop() {
 	logger.stateChannel <- stopped
 }
 
-// SetBufferLength sets lenth of buffer for accepting log records.
+// SetBufferLength sets length of buffer for accepting log records.
 func (logger *Logger) SetBufferLength(length int) {
 	logger.lock.Lock()
 
@@ -237,7 +239,7 @@ func (logger *Logger) ClearHandlers() {
 	logger.lock.Unlock()
 }
 
-// SetLevel sets lowes level that current logger will process.
+// SetLevel sets lower level that current logger will process.
 func (logger *Logger) SetLevel(level Level) {
 	logger.lock.Lock()
 	logger.Level = level

@@ -237,25 +237,12 @@ func NewService(name string, o Options) (s *Service, err error) {
 	}
 
 	logging.RemoveLoggers()
-	logger, err := logging.NewLogger("default", logging.DEBUG, logHandlers, 0)
-	if err != nil {
-		err = fmt.Errorf("default logger error: %s", err)
-		return
-	}
+	logger := logging.NewLogger("default", logging.DEBUG, logHandlers, 0)
 	log.SetOutput(logging.NewInfoLogWriter(logger))
 	log.SetFlags(0)
-	if _, err = logging.NewLogger("access", logging.DEBUG, accessLogHandlers, 0); err != nil {
-		err = fmt.Errorf("access logger error: %s", err)
-		return
-	}
-	if _, err = logging.NewLogger("package-access", logging.DEBUG, packageAccessLogHandlers, 0); err != nil {
-		err = fmt.Errorf("package access logger error: %s", err)
-		return
-	}
-	if _, err = logging.NewLogger("audit", logging.DEBUG, auditLogHandlers, 0); err != nil {
-		err = fmt.Errorf("audit logger error: %s", err)
-		return
-	}
+	logging.NewLogger("access", logging.DEBUG, accessLogHandlers, 0)
+	logging.NewLogger("package-access", logging.DEBUG, packageAccessLogHandlers, 0)
+	logging.NewLogger("audit", logging.DEBUG, auditLogHandlers, 0)
 	return
 }
 
