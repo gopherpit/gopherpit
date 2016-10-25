@@ -63,7 +63,11 @@ func (s Server) domainHandler(h http.Handler) http.Handler {
 			if port != "" {
 				port = ":" + port
 			}
-			http.Redirect(w, r, strings.Join([]string{scheme, "://", s.Domain, port, r.RequestURI}, ""), http.StatusMovedPermanently)
+			query := r.URL.RawQuery
+			if query != "" {
+				query = "?" + query
+			}
+			http.Redirect(w, r, strings.Join([]string{scheme, "://", s.Domain, port, r.URL.Path, query}, ""), http.StatusMovedPermanently)
 			return
 		}
 		// Handle packages.
