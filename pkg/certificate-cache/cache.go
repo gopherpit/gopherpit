@@ -25,21 +25,21 @@ type tlsCertificate struct {
 
 // Cache represents a structure that holds cache map and certificate service.
 type Cache struct {
-	ttl                time.Duration
-	ttlNoCert          time.Duration
-	certificateService certificate.Service
-	nameToCertificate  map[string]tlsCertificate
-	mu                 *sync.RWMutex
+	ttl               time.Duration
+	ttlNoCert         time.Duration
+	certificateGetter certificate.Getter
+	nameToCertificate map[string]tlsCertificate
+	mu                *sync.RWMutex
 }
 
 // NewCache creates a new instance of Cache.
-func NewCache(certificateService certificate.Service, ttl, ttlNoCert time.Duration) Cache {
+func NewCache(certificateGetter certificate.Getter, ttl, ttlNoCert time.Duration) Cache {
 	return Cache{
-		ttl:                ttl,
-		ttlNoCert:          ttlNoCert,
-		certificateService: certificateService,
-		nameToCertificate:  map[string]tlsCertificate{},
-		mu:                 &sync.RWMutex{},
+		ttl:               ttl,
+		ttlNoCert:         ttlNoCert,
+		certificateGetter: certificateGetter,
+		nameToCertificate: map[string]tlsCertificate{},
+		mu:                &sync.RWMutex{},
 	}
 }
 
@@ -74,7 +74,7 @@ func (cc Cache) Certificate(name string) (c *tls.Certificate, err error) {
 	cc.mu.Lock()
 	defer cc.mu.Unlock()
 
-	crt, err := cc.certificateService.Certificate(name)
+	crt, err := cc.certificateGetter.Certificate(name)
 	if err != nil {
 		// Set certificate cache to avoid frequent queries to pit api
 		cc.nameToCertificate[name] = tlsCertificate{
