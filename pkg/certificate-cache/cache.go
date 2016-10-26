@@ -86,6 +86,10 @@ func (cc Cache) Certificate(name string) (c *tls.Certificate, err error) {
 		err = fmt.Errorf("certificate: %s: %s", name, err)
 		return
 	}
+	if crt == nil {
+		err = ErrCertificateNotFound
+		return
+	}
 	c = &tls.Certificate{}
 	*c, err = tls.X509KeyPair([]byte(crt.Cert), []byte(crt.Key))
 	if err != nil {
