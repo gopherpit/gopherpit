@@ -14,10 +14,16 @@ type Service interface {
 	ACMEUserService
 }
 
-// ManagementService defines most basic functionality for certificate management.
-type ManagementService interface {
+// Getter provides interface to get single certificate. It is most useful
+// for services that are only consumers of certificates.
+type Getter interface {
 	// Certificate returns a Certificate for provided FQDN.
 	Certificate(fqdn string) (c *Certificate, err error)
+}
+
+// ManagementService defines most basic functionality for certificate management.
+type ManagementService interface {
+	Getter
 	// UpdateCertificate alters the fields of existing Certificate.
 	UpdateCertificate(fqdn string, o *Options) (c *Certificate, err error)
 	// DeleteCertificate deletes an existing Certificate for a
