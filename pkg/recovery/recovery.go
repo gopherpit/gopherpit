@@ -7,6 +7,7 @@ package recovery // import "gopherpit.com/gopherpit/pkg/recovery"
 
 import (
 	"fmt"
+	"log"
 	"runtime/debug"
 )
 
@@ -39,11 +40,15 @@ func (s Service) Recover() {
 			s.BuildInfo,
 			debug.Stack(),
 		)
+		logFunc := s.LogFunc
+		if logFunc == nil {
+			logFunc = log.Print
+		}
 
-		s.LogFunc(debugInfo)
+		logFunc(debugInfo)
 		if s.Notifier != nil {
 			if err := s.Notifier.Notify(fmt.Sprint("Panic: ", err), debugInfo); err != nil {
-				s.LogFunc("recover email sending: ", err)
+				logFunc("recover email sending: ", err)
 			}
 		}
 	}
