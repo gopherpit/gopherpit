@@ -8,18 +8,19 @@ package recovery // import "gopherpit.com/gopherpit/pkg/recovery"
 import (
 	"fmt"
 	"runtime/debug"
-
-	"resenje.org/logging"
-
-	"gopherpit.com/gopherpit/pkg/email"
 )
+
+type Notifier interface {
+	Notify(subject, body string) error
+}
 
 // Service provides unified way of logging and notifying panic events.
 type Service struct {
 	Version   string
 	BuildInfo string
+	LogFunc   func(...interface{})
 
-	EmailService *email.Service
+	Notifier Notifier
 }
 
 // Recover is a function that recovers from panic, logs and notifies event.
@@ -38,10 +39,11 @@ func (s Service) Recover() {
 			s.BuildInfo,
 			debug.Stack(),
 		)
-		logging.Error(debugInfo)
-		if s.EmailService != nil && len(s.EmailService.NotifyAddresses) > 0 {
-			if err := s.EmailService.Notify(fmt.Sprint("Panic: ", err), debugInfo); err != nil {
-				logging.Error("recover email sending: ", err)
+
+		s.LogFunc(debugInfo)
+		if s.Notifier != nil {
+			if err := s.Notifier.Notify(fmt.Sprint("Panic: ", err), debugInfo); err != nil {
+				s.LogFunc("recover email sending: ", err)
 			}
 		}
 	}

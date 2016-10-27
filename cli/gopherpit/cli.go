@@ -287,9 +287,10 @@ COPYRIGHT
 	// Recovery service provides unified way of logging and notifying
 	// panic events.
 	recoveryService := &recovery.Service{
-		Version:      config.Version,
-		BuildInfo:    config.BuildInfo,
-		EmailService: emailService,
+		Version:   config.Version,
+		BuildInfo: config.BuildInfo,
+		LogFunc:   logger.Error,
+		Notifier:  emailService,
 	}
 
 	// Session service can be configured to use different implementations.
