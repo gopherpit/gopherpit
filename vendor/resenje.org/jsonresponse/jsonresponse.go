@@ -1,3 +1,8 @@
+// Copyright (c) 2015, 2016 Janoš Guljaš <janos@resenje.org>
+// All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package jsonresponse // import "resenje.org/jsonresponse"
 
 import (
@@ -7,211 +12,275 @@ import (
 )
 
 var (
-	DefaultMessageKey           = "message"
-	DefaultCodeKey              = "code"
-	DefaultProgrammingExcuseKey = "programming-excuse"
-	DefaultContentTypeHeader    = "application/json; charset=utf-8"
+	// DefaultContentTypeHeader is the value of if "Content-Type" header
+	// in HTTP response.
+	DefaultContentTypeHeader = "application/json; charset=utf-8"
 )
 
-type Response map[string]interface{}
-
-func (r Response) String() (s string) {
-	b, err := json.Marshal(r)
-	if err != nil {
-		panic(err)
-	}
-	return string(b)
+// MessageResponse is the response structure that will be written by
+// Respond function if respond argument is nil.
+type MessageResponse struct {
+	Code    int    `json:"code,omitempty"`
+	Message string `json:"message,omitempty"`
 }
 
-func (r Response) Response(w http.ResponseWriter, statusCode int) {
-	if _, ok := r[DefaultMessageKey]; !ok {
-		r[DefaultMessageKey] = http.StatusText(statusCode)
+// Respond writes a JSON-encoded body to http.ResponseWriter.
+func Respond(w http.ResponseWriter, statusCode int, response interface{}) {
+	if response == nil {
+		response = &MessageResponse{}
+	} else if r, ok := response.(MessageResponse); ok {
+		response = &r
 	}
-	if _, ok := r[DefaultCodeKey]; !ok {
-		r[DefaultCodeKey] = statusCode
+	if r, ok := response.(*MessageResponse); ok {
+		if r.Code == 0 {
+			r.Code = statusCode
+		}
+		if r.Message == "" {
+			r.Message = http.StatusText(statusCode)
+		}
+	}
+	b, err := json.Marshal(response)
+	if err != nil {
+		panic(err)
 	}
 	if DefaultContentTypeHeader != "" {
 		w.Header().Set("Content-Type", DefaultContentTypeHeader)
 	}
 	w.WriteHeader(statusCode)
-	fmt.Fprint(w, r.String()+"\n")
+	fmt.Fprint(w, string(b)+"\n")
 }
 
-func (r Response) WithProgrammingExcuse() Response {
-	r[DefaultProgrammingExcuseKey] = randomExcuse()
-	return r
+// Continue writes a response with status code 100.
+func Continue(w http.ResponseWriter, response interface{}) {
+	Respond(w, http.StatusContinue, response)
 }
 
-// 1xx
-
-func (r Response) Continue(w http.ResponseWriter) {
-	r.Response(w, http.StatusContinue)
+// SwitchingProtocols writes a response with status code 101.
+func SwitchingProtocols(w http.ResponseWriter, response interface{}) {
+	Respond(w, http.StatusSwitchingProtocols, response)
 }
 
-func (r Response) SwitchingProtocols(w http.ResponseWriter) {
-	r.Response(w, http.StatusSwitchingProtocols)
+// OK writes a response with status code 200.
+func OK(w http.ResponseWriter, response interface{}) {
+	Respond(w, http.StatusOK, response)
 }
 
-// 2xx
-
-func (r Response) OK(w http.ResponseWriter) {
-	r.Response(w, http.StatusOK)
+// Created writes a response with status code 201.
+func Created(w http.ResponseWriter, response interface{}) {
+	Respond(w, http.StatusCreated, response)
 }
 
-func (r Response) Created(w http.ResponseWriter) {
-	r.Response(w, http.StatusCreated)
+// Accepted writes a response with status code 202.
+func Accepted(w http.ResponseWriter, response interface{}) {
+	Respond(w, http.StatusAccepted, response)
 }
 
-func (r Response) Accepted(w http.ResponseWriter) {
-	r.Response(w, http.StatusAccepted)
+// NonAuthoritativeInfo writes a response with status code 203.
+func NonAuthoritativeInfo(w http.ResponseWriter, response interface{}) {
+	Respond(w, http.StatusNonAuthoritativeInfo, response)
 }
 
-func (r Response) NonAuthoritativeInfo(w http.ResponseWriter) {
-	r.Response(w, http.StatusNonAuthoritativeInfo)
+// NoContent writes a response with status code 204.
+func NoContent(w http.ResponseWriter, response interface{}) {
+	Respond(w, http.StatusNoContent, response)
 }
 
-func (r Response) NoContent(w http.ResponseWriter) {
-	r.Response(w, http.StatusNoContent)
+// ResetContent writes a response with status code 205.
+func ResetContent(w http.ResponseWriter, response interface{}) {
+	Respond(w, http.StatusResetContent, response)
 }
 
-func (r Response) ResetContent(w http.ResponseWriter) {
-	r.Response(w, http.StatusResetContent)
+// PartialContent writes a response with status code 206.
+func PartialContent(w http.ResponseWriter, response interface{}) {
+	Respond(w, http.StatusPartialContent, response)
 }
 
-func (r Response) PartialContent(w http.ResponseWriter) {
-	r.Response(w, http.StatusPartialContent)
+// MultipleChoices writes a response with status code 300.
+func MultipleChoices(w http.ResponseWriter, response interface{}) {
+	Respond(w, http.StatusMultipleChoices, response)
 }
 
-// 3xx
-
-func (r Response) MultipleChoices(w http.ResponseWriter) {
-	r.Response(w, http.StatusMultipleChoices)
+// MovedPermanently writes a response with status code 301.
+func MovedPermanently(w http.ResponseWriter, response interface{}) {
+	Respond(w, http.StatusMovedPermanently, response)
 }
 
-func (r Response) MovedPermanently(w http.ResponseWriter) {
-	r.Response(w, http.StatusMovedPermanently)
+// Found writes a response with status code 302.
+func Found(w http.ResponseWriter, response interface{}) {
+	Respond(w, http.StatusFound, response)
 }
 
-func (r Response) Found(w http.ResponseWriter) {
-	r.Response(w, http.StatusFound)
+// SeeOther writes a response with status code 303.
+func SeeOther(w http.ResponseWriter, response interface{}) {
+	Respond(w, http.StatusSeeOther, response)
 }
 
-func (r Response) SeeOther(w http.ResponseWriter) {
-	r.Response(w, http.StatusSeeOther)
+// NotModified writes a response with status code 304.
+func NotModified(w http.ResponseWriter, response interface{}) {
+	Respond(w, http.StatusNotModified, response)
 }
 
-func (r Response) NotModified(w http.ResponseWriter) {
-	r.Response(w, http.StatusNotModified)
+// UseProxy writes a response with status code 305.
+func UseProxy(w http.ResponseWriter, response interface{}) {
+	Respond(w, http.StatusUseProxy, response)
 }
 
-func (r Response) UseProxy(w http.ResponseWriter) {
-	r.Response(w, http.StatusUseProxy)
+// TemporaryRedirect writes a response with status code 307.
+func TemporaryRedirect(w http.ResponseWriter, response interface{}) {
+	Respond(w, http.StatusTemporaryRedirect, response)
 }
 
-func (r Response) TemporaryRedirect(w http.ResponseWriter) {
-	r.Response(w, http.StatusTemporaryRedirect)
+// PermanentRedirect writes a response with status code 308.
+func PermanentRedirect(w http.ResponseWriter, response interface{}) {
+	Respond(w, http.StatusPermanentRedirect, response)
 }
 
-// 4xx
-
-func (r Response) BadRequest(w http.ResponseWriter) {
-	r.Response(w, http.StatusBadRequest)
+// BadRequest writes a response with status code 400.
+func BadRequest(w http.ResponseWriter, response interface{}) {
+	Respond(w, http.StatusBadRequest, response)
 }
 
-func (r Response) Unauthorized(w http.ResponseWriter) {
-	r.Response(w, http.StatusUnauthorized)
+// Unauthorized writes a response with status code 401.
+func Unauthorized(w http.ResponseWriter, response interface{}) {
+	Respond(w, http.StatusUnauthorized, response)
 }
 
-func (r Response) PaymentRequired(w http.ResponseWriter) {
-	r.Response(w, http.StatusPaymentRequired)
+// PaymentRequired writes a response with status code 402.
+func PaymentRequired(w http.ResponseWriter, response interface{}) {
+	Respond(w, http.StatusPaymentRequired, response)
 }
 
-func (r Response) Forbidden(w http.ResponseWriter) {
-	r.Response(w, http.StatusForbidden)
+// Forbidden writes a response with status code 403.
+func Forbidden(w http.ResponseWriter, response interface{}) {
+	Respond(w, http.StatusForbidden, response)
 }
 
-func (r Response) NotFound(w http.ResponseWriter) {
-	r.Response(w, http.StatusNotFound)
+// NotFound writes a response with status code 404.
+func NotFound(w http.ResponseWriter, response interface{}) {
+	Respond(w, http.StatusNotFound, response)
 }
 
-func (r Response) MethodNotAllowed(w http.ResponseWriter) {
-	r.Response(w, http.StatusMethodNotAllowed)
+// MethodNotAllowed writes a response with status code 405.
+func MethodNotAllowed(w http.ResponseWriter, response interface{}) {
+	Respond(w, http.StatusMethodNotAllowed, response)
 }
 
-func (r Response) NotAcceptable(w http.ResponseWriter) {
-	r.Response(w, http.StatusNotAcceptable)
+// NotAcceptable writes a response with status code 406.
+func NotAcceptable(w http.ResponseWriter, response interface{}) {
+	Respond(w, http.StatusNotAcceptable, response)
 }
 
-func (r Response) ProxyAuthRequired(w http.ResponseWriter) {
-	r.Response(w, http.StatusProxyAuthRequired)
+// ProxyAuthRequired writes a response with status code 407.
+func ProxyAuthRequired(w http.ResponseWriter, response interface{}) {
+	Respond(w, http.StatusProxyAuthRequired, response)
 }
 
-func (r Response) RequestTimeout(w http.ResponseWriter) {
-	r.Response(w, http.StatusRequestTimeout)
+// RequestTimeout writes a response with status code 408.
+func RequestTimeout(w http.ResponseWriter, response interface{}) {
+	Respond(w, http.StatusRequestTimeout, response)
 }
 
-func (r Response) Conflict(w http.ResponseWriter) {
-	r.Response(w, http.StatusConflict)
+// Conflict writes a response with status code 409.
+func Conflict(w http.ResponseWriter, response interface{}) {
+	Respond(w, http.StatusConflict, response)
 }
 
-func (r Response) Gone(w http.ResponseWriter) {
-	r.Response(w, http.StatusGone)
+// Gone writes a response with status code 410.
+func Gone(w http.ResponseWriter, response interface{}) {
+	Respond(w, http.StatusGone, response)
 }
 
-func (r Response) LengthRequired(w http.ResponseWriter) {
-	r.Response(w, http.StatusLengthRequired)
+// LengthRequired writes a response with status code 411.
+func LengthRequired(w http.ResponseWriter, response interface{}) {
+	Respond(w, http.StatusLengthRequired, response)
 }
 
-func (r Response) PreconditionFailed(w http.ResponseWriter) {
-	r.Response(w, http.StatusPreconditionFailed)
+// PreconditionFailed writes a response with status code 412.
+func PreconditionFailed(w http.ResponseWriter, response interface{}) {
+	Respond(w, http.StatusPreconditionFailed, response)
 }
 
-func (r Response) RequestEntityTooLarge(w http.ResponseWriter) {
-	r.Response(w, http.StatusRequestEntityTooLarge)
+// RequestEntityTooLarge writes a response with status code 413.
+func RequestEntityTooLarge(w http.ResponseWriter, response interface{}) {
+	Respond(w, http.StatusRequestEntityTooLarge, response)
 }
 
-func (r Response) RequestURITooLong(w http.ResponseWriter) {
-	r.Response(w, http.StatusRequestURITooLong)
+// RequestURITooLong writes a response with status code 414.
+func RequestURITooLong(w http.ResponseWriter, response interface{}) {
+	Respond(w, http.StatusRequestURITooLong, response)
 }
 
-func (r Response) UnsupportedMediaType(w http.ResponseWriter) {
-	r.Response(w, http.StatusUnsupportedMediaType)
+// UnsupportedMediaType writes a response with status code 415.
+func UnsupportedMediaType(w http.ResponseWriter, response interface{}) {
+	Respond(w, http.StatusUnsupportedMediaType, response)
 }
 
-func (r Response) RequestedRangeNotSatisfiable(w http.ResponseWriter) {
-	r.Response(w, http.StatusRequestedRangeNotSatisfiable)
+// RequestedRangeNotSatisfiable writes a response with status code 416.
+func RequestedRangeNotSatisfiable(w http.ResponseWriter, response interface{}) {
+	Respond(w, http.StatusRequestedRangeNotSatisfiable, response)
 }
 
-func (r Response) ExpectationFailed(w http.ResponseWriter) {
-	r.Response(w, http.StatusExpectationFailed)
+// ExpectationFailed writes a response with status code 417.
+func ExpectationFailed(w http.ResponseWriter, response interface{}) {
+	Respond(w, http.StatusExpectationFailed, response)
 }
 
-func (r Response) Teapot(w http.ResponseWriter) {
-	r.Response(w, http.StatusTeapot)
+// Teapot writes a response with status code 418.
+func Teapot(w http.ResponseWriter, response interface{}) {
+	Respond(w, http.StatusTeapot, response)
 }
 
-// 5xx
-
-func (r Response) InternalServerError(w http.ResponseWriter) {
-	r.Response(w, http.StatusInternalServerError)
+// UpgradeRequired writes a response with status code 426.
+func UpgradeRequired(w http.ResponseWriter, response interface{}) {
+	Respond(w, http.StatusUpgradeRequired, response)
 }
 
-func (r Response) NotImplemented(w http.ResponseWriter) {
-	r.Response(w, http.StatusNotImplemented)
+// PreconditionRequired writes a response with status code 428.
+func PreconditionRequired(w http.ResponseWriter, response interface{}) {
+	Respond(w, http.StatusPreconditionRequired, response)
 }
 
-func (r Response) BadGateway(w http.ResponseWriter) {
-	r.Response(w, http.StatusBadGateway)
+// TooManyRequests writes a response with status code 429.
+func TooManyRequests(w http.ResponseWriter, response interface{}) {
+	Respond(w, http.StatusTooManyRequests, response)
 }
 
-func (r Response) ServiceUnavailable(w http.ResponseWriter) {
-	r.Response(w, http.StatusServiceUnavailable)
+// RequestHeaderFieldsTooLarge writes a response with status code 431.
+func RequestHeaderFieldsTooLarge(w http.ResponseWriter, response interface{}) {
+	Respond(w, http.StatusRequestHeaderFieldsTooLarge, response)
 }
 
-func (r Response) GatewayTimeout(w http.ResponseWriter) {
-	r.Response(w, http.StatusGatewayTimeout)
+// UnavailableForLegalReasons writes a response with status code 451.
+func UnavailableForLegalReasons(w http.ResponseWriter, response interface{}) {
+	Respond(w, http.StatusUnavailableForLegalReasons, response)
 }
 
-func (r Response) HTTPVersionNotSupported(w http.ResponseWriter) {
-	r.Response(w, http.StatusHTTPVersionNotSupported)
+// InternalServerError writes a response with status code 500.
+func InternalServerError(w http.ResponseWriter, response interface{}) {
+	Respond(w, http.StatusInternalServerError, response)
+}
+
+// NotImplemented writes a response with status code 501.
+func NotImplemented(w http.ResponseWriter, response interface{}) {
+	Respond(w, http.StatusNotImplemented, response)
+}
+
+// BadGateway writes a response with status code 502.
+func BadGateway(w http.ResponseWriter, response interface{}) {
+	Respond(w, http.StatusBadGateway, response)
+}
+
+// ServiceUnavailable writes a response with status code 503.
+func ServiceUnavailable(w http.ResponseWriter, response interface{}) {
+	Respond(w, http.StatusServiceUnavailable, response)
+}
+
+// GatewayTimeout writes a response with status code 504.
+func GatewayTimeout(w http.ResponseWriter, response interface{}) {
+	Respond(w, http.StatusGatewayTimeout, response)
+}
+
+// HTTPVersionNotSupported writes a response with status code 505.
+func HTTPVersionNotSupported(w http.ResponseWriter, response interface{}) {
+	Respond(w, http.StatusHTTPVersionNotSupported, response)
 }
