@@ -22,13 +22,13 @@ import (
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
+	"resenje.org/email"
 	"resenje.org/httphandlers"
 	"resenje.org/httphandlers/file-server"
 	"resenje.org/logging"
+	"resenje.org/recovery"
 
 	"gopherpit.com/gopherpit/pkg/certificate-cache"
-	"gopherpit.com/gopherpit/pkg/email"
-	"gopherpit.com/gopherpit/pkg/recovery"
 	"gopherpit.com/gopherpit/pkg/webutils"
 	"gopherpit.com/gopherpit/services/certificate"
 	"gopherpit.com/gopherpit/services/notification"

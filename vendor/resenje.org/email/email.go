@@ -3,7 +3,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package email // import "gopherpit.com/gopherpit/pkg/email"
+package email // import "resenje.org/email"
 
 import (
 	"crypto/tls"

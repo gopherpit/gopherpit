@@ -18,8 +18,7 @@ import (
 	"time"
 
 	"github.com/boltdb/bolt"
-
-	"gopherpit.com/gopherpit/pkg/boltutils"
+	"resenje.org/boltutils"
 
 	"gopherpit.com/gopherpit/services/packages"
 )

@@ -153,10 +153,22 @@
 			"revisionTime": "2016-10-13T17:58:31Z"
 		},
 		{
+			"checksumSHA1": "RO6y1j9xZGRkvJlARQm46rDgptk=",
+			"path": "resenje.org/boltutils",
+			"revision": "0918b2b7e71222d3fbb1d86706bbea7fc8052a9f",
+			"revisionTime": "2016-10-28T22:04:20Z"
+		},
+		{
 			"checksumSHA1": "Xhm3zL3nkB/tlctWPRBNTzzj07U=",
 			"path": "resenje.org/daemon",
 			"revision": "cfa6e4909d48d82fc5e95c1d6edaee4521dc4400",
 			"revisionTime": "2016-09-12T15:47:39Z"
+		},
+		{
+			"checksumSHA1": "2wlM99RlETT0eeQ8Av//bz/jipE=",
+			"path": "resenje.org/email",
+			"revision": "30e9ac8f9fd79b4f6dfe040f50efab0047904deb",
+			"revisionTime": "2016-10-28T22:04:37Z"
 		},
 		{
 			"checksumSHA1": "L2WPkqB+fjWxw8iwghe09D73EAE=",
@@ -187,6 +199,12 @@
 			"path": "resenje.org/marshal",
 			"revision": "bd17c4bd170bcbde90b0c6c3eaf2ab574428a188",
 			"revisionTime": "2016-09-19T17:02:59Z"
+		},
+		{
+			"checksumSHA1": "Fh/9MY2lfl/l6QPr/tBHpCF1W/Y=",
+			"path": "resenje.org/recovery",
+			"revision": "3c5a5d00cba3a7f04523aa6836afd6e5302d08ef",
+			"revisionTime": "2016-10-28T22:04:02Z"
 		}
 	],
 	"rootPath": "gopherpit.com/gopherpit"

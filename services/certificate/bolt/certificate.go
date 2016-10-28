@@ -13,8 +13,8 @@ import (
 	"time"
 
 	"github.com/boltdb/bolt"
+	"resenje.org/boltutils"
 
-	"gopherpit.com/gopherpit/pkg/boltutils"
 	"gopherpit.com/gopherpit/services/certificate"
 )
 

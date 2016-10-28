@@ -20,11 +20,11 @@ import (
 	"time"
 
 	"resenje.org/daemon"
+	"resenje.org/email"
 	"resenje.org/logging"
+	"resenje.org/recovery"
 
 	"gopherpit.com/gopherpit/pkg/client"
-	"gopherpit.com/gopherpit/pkg/email"
-	"gopherpit.com/gopherpit/pkg/recovery"
 	"gopherpit.com/gopherpit/pkg/service"
 	"gopherpit.com/gopherpit/server"
 	"gopherpit.com/gopherpit/server/config"

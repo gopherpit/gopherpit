@@ -16,8 +16,7 @@ import (
 	"github.com/boltdb/bolt"
 	"github.com/xenolf/lego/acme"
 	"resenje.org/logging"
-
-	"gopherpit.com/gopherpit/pkg/recovery"
+	"resenje.org/recovery"
 
 	"gopherpit.com/gopherpit/services/certificate"
 )
