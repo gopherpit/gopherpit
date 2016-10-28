@@ -16,12 +16,12 @@
     var $form = $(".package-form");
     $form.ajaxform({
       ok: function(data) {
-        window.location = encodeURI("/domain/[[ .Domain.ID | js ]]")
+        window.location = encodeURI("/domain/[[ .Domain.FQDN | js ]]")
       }
     });
     $(".button.delete-package").ajaxbutton({
       ok: function() {
-        window.location = encodeURI("/domain/[[ .Domain.ID | js ]]")
+        window.location = encodeURI("/domain/[[ .Domain.FQDN | js ]]")
       }
     })
   })
