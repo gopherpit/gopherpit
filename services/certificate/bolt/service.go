@@ -102,7 +102,7 @@ func (s Service) ObtainCertificate(fqdn string) (c *certificate.Certificate, err
 	}
 	client.ExcludeChallenges([]acme.Challenge{acme.TLSSNI01, acme.DNS01})
 
-	certResource, failures := client.ObtainCertificate([]string{fqdn}, true, nil)
+	certResource, failures := client.ObtainCertificate([]string{fqdn}, true, nil, false)
 	if len(failures) > 0 {
 		err = failures[fqdn]
 		return
