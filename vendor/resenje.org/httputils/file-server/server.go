@@ -1,4 +1,9 @@
-package fileServer
+// Copyright (c) 2016, Janoš Guljaš <janos@resenje.org>
+// All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
+package fileServer // import "resenje.org/httputils/file-server"
 
 import (
 	"net/http"
@@ -8,45 +13,34 @@ import (
 	"sync"
 )
 
+// Server is a HTTP Handler tha serves static files from local filesystem.
 type Server struct {
-	Hasher                Hasher
-	NoHashQueryStrings    bool
-	RedirectTrailingSlash bool
-	IndexPage             string
-
-	NotFoundHandler            http.Handler
-	ForbiddenHandler           http.Handler
-	InternalServerErrorHandler http.Handler
+	Options
 
 	root string
 	dir  string
 
 	hashes map[string]string
-	mu     sync.RWMutex
+	mu     *sync.RWMutex
 }
 
+// New initializes a new instance of Server.
 func New(root, dir string, options *Options) *Server {
 	if options == nil {
 		options = &Options{}
 	}
 	return &Server{
-		Hasher:                options.Hasher,
-		NoHashQueryStrings:    options.NoHashQueryStrings,
-		RedirectTrailingSlash: options.RedirectTrailingSlash,
-		IndexPage:             options.IndexPage,
-
-		NotFoundHandler:            options.NotFoundHandler,
-		ForbiddenHandler:           options.ForbiddenHandler,
-		InternalServerErrorHandler: options.InternalServerErrorHandler,
+		Options: *options,
 
 		root: root,
 		dir:  dir,
 
 		hashes: map[string]string{},
-		mu:     sync.RWMutex{},
+		mu:     &sync.RWMutex{},
 	}
 }
 
+// ServeHTTP writes static files content to HTTP response.
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	urlPath := r.URL.Path
 	if !strings.HasPrefix(urlPath, "/") {
@@ -57,7 +51,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	if s.root != "" {
 		if p = strings.TrimPrefix(p, s.root); len(p) >= len(r.URL.Path) {
-			s.HTTPError(w, r, errNotFound)
+			s.httpError(w, r, errNotFound)
 			return
 		}
 	}
@@ -73,7 +67,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		h, err := s.hash(cPath)
 		if err != errNotRegularFile { // continue as usual if it is not a regular file
 			if err != nil {
-				s.HTTPError(w, r, err)
+				s.httpError(w, r, err)
 				return
 			}
 			if hPath := s.hashedPath(cPath, h); hPath != p {
@@ -91,14 +85,14 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	f, err := open(s.dir, p)
 	if err != nil {
-		s.HTTPError(w, r, err)
+		s.httpError(w, r, err)
 		return
 	}
 	defer f.Close()
 
 	d, err := f.Stat()
 	if err != nil {
-		s.HTTPError(w, r, err)
+		s.httpError(w, r, err)
 		return
 	}
 
@@ -132,13 +126,14 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if d.IsDir() {
-		s.HTTPError(w, r, errNotFound)
+		s.httpError(w, r, errNotFound)
 		return
 	}
 
 	http.ServeContent(w, r, d.Name(), d.ModTime(), f)
 }
 
+// HashedPath returns a URL path with hash injected into the filename.
 func (s *Server) HashedPath(p string) (string, error) {
 	if s.Hasher == nil {
 		return p, nil
@@ -150,7 +145,7 @@ func (s *Server) HashedPath(p string) (string, error) {
 	return path.Join(s.root, s.hashedPath(p, h)), nil
 }
 
-func (s Server) HTTPError(w http.ResponseWriter, r *http.Request, err error) {
+func (s Server) httpError(w http.ResponseWriter, r *http.Request, err error) {
 	if os.IsNotExist(err) || err == errNotFound {
 		if s.NotFoundHandler != nil {
 			s.NotFoundHandler.ServeHTTP(w, r)

@@ -23,13 +23,13 @@ import (
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"resenje.org/email"
-	"resenje.org/httphandlers"
-	"resenje.org/httphandlers/file-server"
+	"resenje.org/httputils"
+	"resenje.org/httputils/file-server"
+	"resenje.org/httputils/log/access"
 	"resenje.org/logging"
 	"resenje.org/recovery"
 
 	"gopherpit.com/gopherpit/pkg/certificate-cache"
-	"gopherpit.com/gopherpit/pkg/webutils"
 	"gopherpit.com/gopherpit/services/certificate"
 	"gopherpit.com/gopherpit/services/notification"
 	"gopherpit.com/gopherpit/services/packages"
@@ -193,7 +193,7 @@ func NewServer(o Options) (s *Server, err error) {
 		if err != nil {
 			panic(fmt.Sprintf("get access logger: %s", err))
 		}
-		return webutils.AccessLogHandler(h, logger)
+		return accessLog.NewHandler(h, logger)
 	}
 
 	//
@@ -209,7 +209,7 @@ func NewServer(o Options) (s *Server, err error) {
 		s.htmlRecoveryHandler,
 		accessLogHandler,
 		s.htmlMaxBodyBytesHandler,
-		httphandlers.NoExpireHeadersHandler,
+		httputils.NoExpireHeadersHandler,
 		func(h http.Handler) http.Handler {
 			return s.assetsServer
 		},
@@ -217,12 +217,12 @@ func NewServer(o Options) (s *Server, err error) {
 
 	staticHandler := chainHandlers(
 		func(h http.Handler) http.Handler {
-			return httphandlers.SetHeadersHandler(h, &map[string]string{
+			return httputils.NewSetHeadersHandler(h, map[string]string{
 				"Cache-Control": "no-cache",
 			})
 		},
 		func(h http.Handler) http.Handler {
-			return httphandlers.StaticFilesHandler(h, "/", http.Dir(o.StaticDir))
+			return httputils.NewStaticFilesHandler(h, "/", http.Dir(o.StaticDir))
 		},
 		func(h http.Handler) http.Handler {
 			return http.HandlerFunc(s.htmlNotFoundHandler)
@@ -614,7 +614,7 @@ func NewServer(o Options) (s *Server, err error) {
 	s.handler = chainHandlers(
 		s.domainHandler,
 		func(h http.Handler) http.Handler {
-			return httphandlers.SetHeadersHandler(h, &o.Headers)
+			return httputils.NewSetHeadersHandler(h, o.Headers)
 		},
 		func(h http.Handler) http.Handler {
 			return baseRouter
@@ -632,7 +632,7 @@ func NewServer(o Options) (s *Server, err error) {
 	internalRouter := http.NewServeMux()
 	internalBaseRouter.Handle("/", chainHandlers(
 		handlers.CompressHandler,
-		httphandlers.NoCacheHeadersHandler,
+		httputils.NoCacheHeadersHandler,
 		func(h http.Handler) http.Handler {
 			return internalRouter
 		},
@@ -654,7 +654,7 @@ func NewServer(o Options) (s *Server, err error) {
 	internalBaseRouter.Handle("/api/", chainHandlers(
 		handlers.CompressHandler,
 		s.jsonRecoveryHandler,
-		httphandlers.NoCacheHeadersHandler,
+		httputils.NoCacheHeadersHandler,
 		func(h http.Handler) http.Handler {
 			return internalAPIRouter
 		},
@@ -672,7 +672,7 @@ func NewServer(o Options) (s *Server, err error) {
 	//
 	s.internalHandler = chainHandlers(
 		func(h http.Handler) http.Handler {
-			return httphandlers.SetHeadersHandler(h, &o.Headers)
+			return httputils.NewSetHeadersHandler(h, o.Headers)
 		},
 		func(h http.Handler) http.Handler {
 			return internalBaseRouter
@@ -773,7 +773,7 @@ func (s *Server) Serve(o ServeOptions) error {
 			return fmt.Errorf("listen tls '%v': %s", o.ListenTLS, err)
 		}
 
-		ln = &httphandlers.TLSListener{
+		ln = &httputils.TLSListener{
 			TCPListener: ln.(*net.TCPListener),
 			TLSConfig:   tlsConfig,
 		}
@@ -781,7 +781,7 @@ func (s *Server) Serve(o ServeOptions) error {
 		server := &http.Server{
 			Handler: s.nilRecoveryHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				if r.TLS == nil {
-					httphandlers.HTTPToHTTPSRedirectHandler(w, r)
+					httputils.HTTPToHTTPSRedirectHandler(w, r)
 					return
 				}
 				// Handle go get domain/...
@@ -872,7 +872,7 @@ func (s *Server) Serve(o ServeOptions) error {
 			return fmt.Errorf("listen internal tls '%v': %s", o.ListenInternalTLS, err)
 		}
 
-		ln = &httphandlers.TLSListener{
+		ln = &httputils.TLSListener{
 			TCPListener: ln.(*net.TCPListener),
 			TLSConfig:   tlsConfig,
 		}

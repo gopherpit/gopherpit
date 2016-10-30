@@ -5,12 +5,16 @@
 
 package user
 
-import "fmt"
+import (
+	"fmt"
+
+	"resenje.org/httputils/client/api"
+)
 
 var (
 	// ErrorRegistry is a map of error codes to errors.
 	// It is usually used in gopherpit.com/gopherpit/pkg/client.Client.
-	ErrorRegistry = map[int]error{}
+	ErrorRegistry = apiClient.NewMapErrorRegistry(nil)
 	serviceName   = "user"
 )
 
@@ -35,9 +39,8 @@ func NewError(code int, message string) (err *Error) {
 		Message: message,
 		Code:    code,
 	}
-	if _, ok := ErrorRegistry[code]; ok {
-		panic(fmt.Sprintf("%s service error %v registered twice", serviceName, code))
+	if e := ErrorRegistry.AddError(code, err); e != nil {
+		panic(fmt.Sprintf("%s service error %v: %s", serviceName, code, e))
 	}
-	ErrorRegistry[code] = err
 	return
 }

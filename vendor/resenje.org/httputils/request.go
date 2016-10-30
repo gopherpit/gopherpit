@@ -3,15 +3,15 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package webutils
+package httputils
 
 import (
 	"net/http"
 	"strings"
 )
 
-// GetIPs returns all possible IPs found in HTTP request.
-func GetIPs(r *http.Request) string {
+// GetRequestIPs returns all possible IPs found in HTTP request.
+func GetRequestIPs(r *http.Request) string {
 	var ips []string
 	idx := strings.LastIndex(r.RemoteAddr, ":")
 	if idx == -1 {
@@ -30,8 +30,9 @@ func GetIPs(r *http.Request) string {
 	return strings.Join(ips, ", ")
 }
 
-// GetHost returns request's host perpended with protocol: protocol://host.
-func GetHost(r *http.Request) string {
+// GetRequestEndpoint returns request's host perpended with protocol:
+// protocol://host.
+func GetRequestEndpoint(r *http.Request) string {
 	proto := r.Header.Get("X-Forwarded-Proto")
 	if proto == "" {
 		if r.TLS == nil {

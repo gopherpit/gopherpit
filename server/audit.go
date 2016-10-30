@@ -11,7 +11,8 @@ import (
 	"net/http"
 	"time"
 
-	"gopherpit.com/gopherpit/pkg/webutils"
+	"resenje.org/httputils"
+
 	"gopherpit.com/gopherpit/services/user"
 )
 
@@ -47,7 +48,7 @@ func (s Server) audit(r *http.Request, info interface{}, action, message string)
 		Username: username,
 		Email:    email,
 		Info:     info,
-		IPs:      webutils.GetIPs(r),
+		IPs:      httputils.GetRequestIPs(r),
 		Action:   action,
 		Message:  message,
 	})

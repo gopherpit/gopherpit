@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"resenje.org/antixsrf"
-	"resenje.org/httphandlers"
+	"resenje.org/httputils"
 	"resenje.org/jsonresponse"
 
 	"gopherpit.com/gopherpit/pkg/service"
@@ -21,7 +21,7 @@ import (
 )
 
 // A shorter variable for function that chains handlers.
-var chainHandlers = httphandlers.ChainHandlers
+var chainHandlers = httputils.ChainHandlers
 
 // Helper function for raising unexpected errors in JSON API handlers.
 func jsonServerError(w http.ResponseWriter, err error) {
@@ -157,20 +157,39 @@ func (s Server) nilRecoveryHandler(h http.Handler) http.Handler {
 }
 
 func (s *Server) htmlMaxBodyBytesHandler(h http.Handler) http.Handler {
-	m, err := renderToString(s.template(tidRequestEntityTooLarge), "", nil)
-	if err != nil {
-		s.logger.Errorf("htmlMaxBodyBytesHandler Template413 error: %s", err)
-		m = "Request Entity Too Large"
+	return httputils.MaxBodyBytesHandler{
+		Handler: h,
+		Limit:   2 * 1024 * 1024,
+		BodyFunc: func(r *http.Request) (string, error) {
+			return renderToString(s.template(tidRequestEntityTooLarge), "", nil)
+		},
+		ContentType:  "text/html; charset=utf-8",
+		ErrorHandler: s.htmlServerError,
 	}
-	return httphandlers.MaxBodyBytesHandler(h, 20*1024, m, "text/html; charset=utf-8")
 }
 
 func textMaxBodyBytesHandler(h http.Handler) http.Handler {
-	return httphandlers.MaxBodyBytesHandler(h, 20*1024, `Request Entity Too Large`, "text/plain; charset=utf-8")
+	return httputils.MaxBodyBytesHandler{
+		Handler: h,
+		Limit:   2 * 1024 * 1024,
+		BodyFunc: func(r *http.Request) (string, error) {
+			return `Request Entity Too Large`, nil
+		},
+		ContentType:  "text/plain; charset=utf-8",
+		ErrorHandler: nil,
+	}
 }
 
 func jsonMaxBodyBytesHandler(h http.Handler) http.Handler {
-	return httphandlers.MaxBodyBytesHandler(h, 20*1024, `{"message":"Request Entity Too Large error","code":413}`, "application/json; charset=utf-8")
+	return httputils.MaxBodyBytesHandler{
+		Handler: h,
+		Limit:   2 * 1024 * 1024,
+		BodyFunc: func(r *http.Request) (string, error) {
+			return `{"message":"Request Entity Too Large error","code":413}`, nil
+		},
+		ContentType:  "application/json; charset=utf-8",
+		ErrorHandler: nil,
+	}
 }
 
 func (s Server) htmlNotFoundHandler(w http.ResponseWriter, r *http.Request) {
@@ -344,13 +363,13 @@ func (s *Server) jsonValidatedEmailRequiredHandler(h http.Handler) http.Handler 
 type textMethodHandler map[string]http.Handler
 
 func (h textMethodHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	httphandlers.MethodHandler(h, "Method Not Allowed", "text/plain; charset=utf-8", w, r)
+	httputils.HandleMethods(h, "Method Not Allowed", "text/plain; charset=utf-8", w, r)
 }
 
 type jsonMethodHandler map[string]http.Handler
 
 func (h jsonMethodHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	httphandlers.MethodHandler(h, `{"message": "Method Not Allowed", "code": 405}`, "application/json; charset=utf-8", w, r)
+	httputils.HandleMethods(h, `{"message": "Method Not Allowed", "code": 405}`, "application/json; charset=utf-8", w, r)
 }
 
 func noCacheHeaderHandler(h http.Handler) http.Handler {

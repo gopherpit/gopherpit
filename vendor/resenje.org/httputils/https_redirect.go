@@ -1,4 +1,9 @@
-package httphandlers // import "resenje.org/httphandlers"
+// Copyright (c) 2016, Janoš Guljaš <janos@resenje.org>
+// All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
+package httputils
 
 import (
 	"crypto/tls"
@@ -31,11 +36,19 @@ func (c *conn) Read(b []byte) (int, error) {
 	return c.Conn.Read(b)
 }
 
+// TLSListener is a TCP listener that will check if the connection should be
+// encrypted, and return encrypted connection, and if not, to return plain
+// connection. It can be used along with HTTPToHTTPSRedirectHandler, to
+// automatically redirect users from http:// to https:// protocol, by checking
+// if http.Request has TLS equal to nil. Or to provide provide a different
+// content in case that client provided or not TLS connection.
 type TLSListener struct {
 	*net.TCPListener
 	TLSConfig *tls.Config
 }
 
+// Accept accepts TCP connection, sets keep alive and checks if a client
+// requested an encrypted connection.
 func (l TLSListener) Accept() (net.Conn, error) {
 	c, err := l.AcceptTCP()
 	if err != nil {
@@ -67,6 +80,8 @@ func (l TLSListener) Accept() (net.Conn, error) {
 	return con, nil
 }
 
+// HTTPToHTTPSRedirectHandler redirects with status code 301 to a https://
+// version of HTTP request.
 func HTTPToHTTPSRedirectHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Location", "https://"+r.Host+r.RequestURI)
 	w.WriteHeader(http.StatusMovedPermanently)

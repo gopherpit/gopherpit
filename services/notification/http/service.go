@@ -9,7 +9,8 @@ import (
 	"bytes"
 	"encoding/json"
 
-	"gopherpit.com/gopherpit/pkg/client"
+	"resenje.org/httputils/client/api"
+
 	"gopherpit.com/gopherpit/services/notification"
 )
 
@@ -17,7 +18,7 @@ import (
 // interface.
 type Service struct {
 	// Client provides HTTP request making functionality.
-	Client *client.Client
+	Client *apiClient.Client
 }
 
 // SendEmailResponse is expected structure of JSON-encoded response

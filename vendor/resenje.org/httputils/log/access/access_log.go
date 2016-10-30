@@ -3,7 +3,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package webutils
+package accessLog // import "resenje.org/httputils/log/access"
 
 import (
 	"net/http"
@@ -54,12 +54,12 @@ func (l *responseLogger) Size() int {
 	return l.size
 }
 
-// AccessLogHandler logs HTTP requests that HTTP sever handles.
+// NewHandler returns a handler that logs HTTP requests.
 // It logs information about remote address, X-Forwarded-For or X-Real-Ip,
 // HTTP method, request URI, HTTP protocol, HTTP response status, total bytes
 // written to http.ResponseWriter, response duration, HTTP referrer and
 // HTTP client user agent.
-func AccessLogHandler(h http.Handler, logger *logging.Logger) http.Handler {
+func NewHandler(h http.Handler, logger *logging.Logger) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		startTime := time.Now()
 		rl := &responseLogger{w, 0, 0}

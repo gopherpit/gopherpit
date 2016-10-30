@@ -12,9 +12,8 @@ import (
 	"net/http"
 	"strings"
 
+	"resenje.org/httputils"
 	"resenje.org/jsonresponse"
-
-	"gopherpit.com/gopherpit/pkg/webutils"
 )
 
 type contactRequest struct {
@@ -30,7 +29,7 @@ func (s Server) contactPrivateFEAPIHandler(w http.ResponseWriter, r *http.Reques
 	}
 
 	request := contactRequest{}
-	errors := webutils.FormErrors{}
+	errors := httputils.FormErrors{}
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		s.logger.Warningf("contact private fe api: request decode %s %s: %s", u.ID, u.Email, err)
 		errors.AddError("Invalid data.")
@@ -63,7 +62,7 @@ func (s Server) contactPrivateFEAPIHandler(w http.ResponseWriter, r *http.Reques
 
 func (s Server) contactFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 	request := contactRequest{}
-	errors := webutils.FormErrors{}
+	errors := httputils.FormErrors{}
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		s.logger.Warningf("contact fe api: request decode: %s", err)
 		errors.AddError("Invalid data.")

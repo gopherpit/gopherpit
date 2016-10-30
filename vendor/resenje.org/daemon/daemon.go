@@ -19,7 +19,7 @@ import (
 	"syscall"
 )
 
-// Structure that holds information about PID file.
+// Daemon is a structure that holds information about PID file.
 type Daemon struct {
 	PidFileName string
 	PidFileMode os.FileMode
@@ -53,16 +53,12 @@ func (d *Daemon) Daemonize(workDir string, inFile io.Reader, outFile io.Writer, 
 		os.Chdir(workDir)
 	}
 
-	s_ret, s_err := syscall.Setsid()
-	if s_err != nil {
-		return s_err
-	}
-
-	if err := ioutil.WriteFile(d.PidFileName, []byte(strconv.Itoa(s_ret)), d.PidFileMode); err != nil {
+	s, err := syscall.Setsid()
+	if err != nil {
 		return err
 	}
 
-	return nil
+	return ioutil.WriteFile(d.PidFileName, []byte(strconv.Itoa(s)), d.PidFileMode)
 }
 
 // Cleanup removes PID file.
@@ -73,7 +69,7 @@ func (d *Daemon) Cleanup() error {
 	return os.Remove(d.PidFileName)
 }
 
-// PID returns process ID if available.
+// Pid returns process ID if available.
 func (d *Daemon) Pid() (int, error) {
 	pid, err := ioutil.ReadFile(d.PidFileName)
 	if err != nil {
@@ -115,7 +111,7 @@ func (d *Daemon) Status() (pid int, err error) {
 	return p.Pid, p.Signal(syscall.Signal(0x0))
 }
 
-// Stops sends SIGTERM signal to the daemonized process. If it fails,
+// Stop sends SIGTERM signal to the daemonized process. If it fails,
 // SIGKILL signal is sent.
 func (d *Daemon) Stop() error {
 	process, err := d.Process()

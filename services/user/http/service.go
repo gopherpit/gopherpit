@@ -14,13 +14,14 @@ import (
 	"strconv"
 	"time"
 
-	"gopherpit.com/gopherpit/pkg/client"
+	"resenje.org/httputils/client/api"
+
 	"gopherpit.com/gopherpit/services/user"
 )
 
 // Service implements gopherpit.com/gopherpit/services/user.Service interface.
 type Service struct {
-	Client *client.Client
+	Client *apiClient.Client
 }
 
 // User retrieves an existing User instance by making a HTTP GET request

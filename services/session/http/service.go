@@ -11,14 +11,15 @@ import (
 	"bytes"
 	"encoding/json"
 
-	"gopherpit.com/gopherpit/pkg/client"
+	"resenje.org/httputils/client/api"
+
 	"gopherpit.com/gopherpit/services/session"
 )
 
 // Service implements gopherpit.com/gopherpit/services/session.Service interface.
 type Service struct {
 	// Client provides HTTP request making functionality.
-	Client *client.Client
+	Client *apiClient.Client
 }
 
 // Session retrieves a Session instance by making a HTTP GET request

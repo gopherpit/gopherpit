@@ -11,14 +11,14 @@ import (
 	"net/url"
 	"strconv"
 
-	"gopherpit.com/gopherpit/pkg/client"
+	"resenje.org/httputils/client/api"
 
 	"gopherpit.com/gopherpit/services/packages"
 )
 
 // Service implements gopherpit.com/gopherpit/services/packages.Service interface.
 type Service struct {
-	Client *client.Client
+	Client *apiClient.Client
 }
 
 func (s Service) Domain(ref string) (d *packages.Domain, err error) {

@@ -10,7 +10,7 @@ import "testing"
 func TestNewError(t *testing.T) {
 	var errorCode = 1
 	err := NewError(errorCode, "error 1")
-	if err != ErrorRegistry[errorCode] {
+	if err != ErrorRegistry.Error(errorCode) {
 		t.Errorf("New error was not found in ErrorRegistry")
 	}
 }

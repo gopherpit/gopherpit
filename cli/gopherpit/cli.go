@@ -21,10 +21,11 @@ import (
 
 	"resenje.org/daemon"
 	"resenje.org/email"
+	"resenje.org/httputils/client/api"
+	"resenje.org/httputils/client/http"
 	"resenje.org/logging"
 	"resenje.org/recovery"
 
-	"gopherpit.com/gopherpit/pkg/client"
 	"gopherpit.com/gopherpit/pkg/service"
 	"gopherpit.com/gopherpit/server"
 	"gopherpit.com/gopherpit/server/config"
@@ -297,14 +298,14 @@ COPYRIGHT
 	// If session endpoint in services options is not blank, use http service.
 	var sessionService session.Service
 	if servicesOptions.SessionEndpoint != "" {
-		c := &client.Client{
+		c := &apiClient.Client{
 			Endpoint:      servicesOptions.SessionEndpoint,
 			Key:           servicesOptions.SessionKey,
 			UserAgent:     config.UserAgent,
 			ErrorRegistry: session.ErrorRegistry,
 		}
 		if servicesOptions.SessionOptions != nil {
-			c.HTTPClient = client.NewHTTPClient(servicesOptions.SessionOptions)
+			c.HTTPClient = httpClient.New(servicesOptions.SessionOptions)
 		}
 		sessionService = &httpSession.Service{
 			Client: c,
@@ -325,14 +326,14 @@ COPYRIGHT
 	// If user endpoint in services options is not blank, use http service.
 	var userService user.Service
 	if servicesOptions.UserEndpoint != "" {
-		c := &client.Client{
+		c := &apiClient.Client{
 			Endpoint:      servicesOptions.UserEndpoint,
 			Key:           servicesOptions.UserKey,
 			UserAgent:     config.UserAgent,
 			ErrorRegistry: user.ErrorRegistry,
 		}
 		if servicesOptions.UserOptions != nil {
-			c.HTTPClient = client.NewHTTPClient(servicesOptions.UserOptions)
+			c.HTTPClient = httpClient.New(servicesOptions.UserOptions)
 		}
 		userService = &httpUser.Service{
 			Client: c,
@@ -375,14 +376,14 @@ COPYRIGHT
 	}
 	var notificationService notification.Service
 	if servicesOptions.NotificationEndpoint != "" {
-		c := &client.Client{
+		c := &apiClient.Client{
 			Endpoint:      servicesOptions.NotificationEndpoint,
 			Key:           servicesOptions.NotificationKey,
 			UserAgent:     config.UserAgent,
 			ErrorRegistry: notification.ErrorRegistry,
 		}
 		if servicesOptions.NotificationOptions != nil {
-			c.HTTPClient = client.NewHTTPClient(servicesOptions.NotificationOptions)
+			c.HTTPClient = httpClient.New(servicesOptions.NotificationOptions)
 		}
 		notificationService = &httpNotification.Service{
 			Client: c,
@@ -407,14 +408,14 @@ COPYRIGHT
 	}
 	var certificateService certificate.Service
 	if servicesOptions.CertificateEndpoint != "" {
-		c := &client.Client{
+		c := &apiClient.Client{
 			Endpoint:      servicesOptions.CertificateEndpoint,
 			Key:           servicesOptions.CertificateKey,
 			UserAgent:     config.UserAgent,
 			ErrorRegistry: certificate.ErrorRegistry,
 		}
 		if servicesOptions.CertificateOptions != nil {
-			c.HTTPClient = client.NewHTTPClient(servicesOptions.CertificateOptions)
+			c.HTTPClient = httpClient.New(servicesOptions.CertificateOptions)
 		}
 		certificateService = &httpCertificate.Service{
 			Client: c,
@@ -436,14 +437,14 @@ COPYRIGHT
 	}
 	var packagesService packages.Service
 	if servicesOptions.PackagesEndpoint != "" {
-		c := &client.Client{
+		c := &apiClient.Client{
 			Endpoint:      servicesOptions.PackagesEndpoint,
 			Key:           servicesOptions.PackagesKey,
 			UserAgent:     config.UserAgent,
 			ErrorRegistry: packages.ErrorRegistry,
 		}
 		if servicesOptions.PackagesOptions != nil {
-			c.HTTPClient = client.NewHTTPClient(servicesOptions.PackagesOptions)
+			c.HTTPClient = httpClient.New(servicesOptions.PackagesOptions)
 		}
 		packagesService = &httpPackages.Service{
 			Client: c,

@@ -14,14 +14,14 @@ import (
 	"strconv"
 	"time"
 
-	"gopherpit.com/gopherpit/pkg/client"
+	"resenje.org/httputils/client/api"
 
 	"gopherpit.com/gopherpit/services/certificate"
 )
 
 // Service implements gopherpit.com/gopherpit/services/certificates.Service interface.
 type Service struct {
-	Client *client.Client
+	Client *apiClient.Client
 }
 
 // Certificate retrieves an existing Certificate instance by making a HTTP GET request

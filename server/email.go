@@ -13,9 +13,9 @@ import (
 	"net/http"
 	"regexp"
 
+	"resenje.org/httputils"
 	"resenje.org/logging"
 
-	"gopherpit.com/gopherpit/pkg/webutils"
 	"gopherpit.com/gopherpit/services/notification"
 )
 
@@ -33,7 +33,7 @@ func (s Server) sendEmailValidationEmail(r *http.Request, to, token string) erro
 
 	if err := emailTemplateEmailValidateText.Execute(&textBody, map[string]interface{}{
 		"Brand":              s.Brand,
-		"Host":               webutils.GetHost(r),
+		"Host":               httputils.GetRequestEndpoint(r),
 		"Token":              token,
 		"EmailSettingsToken": string(emailSettingsToken),
 	}); err != nil {
@@ -42,7 +42,7 @@ func (s Server) sendEmailValidationEmail(r *http.Request, to, token string) erro
 
 	if err := emailTemplateEmailValidateHTML.Execute(&htmlBody, map[string]interface{}{
 		"Brand":              s.Brand,
-		"Host":               webutils.GetHost(r),
+		"Host":               httputils.GetRequestEndpoint(r),
 		"Token":              token,
 		"EmailSettingsToken": string(emailSettingsToken),
 	}); err != nil {
@@ -72,7 +72,7 @@ func (s Server) sendEmailPasswordResetEmail(r *http.Request, to, token string) e
 
 	if err := emailTemplatePasswordResetText.Execute(&textBody, map[string]interface{}{
 		"Brand":              s.Brand,
-		"Host":               webutils.GetHost(r),
+		"Host":               httputils.GetRequestEndpoint(r),
 		"Token":              token,
 		"EmailSettingsToken": string(emailSettingsToken),
 	}); err != nil {
@@ -81,7 +81,7 @@ func (s Server) sendEmailPasswordResetEmail(r *http.Request, to, token string) e
 
 	if err := emailTemplatePasswordResetHTML.Execute(&htmlBody, map[string]interface{}{
 		"Brand":              s.Brand,
-		"Host":               webutils.GetHost(r),
+		"Host":               httputils.GetRequestEndpoint(r),
 		"Token":              token,
 		"EmailSettingsToken": string(emailSettingsToken),
 	}); err != nil {

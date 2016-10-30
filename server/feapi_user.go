@@ -13,10 +13,10 @@ import (
 	"strings"
 	"time"
 
+	"resenje.org/httputils"
 	"resenje.org/jsonresponse"
 	"resenje.org/marshal"
 
-	"gopherpit.com/gopherpit/pkg/webutils"
 	"gopherpit.com/gopherpit/services/session"
 	"gopherpit.com/gopherpit/services/user"
 )
@@ -29,7 +29,7 @@ type authLoginRequest struct {
 
 func (s Server) authLoginFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 	request := authLoginRequest{}
-	errors := webutils.FormErrors{}
+	errors := httputils.FormErrors{}
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		s.logger.Warningf("auth login fe api: request decode: %s", err)
 		errors.AddError("Invalid data.")
@@ -113,7 +113,7 @@ type passwordResetTokenRequest struct {
 
 func (s Server) passwordResetTokenFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 	request := passwordResetTokenRequest{}
-	errors := webutils.FormErrors{}
+	errors := httputils.FormErrors{}
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		s.logger.Warningf("password reset token fe api: request decode: %s", err)
 		errors.AddError("Invalid data.")
@@ -194,7 +194,7 @@ type passwordResetRequest struct {
 
 func (s Server) passwordResetFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 	request := passwordResetRequest{}
-	errors := webutils.FormErrors{}
+	errors := httputils.FormErrors{}
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		s.logger.Warningf("password reset token fe api: request decode: %s", err)
 		errors.AddError("Invalid data.")
@@ -250,7 +250,7 @@ func (s Server) userFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	request := userRequest{}
-	errors := webutils.FormErrors{}
+	errors := httputils.FormErrors{}
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		s.logger.Warningf("user fe api: request decode %s %s: %s", u.ID, u.Email, err)
 		errors.AddError("Invalid data.")
@@ -309,7 +309,7 @@ func (s Server) userEmailFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	request := userEmailRequest{}
-	errors := webutils.FormErrors{}
+	errors := httputils.FormErrors{}
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		s.logger.Warningf("user email fe api: request decode %s %s: %s", u.ID, u.Email, err)
 		errors.AddError("Invalid data.")
@@ -367,7 +367,7 @@ func (s Server) userNotificationsSettingsFEAPIHandler(w http.ResponseWriter, r *
 	}
 
 	request := userNotificationsSettingsRequest{}
-	errors := webutils.FormErrors{}
+	errors := httputils.FormErrors{}
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		s.logger.Warningf("user notifications settings fe api: request decode %s %s: %s", u.ID, u.Email, err)
 		errors.AddError("Invalid data.")
@@ -405,7 +405,7 @@ func (s Server) userPasswordFEAPIHandler(w http.ResponseWriter, r *http.Request)
 	}
 
 	request := userPasswordRequest{}
-	errors := webutils.FormErrors{}
+	errors := httputils.FormErrors{}
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		s.logger.Warningf("user password fe api: request decode %s %s: %s", u.ID, u.Email, err)
 		errors.AddError("Invalid data.")
@@ -473,7 +473,7 @@ func (s Server) userDeleteFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	request := userDeleteRequest{}
-	errors := webutils.FormErrors{}
+	errors := httputils.FormErrors{}
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		s.logger.Warningf("user delete fe api: request decode %s %s: %s", u.ID, u.Email, err)
 		errors.AddError("Invalid data.")
@@ -570,7 +570,7 @@ type registrationRequest struct {
 
 func (s Server) registrationFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 	request := registrationRequest{}
-	errors := webutils.FormErrors{}
+	errors := httputils.FormErrors{}
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		s.logger.Warningf("registration fe api: request decode: %s", err)
 		errors.AddError("Invalid data.")

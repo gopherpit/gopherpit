@@ -3,7 +3,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package webutils
+package httputils
 
 // FormErrors represent structure errors returned by API server to
 // request based on HTML form data.

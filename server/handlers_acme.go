@@ -13,9 +13,9 @@ import (
 	"time"
 
 	"resenje.org/antixsrf"
+	"resenje.org/httputils"
 	"resenje.org/logging"
 
-	"gopherpit.com/gopherpit/pkg/webutils"
 	"gopherpit.com/gopherpit/services/certificate"
 	"gopherpit.com/gopherpit/services/packages"
 	"gopherpit.com/gopherpit/services/user"
@@ -165,7 +165,7 @@ func (s Server) packageResolverHandler(w http.ResponseWriter, r *http.Request) {
 		default:
 			level = logging.DEBUG
 		}
-		s.packageAccessLogger.Logf(level, "%s \"%s\" %s %s %s %d %f \"%s\" \"%s\"", r.RemoteAddr, xips, r.Method, webutils.GetHost(r)+r.URL.String(), r.Proto, code, time.Since(startTime).Seconds(), referrer, userAgent)
+		s.packageAccessLogger.Logf(level, "%s \"%s\" %s %s %s %d %f \"%s\" \"%s\"", r.RemoteAddr, xips, r.Method, httputils.GetRequestEndpoint(r)+r.URL.String(), r.Proto, code, time.Since(startTime).Seconds(), referrer, userAgent)
 	}(time.Now())
 
 	domain, _, err := net.SplitHostPort(r.Host)
