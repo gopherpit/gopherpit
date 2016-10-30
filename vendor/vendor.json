@@ -64,7 +64,6 @@
 		},
 		{
 			"checksumSHA1": "4hQNaJUg67lF/QcO0NKzUeqlaew=",
-			"origin": "gopherpit.com/gopherpit/vendor/golang.org/x/net/context",
 			"path": "golang.org/x/net/context",
 			"revision": "3fe3024eef808ba2798cc1855690f49e2b860573",
 			"revisionTime": "2016-10-29T05:13:58Z"
@@ -136,10 +135,10 @@
 			"revisionTime": "2016-09-23T00:08:11Z"
 		},
 		{
-			"checksumSHA1": "sSvHMGvgvZmv0PwBa8pPGGODsdA=",
+			"checksumSHA1": "ECObkCQtkpNQlsIJm6KgtUQzZi4=",
 			"path": "resenje.org/antixsrf",
-			"revision": "575f18f48f186c843b0027a4a9a9b5c2869c5b8f",
-			"revisionTime": "2016-10-28T22:24:07Z"
+			"revision": "d9a5000f465639ad0e604c2fdfab26d1c6e41fff",
+			"revisionTime": "2016-10-30T22:59:34Z"
 		},
 		{
 			"checksumSHA1": "W9zEYmkJgDexb77AHyMWkVF49g8=",

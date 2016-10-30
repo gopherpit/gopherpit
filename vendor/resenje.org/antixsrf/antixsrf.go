@@ -8,9 +8,9 @@ package antixsrf // import "resenje.org/antixsrf"
 import (
 	"crypto/rand"
 	"encoding/base32"
-	"errors"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 )
 
@@ -23,13 +23,29 @@ var (
 	XSRFFormFieldName = "secid"
 )
 
+// Error is a generic error for this package.
+type Error struct {
+	message string
+}
+
+func newError(message string) *Error {
+	return &Error{
+		message: message,
+	}
+}
+
+func (e *Error) Error() string {
+	return e.message
+}
+
 // Errors related to invalid or missing anti-XSRF token value.
 var (
-	ErrNoReferer      = errors.New("antixsrf: missing referer header")
-	ErrInvalidReferer = errors.New("antixsrf: invalid referer header")
-	ErrInvalidToken   = errors.New("antixsrf: invalid xsrf token")
-	ErrMissingCookie  = errors.New("antixsrf: missing xsrf cookie")
-	ErrMissingHeader  = errors.New("antixsrf: missing xsrf header")
+	ErrNoReferer      = newError("antixsrf: missing referer header")
+	ErrInvalidReferer = newError("antixsrf: invalid referer header")
+	ErrInvalidToken   = newError("antixsrf: invalid xsrf token")
+	ErrMissingCookie  = newError("antixsrf: missing xsrf cookie")
+	ErrMissingToken   = newError("antixsrf: missing xsrf token")
+	ErrMissingHeader  = newError("antixsrf: missing xsrf header")
 )
 
 var safeMethods = []string{"GET", "HEAD", "OPTIONS", "TRACE"}
@@ -42,7 +58,7 @@ func Verify(r *http.Request) error {
 		return nil
 	}
 
-	referer, err := r.URL.Parse(r.Header.Get("Referer"))
+	referer, err := url.Parse(r.Header.Get("Referer"))
 	if err != nil {
 		return err
 	}
@@ -56,6 +72,9 @@ func Verify(r *http.Request) error {
 
 	token, err := r.Cookie(XSRFCookieName)
 	if err != nil {
+		if err.Error() == "http: named cookie not present" {
+			return ErrMissingCookie
+		}
 		return err
 	}
 
@@ -66,7 +85,7 @@ func Verify(r *http.Request) error {
 	}
 
 	if token.Value == "" {
-		return ErrMissingCookie
+		return ErrMissingToken
 	}
 
 	header := r.Header.Get(XSRFHeaderName)
@@ -84,14 +103,12 @@ func Verify(r *http.Request) error {
 
 // Generate generates an anti-XSRF token and sets it as a cookie value.
 func Generate(w http.ResponseWriter, r *http.Request, path string) {
-	if _, err := r.Cookie(XSRFCookieName); err != nil {
-		http.SetCookie(w, &http.Cookie{
-			Name:   XSRFCookieName,
-			Value:  newKey(),
-			Path:   path,
-			Secure: r.TLS != nil,
-		})
-	}
+	http.SetCookie(w, &http.Cookie{
+		Name:   XSRFCookieName,
+		Value:  newKey(),
+		Path:   path,
+		Secure: r.TLS != nil,
+	})
 }
 
 func newKey() string {
