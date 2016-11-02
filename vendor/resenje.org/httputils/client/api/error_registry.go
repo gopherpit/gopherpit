@@ -5,10 +5,7 @@
 
 package apiClient
 
-import (
-	"errors"
-	"sync"
-)
+import "errors"
 
 // ErrErrorAlreadyRegistered is returned an error with the same code
 // is found in the error registry.
@@ -20,9 +17,13 @@ type ErrorRegistry interface {
 }
 
 // MapErrorRegistry uses map to store errors and their codes.
+// It is assumed that adding of errors will be performed on
+// initialization of program and therefore it is not locked
+// for concurrent writes. Concurrent reads are safe as Go maps
+// allow it. If concurrent adding and reading of errors in registry
+// is needed, an implementation with locks must be used.
 type MapErrorRegistry struct {
 	errors map[int]error
-	mu     *sync.Mutex
 }
 
 // NewMapErrorRegistry creates a new instance of MapErrorRegistry.
@@ -32,7 +33,6 @@ func NewMapErrorRegistry(errors map[int]error) *MapErrorRegistry {
 	}
 	return &MapErrorRegistry{
 		errors: errors,
-		mu:     &sync.Mutex{},
 	}
 }
 
@@ -40,8 +40,6 @@ func NewMapErrorRegistry(errors map[int]error) *MapErrorRegistry {
 // It there already is an error with the same code,
 // ErrErrorAlreadyRegistered will be returned.
 func (r *MapErrorRegistry) AddError(code int, err error) error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
 	if _, ok := r.errors[code]; ok {
 		return ErrErrorAlreadyRegistered
 	}
