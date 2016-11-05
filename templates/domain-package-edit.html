@@ -101,7 +101,10 @@
       <label class="label">Go Source</label>
       <p class="control">
         <input class="input" type="text" name="go-source" value="[[ .Package.GoSource ]]" />
-        <span class="help">Value for HTML meta tag go-source, used for <a href="https://github.com/golang/gddo/wiki/Source-Code-Links" target="_blank">documentation links</a>. It is optional.</span>
+        <p class="help">Value for HTML meta tag go-source, used for <a href="https://github.com/golang/gddo/wiki/Source-Code-Links" target="_blank">documentation links</a>. It is optional.
+        <br><br>Example:<br>
+        example.com/package https://github.com/example/package/ https://github.com/example/package/tree/master{/dir} https://github.com/example/package/blob/master{/dir}/{file}#L{line}
+        </p>
       </p>
 
       <label class="label">Redirect URL</label>
