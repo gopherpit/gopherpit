@@ -84,7 +84,7 @@
   </div>
   <div class="column">
     <h2 class="title is-4">Your own domain or subdomain</h2>
-    <div class="subtitle is-5">my-domain.com or project.my-domain.com</div>
+    <div class="subtitle is-5">example.com or project.example.com</div>
     <p>Custom domain must have a CNAME DNS record with value: <code>[[ context "AliasCNAME" ]].</code><br />in order to be functional and to sucessfully request a TLS certificate. A verification of ownership is required by adding TXT DNS records with a unique value provided in the next step.</p>
     <p>If you already use your domain to serve content over HTTP(S), you can configure your web server to proxy only <i>go get</i> requests <a class="nginx-proxy modal-button" data-target=".modal.nginx-proxy">nginx example</a>. In this case you can silence TLS warning message in domain settings.</p>
     <h2 class="title is-4">Provided subdomain</h2>
@@ -100,7 +100,7 @@
       <div class="title">Nginx proxy configuration example</div>
       <pre class="message">
 server {
-    server_name my-domain.com;
+    server_name example.com;
     ...
     location / {
         if ($args ~ go-get=1) {

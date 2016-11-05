@@ -92,7 +92,7 @@ Storage directory is used by GopherPit to store permanent or temporary data, and
 To be able to fully utilize GopherPit, it is required for service to listen to default http and https ports under a specific domain. These are privileged ports, so root user is required for starting the service. This is a simple "one-liner" to accomplish this:
 
 ```text
-$ GOPHERPIT_DOMAIN=gopherpit.my-domain.com GOPHERPIT_LISTEN=:80 GOPHERPIT_LISTEN_TLS=:443 ./gopherpit daemon
+$ GOPHERPIT_DOMAIN=gopherpit.example.com GOPHERPIT_LISTEN=:80 GOPHERPIT_LISTEN_TLS=:443 ./gopherpit daemon
 ```
 
 Or if you prefer to have an explicit configuration, set this options in `/etc/gopherpit/gopherpit.json`:
@@ -101,7 +101,7 @@ Or if you prefer to have an explicit configuration, set this options in `/etc/go
 {
     "listen": ":80",
     "listen-tls": ":443",
-    "domain": "gopherpit.my-domain.com",
+    "domain": "gopherpit.example.com",
     "storage-dir": "/path/to/storage"
 }
 ```
@@ -112,7 +112,7 @@ And just start:
 # ./gopherpit daemon
 ```
 
-Make sure that configured domain (`gopherpit.my-domain.com` is just an example) has the right DNS record, and you should be able to access the service.
+Make sure that configured domain (`gopherpit.example.com` is just an example) has the right DNS record, and you should be able to access the service.
 
 The domain specified in configuration is the domain that GopherPit recognizes as the one that the web interface should be served on. If you mistype or go to a different domain that is pointing to your GopherPit running instance, you will get a text message that no packages could be found, or a TLS error. In that case, make sure that domain in your browser and configuration match.
 
@@ -128,8 +128,8 @@ To summarize:
  - Make sure that DNS record for your domain points to the right IP address of your server.
  - Configure GopherPit to listen on ports 80 and 433 and to have domain specified.
  - Start GopherPit.
- - Open http://gopherpit.my-domain.com in your browser and register ACME user.
- - Open https://gopherpit.my-domain.com in your browser to obtain certificate.
+ - Open http://gopherpit.example.com in your browser and register ACME user.
+ - Open https://gopherpit.example.com in your browser to obtain certificate.
 
 ACME provider allows automatic obtaining of TLS certificates for domains added through the service, but if you do not need that functionality, it is possible to configure static TLS certificates.
 
@@ -146,7 +146,7 @@ It is not required to use ACME provider for TLS certificates. If you already hav
 
 ## SMTP issues and options
 
-Default configuration for SMTP integration is to verify the certificate of SMTP server and that it listens on localhost port 25. Postfix and other MTAs may not have a valid certificate for localhost. In that case, either change the `smtp-host` in `email.json` configuration file, or in the same file set `smtp-skip-verify` to `true`. It is possible to have this type of error in log files `notifier api send email: x509: certificate is valid for gopherpit.my-domain.com, not localhost`.
+Default configuration for SMTP integration is to verify the certificate of SMTP server and that it listens on localhost port 25. Postfix and other MTAs may not have a valid certificate for localhost. In that case, either change the `smtp-host` in `email.json` configuration file, or in the same file set `smtp-skip-verify` to `true`. It is possible to have this type of error in log files `notifier api send email: x509: certificate is valid for gopherpit.example.com, not localhost`.
 
 Some may use Gmail as SMTP server, and example of that `email.json` configuration in this case is:
 
