@@ -32,7 +32,7 @@ Log messages should appear in terminal. You can open [http://localhost:8080](htt
 To start the service in the background execute:
 
 ```text
-$ ./gopheprit daemon
+$ ./gopherpit daemon
 ```
 
 Log messages are written in files under configured `log` directory, by default it is a `log` directory next to the `gopherpit` executable.
@@ -51,7 +51,7 @@ $ ./gopheprit stop
 
 ## Configuration introduction
 
-And to print all loaded configuration options:
+To print all loaded configuration options:
 
 ```text
 $ ./gopherpit config
@@ -59,7 +59,7 @@ $ ./gopherpit config
 
 All default configuration options are optimized for local testing. Each production environment requires its own specific settings, some of which are addressed in this introduction.
 
-Each section of the configuration can be overridden by a json file with the same name under a configuration directory, which is printed at the end of the config command output, and by default it is `/etc/gopherpit`.
+Each section of the configuration can be overridden by a JSON file with the same name under a configuration directory, which is printed at the end of the config command output, by default it is `/etc/gopherpit`.
 
 For example, to change the `log` directory, create a file `/etc/gopherpit/logging.json` with the following content:
 
@@ -85,7 +85,7 @@ Beside `log` directory, `storage` directory should be configured, too, but in di
 }
 ```
 
-Storage directory is used by GopherPit to store permanent or temporary data, and it should be outside of the GopherPit installation directory.
+Storage directory is used by GopherPit to store permanent or temporary data and it should be outside of the GopherPit installation directory.
 
 ## Serving on ports 80 and 443 on a custom domain
 
@@ -124,7 +124,7 @@ The first time you access the domain you configured, GopherPit will try to obtai
 
 To summarize:
 
- - Make sure that your server is available to ACME provider (or publicly on the Internet).
+ - Make sure that your server is available to the ACME provider (or publicly on the Internet).
  - Make sure that DNS record for your domain points to the right IP address of your server.
  - Configure GopherPit to listen on ports 80 and 433 and to have domain specified.
  - Start GopherPit.
