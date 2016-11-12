@@ -82,7 +82,6 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			r.URL.Path = path.Join(s.root, cPath)
 		}
 	}
-
 	f, err := open(s.dir, p)
 	if err != nil {
 		s.httpError(w, r, err)
@@ -136,7 +135,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 // HashedPath returns a URL path with hash injected into the filename.
 func (s *Server) HashedPath(p string) (string, error) {
 	if s.Hasher == nil {
-		return p, nil
+		return path.Join(s.root, p), nil
 	}
 	h, err := s.hash(p)
 	if err != nil {
@@ -166,7 +165,7 @@ func (s Server) httpError(w http.ResponseWriter, r *http.Request, err error) {
 		s.InternalServerErrorHandler.ServeHTTP(w, r)
 		return
 	}
-	DefaultInternalServerErrorhandler.ServeHTTP(w, r)
+	DefaultInternalServerErrorHandler.ServeHTTP(w, r)
 }
 
 func (s *Server) hash(p string) (h string, err error) {
@@ -203,11 +202,12 @@ func (s *Server) hash(p string) (h string, err error) {
 }
 
 func (s Server) hashedPath(p, h string) string {
-	d, f := path.Split(p)
-
 	if h == "" {
 		return p
 	}
+
+	d, f := path.Split(p)
+
 	i := strings.LastIndex(f, ".")
 	if i > 0 {
 		return d + f[:i] + "." + h + f[i:]

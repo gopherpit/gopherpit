@@ -19,13 +19,13 @@ func GetRequestIPs(r *http.Request) string {
 	} else {
 		ips = []string{r.RemoteAddr[:idx]}
 	}
-	xri := r.Header.Get("X-Real-Ip")
-	if xri != "" {
-		ips = append(ips, xri)
-	}
 	xfr := r.Header.Get("X-Forwarded-For")
 	if xfr != "" {
 		ips = append(ips, xfr)
+	}
+	xri := r.Header.Get("X-Real-Ip")
+	if xri != "" {
+		ips = append(ips, xri)
 	}
 	return strings.Join(ips, ", ")
 }

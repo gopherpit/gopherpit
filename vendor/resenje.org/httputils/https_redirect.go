@@ -83,6 +83,11 @@ func (l TLSListener) Accept() (net.Conn, error) {
 // HTTPToHTTPSRedirectHandler redirects with status code 301 to a https://
 // version of HTTP request.
 func HTTPToHTTPSRedirectHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Location", "https://"+r.Host+r.RequestURI)
+	url := r.URL
+	url.Scheme = "https"
+	if url.Host == "" {
+		url.Host = r.Host
+	}
+	w.Header().Set("Location", url.String())
 	w.WriteHeader(http.StatusMovedPermanently)
 }

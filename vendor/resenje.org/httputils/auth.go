@@ -25,6 +25,8 @@ const basicAuthScheme string = "Basic "
 //  - single API key auth handler with Basic auth support - BasicAuthRealm and KeyHeaderName are set
 //  - public/secret API key auth handler - KeyHeaderName and SecretHeaderName are set
 //  - public/secret API key auth handler with Basic auth support - all three are set
+// By setting AuthorizedNetworks, this handler can authorize requests based only on
+// RemoteAddr address.
 type AuthHandler struct {
 	KeyHeaderName    string
 	SecretHeaderName string
@@ -73,7 +75,9 @@ func (h AuthHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.Handler.ServeHTTP(w, r)
+	if h.Handler != nil {
+		h.Handler.ServeHTTP(w, r)
+	}
 }
 
 func (h AuthHandler) authenticate(r *http.Request) (key, secret string, valid bool, err error) {
@@ -117,7 +121,6 @@ func (h AuthHandler) authenticate(r *http.Request) (key, secret string, valid bo
 			if !strings.HasPrefix(auth, basicAuthScheme) {
 				return
 			}
-
 			var decoded []byte
 			decoded, err = base64.StdEncoding.DecodeString(auth[len(basicAuthScheme):])
 			if err != nil {

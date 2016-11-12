@@ -46,14 +46,6 @@ func (l *responseLogger) WriteHeader(s int) {
 	l.status = s
 }
 
-func (l *responseLogger) Status() int {
-	return l.status
-}
-
-func (l *responseLogger) Size() int {
-	return l.size
-}
-
 // NewHandler returns a handler that logs HTTP requests.
 // It logs information about remote address, X-Forwarded-For or X-Real-Ip,
 // HTTP method, request URI, HTTP protocol, HTTP response status, total bytes

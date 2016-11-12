@@ -10,7 +10,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"strings"
 )
 
 func redirect(w http.ResponseWriter, r *http.Request, location string) {
@@ -23,16 +22,8 @@ func redirect(w http.ResponseWriter, r *http.Request, location string) {
 }
 
 func open(root, name string) (http.File, error) {
-	if filepath.Separator != '/' && strings.IndexRune(name, filepath.Separator) >= 0 ||
-		strings.Contains(name, "\x00") {
-		return nil, errNotFound // invalid character in file path
-	}
 	if root == "" {
 		root = "."
 	}
-	f, err := os.Open(filepath.Join(root, filepath.FromSlash(path.Clean("/"+name))))
-	if err != nil {
-		return nil, err
-	}
-	return f, nil
+	return os.Open(filepath.Join(root, filepath.FromSlash(path.Clean("/"+name))))
 }

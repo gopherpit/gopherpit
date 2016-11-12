@@ -103,16 +103,20 @@ func (c Client) Request(method, path string, query url.Values, body io.Reader, a
 		}()
 
 		message := struct {
-			Message *string `json:"message"`
-			Code    *int    `json:"code"`
+			Message string `json:"message"`
+			Code    *int   `json:"code"`
 		}{}
 		if resp.ContentLength != 0 && strings.Contains(resp.Header.Get("Content-Type"), "application/json") {
 			if err = json.NewDecoder(resp.Body).Decode(&message); err != nil {
-				if e, ok := err.(*json.SyntaxError); ok {
-					err = fmt.Errorf("json: %s, offset: %d", e, e.Offset)
+				switch e := err.(type) {
+				case *json.SyntaxError:
+					message.Message = fmt.Sprintf("json %s, offset: %d", e, e.Offset)
+				case *json.UnmarshalTypeError:
+					// If the type of message is not as expected,
+					// continue with http based error reporting.
+				default:
 					return
 				}
-				return
 			}
 		}
 		if message.Code != nil && c.ErrorRegistry != nil {
@@ -120,15 +124,15 @@ func (c Client) Request(method, path string, query url.Values, body io.Reader, a
 				return
 			}
 		}
-		if message.Message != nil {
-			err = &Error{
-				message: *message.Message,
-			}
-			return
+		var msg string
+		if message.Message != "" {
+			msg = message.Message
+		} else {
+			msg = "http status: " + strings.ToLower(http.StatusText(resp.StatusCode))
 		}
-		err = &HTTPError{
-			Status: resp.Status,
-			Code:   resp.StatusCode,
+		err = &Error{
+			Message: msg,
+			Code:    resp.StatusCode,
 		}
 	}
 
@@ -158,7 +162,7 @@ func (c Client) JSON(method, path string, query url.Values, body io.Reader, resp
 		if err = json.NewDecoder(resp.Body).Decode(&response); err != nil {
 			switch e := err.(type) {
 			case *json.SyntaxError:
-				return fmt.Errorf("json: %s, offset: %d", e, e.Offset)
+				return fmt.Errorf("json %s, offset: %d", e, e.Offset)
 			case *json.UnmarshalTypeError:
 				return fmt.Errorf("expected json %s value but got %s, offset %d", e.Type, e.Value, e.Offset)
 			}

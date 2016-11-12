@@ -18,7 +18,7 @@ var (
 	DefaultForbiddenHandler = http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		http.Error(w, "Forbidden", http.StatusForbidden)
 	})
-	DefaultInternalServerErrorhandler = http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+	DefaultInternalServerErrorHandler = http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 	})
 

@@ -33,7 +33,7 @@ var (
 // Options is structure that passes optional variables to New function.
 type Options struct {
 	// Value for net.Dialer.Timeout.
-	Timeout time.Duration
+	Timeout time.Duration `envconfig:"TIMEOUT"`
 	// Value for net.Dialer.KeepAlive.
 	KeepAlive time.Duration `envconfig:"KEEP_ALIVE"`
 	// Value for net/http.Transport.TLSHandshakeTimeout.
@@ -163,7 +163,7 @@ func (o *Options) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, v); err != nil {
 		return err
 	}
-	o = &Options{
+	*o = Options{
 		Timeout:             v.Timeout.Duration(),
 		KeepAlive:           v.KeepAlive.Duration(),
 		TLSHandshakeTimeout: v.TLSHandshakeTimeout.Duration(),

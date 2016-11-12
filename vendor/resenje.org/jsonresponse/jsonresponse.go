@@ -80,11 +80,6 @@ func NonAuthoritativeInfo(w http.ResponseWriter, response interface{}) {
 	Respond(w, http.StatusNonAuthoritativeInfo, response)
 }
 
-// NoContent writes a response with status code 204.
-func NoContent(w http.ResponseWriter, response interface{}) {
-	Respond(w, http.StatusNoContent, response)
-}
-
 // ResetContent writes a response with status code 205.
 func ResetContent(w http.ResponseWriter, response interface{}) {
 	Respond(w, http.StatusResetContent, response)

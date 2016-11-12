@@ -5,23 +5,14 @@
 
 package apiClient
 
-// Error is a generic error for this package.
+// Error represents an error that contains a message and an error code.
+// If the error is based on HTTP response status, message is status text
+// and code status code.
 type Error struct {
-	message string
+	Message string
+	Code    int
 }
 
 func (e *Error) Error() string {
-	return e.message
-}
-
-// HTTPError represents a HTTP error that contains status text and status code.
-type HTTPError struct {
-	// HTTP response status text.
-	Status string
-	// HTTP response status code.
-	Code int
-}
-
-func (e *HTTPError) Error() string {
-	return e.Status
+	return e.Message
 }
