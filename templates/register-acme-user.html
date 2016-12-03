@@ -9,48 +9,56 @@
 [[ define "title" ]]ACME User - GopherPit[[ end ]]
 
 [[ define "script" ]]
-<script type="text/javascript">
-  "use strict";
-
-  $(function(){
-    var $form = $(".register-acme-user-form");
-    $form.ajaxform({
-      ok: function(data) {
-        $form.replaceWith($('#register-acme-user-form-success').html())
-      }
-    })
+<script>
+  new Vue({
+    el: "#register-acme-user-form",
+    data: {
+      fields: {
+        email: "[[ .User.Email ]]",
+        directory: ""
+      },
+      errors: [],
+      fieldErrors: {},
+      isLoading: false,
+      isDone: false
+    },
+    methods: {
+      submit: _.throttle(function() {
+        httpPost(this, '/i/register-acme-user', function(response) {
+          this.isDone = true
+        })
+      }, 500)
+    }
   })
 </script>
 [[ end ]]
 
-[[ define "head" ]]
-<script type="text/html" id="register-acme-user-form-success">
-<div class="notification is-success">
-  ACME User is successfully registered.
-</div>
-<a href="/" class="button is-pulled-right">Continue</a>
-</script>
-[[ end ]]
-
 [[ define "main" ]]
-<div class="column is-4 is-offset-4 content">
+<div class="column is-4 is-offset-4 content" id="register-acme-user-form">
   <h1 class="title is-1">ACME User</h1>
-  <form class="register-acme-user-form" method="post" action="/i/register-acme-user" autocomplete="off">
+  <div v-if="isDone" v-cloak>
+    <div class="notification is-success">ACME User is successfully registered.</div>
+    <a href="/" class="button is-pulled-right">Continue</a>
+  </div>
+  <form method="post" v-on:submit.prevent="submit" v-bind:class="{'is-disabled': isLoading}" v-if="!isDone">
     <p>Registration of ACME user is required to request new TLS/SSL certificates. E-mail address is optional, but if provided, notifications from ACME provider will be sent to it. Production directory generates valid certificates, while Staging is meant for testing and development.</p>
+    <div class="notification is-danger" v-for="err in errors" v-cloak v-html="err"></div>
     <label class="label">E-mail</label>
     <p class="control has-icon">
-      <input class="input" type="email" name="email" placeholder="User email" value="[[ .User.Email ]]"/>
+      <input class="input" type="email" v-model="fields.email" placeholder="User email">
       <i class="fa fa-envelope"></i>
+      <p class="control help is-danger" v-for="err in fieldErrors.email" v-cloak v-html="err"></p>
     </p>
     <label class="label">Directory</label>
     <p class="control">
       <span class="select">
-        <select name="directory">
+        <select v-model="fields.directory">
           <option value="production">Production</option>
           <option value="staging">Staging</option>
         </select>
       </span>
       <span class="help">Production: &lt;[[ .ProductionDirectory ]]&gt; <br>Staging: &lt;[[ .StagingDirectory ]]&gt;</span>
+      <p class="control help is-danger" v-for="err in fieldErrors.directory" v-cloak v-html="err"></p>
     </p>
     <p class="control">
       <nav class="level">
@@ -58,7 +66,7 @@
         </div>
         <div class="level-right">
           <div class="level-item">
-            <button type="submit" class="button is-primary">Register</button>
+            <button type="submit" class="button is-primary" v-bind:class="{'is-loading': isLoading}">Register</button>
           </div>
         </div>
       </nav>
