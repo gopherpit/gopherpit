@@ -9,44 +9,52 @@
 [[ define "title" ]]Contact - GopherPit[[ end ]]
 
 [[ define "script" ]]
-<script type="text/javascript">
-  "use strict";
-
-  $(function(){
-    var $form = $(".contact-form");
-    $form.ajaxform({
-      ok: function(data) {
-        $form.replaceWith($('#contact-form-success').html())
-      }
-    })
+<script>
+  new Vue({
+    el: "#contact-form",
+    data: {
+      fields: {
+        name: "",
+        email: "",
+        message: ""
+      },
+      errors: [],
+      fieldErrors: {},
+      isLoading: false,
+      isDone: false
+    },
+    methods: {
+      submit: _.throttle(function() {
+        httpPost(this, '/i/contact', function(response) {
+          this.isDone = true
+        })
+      }, 500)
+    }
   })
 </script>
 [[ end ]]
 
-[[ define "head" ]]
-<script type="text/html" id="contact-form-success">
-<div class="notification is-success">
-  Thank you for your feedback.
-</div>
-</script>
-[[ end ]]
-
 [[ define "main" ]]
-<div class="column is-6 is-offset-3">
+<div class="column is-6 is-offset-3" id="contact-form">
   <h1 class="title is-1">Contact</h1>
-  <form class="contact-form" method="post" action="/i/contact">
+  <div class="notification is-success" v-cloak v-if="isDone">Thank you for your feedback.</div>
+  <form method="post" v-on:submit.prevent="submit" v-bind:class="{'is-disabled': isLoading}" v-if="!isDone">
+    <div class="notification is-danger" v-for="err in errors" v-cloak v-html="err"></div>
     [[ if not .User ]]
     <p class="control has-icon">
-      <input class="input" type="text" name="contact-name" placeholder="Your name" />
+      <input class="input" type="text" v-model="fields.name" placeholder="Your name">
       <i class="fa fa-user"></i>
+      <p class="control help is-danger" v-for="err in fieldErrors.name" v-cloak v-html="err"></p>
     </p>
     <p class="control has-icon">
-      <input class="input" type="email" name="contact-email" placeholder="Your email address" />
+      <input class="input" type="email" v-model="fields.email" placeholder="Your email address">
       <i class="fa fa-envelope"></i>
+      <p class="control help is-danger" v-for="err in fieldErrors.email" v-cloak v-html="err"></p>
     </p>
     [[ end ]]
     <p class="control has-icon">
-      <textarea class="textarea" name="contact-message" placeholder="Type message here..."></textarea>
+      <textarea class="textarea" v-model="fields.message" placeholder="Type message here..."></textarea>
+      <p class="control help is-danger" v-for="err in fieldErrors.message" v-cloak v-html="err"></p>
     </p>
     <p class="control">
       <nav class="level">
@@ -54,7 +62,7 @@
         </div>
         <div class="level-right">
           <div class="level-item">
-            <button type="submit" class="button is-primary">Submit</button>
+            <button type="submit" class="button is-primary" v-bind:class="{'is-loading': isLoading}">Submit</button>
           </div>
         </div>
       </nav>
