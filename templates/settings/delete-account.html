@@ -11,16 +11,24 @@
 [[ define "hero-class" ]]is-danger is-bold[[ end ]]
 
 [[ define "script" ]]
-<script type="text/javascript">
-  "use strict";
-
-  $(function(){
-    var $form = $(".delete-account-form");
-    $form.ajaxform({
-      ok: function(data) {
-        window.location = "/"
-      }
-    })
+<script>
+  new Vue({
+    el: "#delete-account-form",
+    data: {
+      fields: {
+        password: ""
+      },
+      errors: [],
+      fieldErrors: {},
+      isLoading: false
+    },
+    methods: {
+      submit: _.throttle(function() {
+        httpPost(this, '/i/user/delete', function(response) {
+          window.location = '/'
+        })
+      }, 500)
+    }
   })
 </script>
 [[ end ]]
@@ -56,11 +64,13 @@
       </aside>
     </div>
     <div class="column">
-      <form class="delete-account-form" method="post" action="/i/user/delete">
+      <form id="delete-account-form" v-on:submit.prevent="submit" v-bind:class="{'is-disabled': isLoading}">
         <p class="content">Account deletion is irreversible and all your data will be lost.</p>
         <label class="label">Enter password to confirm account deletion</label>
+        <div class="notification is-danger" v-for="err in errors" v-cloak v-html="err"></div>
         <p class="control">
-          <input class="input" name="password" type="password" autofocus />
+          <input class="input" v-model="fields.password" type="password" autofocus>
+          <p class="control help is-danger" v-for="err in fieldErrors.password" v-cloak v-html="err"></p>
         </p>
         <p class="control">
           <nav class="level">
@@ -68,7 +78,7 @@
             </div>
             <div class="level-right">
               <div class="level-item">
-                <button type="submit" class="button is-danger">Yes, delete my account!</button>
+                <button type="submit" class="button is-danger" v-bind:class="{'is-loading': isLoading}">Yes, delete my account!</button>
               </div>
             </div>
           </nav>
