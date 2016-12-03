@@ -32,7 +32,10 @@
       <p class="control help is-danger" v-for="err in fieldErrors.password" v-cloak v-html="err"></p>
     </p>
     <p class="control">
-      <label class="checkbox"><input type="checkbox" v-model="fields.rememberMe">Remember me</label>
+      <label class="checkbox">
+        <input type="checkbox" v-model="fields.rememberMe">
+        Remember me
+      </label>
     </p>
     <p class="control">
       <nav class="level">
