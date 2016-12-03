@@ -11,37 +11,45 @@
 [[ define "hero-class" ]]is-dark is-bold[[ end ]]
 
 [[ define "script" ]]
-<script type="text/javascript">
-  "use strict";
-
-  $(function(){
-    var $form = $(".email-change-form");
-    $form.ajaxform({
-      ok: function(data) {
-        $form.replaceWith($('#email-change-form-success').html())
-      }
-    });
-    var $btn = $(".send-validation-email");
-    $btn.ajaxbutton({
-      ok: function() {
-        $btn.replaceWith($('#send-validation-email-success').html())
-      }
-    })
-  })
-</script>
-[[ end ]]
-
-[[ define "head" ]]
-<script type="text/html" id="email-change-form-success">
-<div class="notification">
-  <p>Validation e-mail messages is sent.</p>
-  <p>To complete e-mail change you need to verify that you are the owner of that address. Until then, your current e-mail address will be used for identification and notifications.</p>
-</div>
-</script>
-<script type="text/html" id="send-validation-email-success">
-<div class="notification">
-  <p>Validation e-mail message is sent.</p>
-</div>
+<script>
+  new Vue({
+    el: "#email-change-form",
+    data: {
+      fields: {
+        email: ""
+      },
+      errors: [],
+      fieldErrors: {},
+      isLoading: false,
+      isDone: false
+    },
+    methods: {
+      submit: _.throttle(function() {
+        httpPost(this, '/i/user/email', function(response) {
+          this.isDone = true
+        })
+      }, 500)
+    }
+  });
+  [[ if .User.EmailUnvalidated ]]
+  new Vue({
+    el: "#send-validation-email",
+    data: {
+      fields: {},
+      errors: [],
+      fieldErrors: {},
+      isLoading: false,
+      isDone: false
+    },
+    methods: {
+      submit: _.throttle(function() {
+        httpPost(this, '/i/user/email/validation-email', function(response) {
+            this.isDone = true
+        })
+      }, 500)
+    }
+  });
+  [[ end ]]
 </script>
 [[ end ]]
 
@@ -95,8 +103,11 @@
         <div class="level-left">
         </div>
         <div class="level-right">
-          <div class="level-item">
-            <button class="button send-validation-email" data-action="/i/user/email/validation-email" data-method="post">Send e-mail validation message</button>
+          <div class="level-item" id="send-validation-email">
+            <div class="notification is-info" v-if="isDone" v-cloak>
+              <p>Validation e-mail message has been sent.</p>
+            </div>
+            <button class="button" v-on:click="submit" v-bind:class="{'is-loading': isLoading}" v-if="!isDone">Send e-mail validation message</button>
           </div>
         </div>
       </nav>
@@ -105,25 +116,33 @@
       </div>
 
       <div class="title is-h3">Change</div>
-      <form class="email-change-form" method="post" action="/i/user/email">
-        <p class="content">E-mail address change requires validation of ownership.</p>
-        <label class="label">New e-mail address</label>
-        <p class="control">
-          <input class="input" name="email" type="email" autofocus />
-          <span class="help">It will never be revealed to other user or visitors.</span>
-        </p>
-        <p class="control">
-          <nav class="level">
-            <div class="level-left">
-            </div>
-            <div class="level-right">
-              <div class="level-item">
-                <button type="submit" class="button is-primary">Change</button>
+      <div id="email-change-form">
+        <div class="notification is-info" v-if="isDone" v-cloak>
+          <p>Validation e-mail messages is sent.</p>
+          <p>To complete e-mail change you need to verify that you are the owner of that address. Until then, your current e-mail address will be used for identification and notifications.</p>
+        </div>
+        <form method="post" v-on:submit.prevent="submit" v-bind:class="{'is-disabled': isLoading}" v-if="!isDone">
+          <div class="notification is-danger" v-for="err in errors" v-cloak v-html="err"></div>
+          <p class="content">E-mail address change requires validation of ownership.</p>
+          <label class="label">New e-mail address</label>
+          <p class="control">
+            <input class="input" name="email" v-model="fields.email" autofocus>
+            <span class="help">It will never be revealed to other user or visitors.</span>
+            <p class="control help is-danger" v-for="err in fieldErrors.email" v-cloak v-html="err"></p>
+          </p>
+          <p class="control">
+            <nav class="level">
+              <div class="level-left">
               </div>
-            </div>
-          </nav>
-        </p>
-      </form>
+              <div class="level-right">
+                <div class="level-item">
+                  <button type="submit" class="button is-primary" v-bind:class="{'is-loading': isLoading}">Change</button>
+                </div>
+              </div>
+            </nav>
+          </p>
+        </form>
+      </div>
     </div>
   </div>
 </div>
