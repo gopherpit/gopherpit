@@ -27,8 +27,11 @@ export CGO_ENABLED=0
 endif
 
 BULMA_VERSION ?= 0.2.3
-FONTAWESOME_VERSION ?= 4.6.3
-JQUERY_VERSION ?= 3.1.1
+FONTAWESOME_VERSION ?= 4.7.0
+VUE_VERSION ?= 2.1.4
+VUERESOURCE_VERSION ?= 1.0.3
+LODASH_VERSION ?= 4.17.1
+LODASH_INCLUDE ?= debounce,throttle
 
 NODEJS ?= docker run -it --rm -v $$(pwd):/usr/src/app -w /usr/src/app node
 
@@ -67,6 +70,10 @@ dist/version: dist FORCE
 .PHONY: assets
 assets:
 	mkdir -p dist/frontend
+	echo "" > assets/vendor.css
+	echo "" > assets/vendor.js
+
+	# Bulma
 	cd dist/frontend && \
 		$(NODEJS) npm install bulma@$(BULMA_VERSION)
 	echo "$$(cat frontend/bulma.sass)\n$$(cat dist/frontend/node_modules/bulma/bulma.sass)" > dist/frontend/node_modules/bulma/bulma.sass
@@ -76,23 +83,33 @@ assets:
 	cd dist/frontend/node_modules/bulma && \
 		$(NODEJS) npm install clean-css && \
 		$(NODEJS) ./node_modules/clean-css/bin/cleancss -o css/bulma.min.css css/bulma.css
-
-	mkdir -p assets
-	echo "" > assets/vendor.css
 	cat dist/frontend/node_modules/bulma/css/bulma.min.css >> assets/vendor.css
-	curl -sSL https://raw.githubusercontent.com/FortAwesome/Font-Awesome/v$(FONTAWESOME_VERSION)/css/font-awesome.min.css | sed 's/\.\.\/fonts\///g' >> assets/vendor.css
 
-	cd assets && \
+	# FontAwesome
+	mkdir -p assets/fonts
+	cd assets/fonts && \
 	curl -sSL \
 		 -O https://github.com/FortAwesome/Font-Awesome/raw/v$(FONTAWESOME_VERSION)/fonts/FontAwesome.otf \
 		 -O https://github.com/FortAwesome/Font-Awesome/raw/v$(FONTAWESOME_VERSION)/fonts/fontawesome-webfont.eot \
 		 -O https://github.com/FortAwesome/Font-Awesome/raw/v$(FONTAWESOME_VERSION)/fonts/fontawesome-webfont.svg\
 		 -O https://github.com/FortAwesome/Font-Awesome/raw/v$(FONTAWESOME_VERSION)/fonts/fontawesome-webfont.ttf\
 		 -O https://github.com/FortAwesome/Font-Awesome/raw/v$(FONTAWESOME_VERSION)/fonts/fontawesome-webfont.woff \
-		 -O https://github.com/FortAwesome/Font-Awesome/raw/v$(FONTAWESOME_VERSION)/fonts/fontawesome-webfont.woff2 \
+		 -O https://github.com/FortAwesome/Font-Awesome/raw/v$(FONTAWESOME_VERSION)/fonts/fontawesome-webfont.woff2
+	curl -sSL https://raw.githubusercontent.com/FortAwesome/Font-Awesome/v$(FONTAWESOME_VERSION)/css/font-awesome.min.css| sed 's/\.\.\/fonts\//fonts\//g' >> assets/vendor.css
 
-	echo "" > assets/vendor.js
-	curl -sSL http://code.jquery.com/jquery-$(JQUERY_VERSION).min.js >> assets/vendor.js
+	# Vue.js
+	curl -sSL https://unpkg.com/vue@$(VUE_VERSION)/dist/vue.min.js >> assets/vendor.js
+	echo "\n" >> assets/vendor.js
+	# vue-resource
+	curl -sSL https://unpkg.com/vue-resource@$(VUERESOURCE_VERSION)/dist/vue-resource.min.js >> assets/vendor.js
+
+	# Lodash
+	cd dist/frontend && \
+		$(NODEJS) npm install lodash-cli@$(LODASH_VERSION) && \
+		$(NODEJS) node_modules/lodash-cli/bin/lodash include=$(LODASH_INCLUDE)
+	cat dist/frontend/lodash.custom.min.js >> assets/vendor.js
+
+	rm -rf dist/frontend
 
 .PHONY: clean
 clean:
