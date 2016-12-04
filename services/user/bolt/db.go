@@ -545,6 +545,19 @@ func resetPassword(tx *bolt.Tx, token, password []byte, noReuseMonths int) (err 
 
 func requestEmailChange(tx *bolt.Tx, id string, email string, validationExpirationTime time.Time) (token string, err error) {
 	email = strings.ToLower(email)
+	var r *userRecord
+	r, err = getUserRecordByEmail(tx, []byte(email))
+	switch err {
+	case nil:
+		if r != nil && r.id != id {
+			err = user.EmailChangeEmailNotAvaliable
+			return
+		}
+	case user.UserNotFound:
+		err = nil
+	default:
+		return
+	}
 	var bucket *bolt.Bucket
 	bucket, err = tx.CreateBucketIfNotExists(bucketNameEmailValidations)
 	if err != nil {
