@@ -747,10 +747,6 @@ func (s *Server) Serve(o ServeOptions) error {
 			default:
 				return nil, fmt.Errorf("get certificate: %s: certificate cache: %s", clientHello.ServerName, err)
 			}
-			// If the cert is nil, return error
-			if c == nil {
-				return nil, fmt.Errorf("get certificate: %s: nil certificate", clientHello.ServerName)
-			}
 			return c, nil
 		},
 		MinVersion:         tls.VersionTLS10,
