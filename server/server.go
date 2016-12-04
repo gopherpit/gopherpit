@@ -695,63 +695,85 @@ type ServeOptions struct {
 // Serve starts HTTP servers based on provided ServeOptions properties.
 func (s *Server) Serve(o ServeOptions) error {
 	tlsConfig := &tls.Config{
-		GetCertificate: func(clientHello *tls.ClientHelloInfo) (*tls.Certificate, error) {
-			// If ServerName is defined in Options as Domain and there is TLSCert in Options
-			// use static configuration by returning nil or both cert and err
-			if clientHello.ServerName == s.Domain && o.TLSCert != "" {
-				return nil, nil
-			}
-			// Get certificate for this ServerName
-			c, err := s.certificateCache.Certificate(clientHello.ServerName)
-			switch err {
-			case certificateCache.ErrCertificateNotFound, certificate.CertificateNotFound:
-				// If ServerName is the same as configured domain or it's www subdomain
-				// and tls listener is on https port 443, try to obtain the certificate.
-				if strings.HasSuffix(o.ListenTLS, ":443") && (clientHello.ServerName == s.Domain || clientHello.ServerName == "www."+s.Domain) {
-					obtainCertificate := false
-					// Check if there is not already a request for new certificate active.
-					for i := 0; i < 50; i++ {
-						yes, err := s.CertificateService.IsCertificateBeingObtained(clientHello.ServerName)
-						if err != nil {
-							return nil, fmt.Errorf("get certificate %s: is certificate being obtained: %s", clientHello.ServerName, err)
-						}
-						if yes {
-							time.Sleep(100 * time.Millisecond)
-							continue
-						}
-						obtainCertificate = i == 0
-						break
-					}
-
-					if obtainCertificate {
-						s.logger.Debugf("get certificate: %s: obtaining certificate for domain", clientHello.ServerName)
-						cert, err := s.CertificateService.ObtainCertificate(clientHello.ServerName)
-						if err != nil {
-							return nil, fmt.Errorf("get certificate %s: obtain certificate: %s", clientHello.ServerName, err)
-						}
-						c = &tls.Certificate{}
-						*c, err = tls.X509KeyPair([]byte(cert.Cert), []byte(cert.Key))
-						if err != nil {
-							return nil, fmt.Errorf("get certificate: %s: tls X509KeyPair: %s", clientHello.ServerName, err)
-						}
-						// Clean cached empty certificate.
-						s.certificateCache.InvalidateCertificate(clientHello.ServerName)
-					} else {
-						c, err = s.certificateCache.Certificate(clientHello.ServerName)
-						if err != nil {
-							return nil, fmt.Errorf("get certificate: %s: certificate cache: %s", clientHello.ServerName, err)
-						}
-					}
-				}
-			case nil:
-			default:
-				return nil, fmt.Errorf("get certificate: %s: certificate cache: %s", clientHello.ServerName, err)
-			}
-			return c, nil
-		},
 		MinVersion:         tls.VersionTLS10,
 		NextProtos:         []string{"h2"},
 		ClientSessionCache: tls.NewLRUClientSessionCache(-1),
+	}
+	tlsConfig.GetCertificate = func(clientHello *tls.ClientHelloInfo) (*tls.Certificate, error) {
+		// If ServerName is defined in Options as Domain and there is TLSCert in Options
+		// use static configuration by returning nil or both cert and err
+		if clientHello.ServerName == s.Domain && o.TLSCert != "" {
+			return nil, nil
+		}
+		// Get certificate for this ServerName
+		c, err := s.certificateCache.Certificate(clientHello.ServerName)
+		switch err {
+		case certificateCache.ErrCertificateNotFound, certificate.CertificateNotFound:
+			// If ServerName is the same as configured domain or it's www subdomain
+			// and tls listener is on https port 443, try to obtain the certificate.
+			if strings.HasSuffix(o.ListenTLS, ":443") && (clientHello.ServerName == s.Domain || clientHello.ServerName == "www."+s.Domain) {
+				obtainCertificate := false
+				// Check if there is not already a request for new certificate active.
+				for i := 0; i < 50; i++ {
+					yes, err := s.CertificateService.IsCertificateBeingObtained(clientHello.ServerName)
+					if err != nil {
+						return nil, fmt.Errorf("get certificate %s: is certificate being obtained: %s", clientHello.ServerName, err)
+					}
+					if yes {
+						time.Sleep(100 * time.Millisecond)
+						continue
+					}
+					obtainCertificate = i == 0
+					break
+				}
+
+				if obtainCertificate {
+					s.logger.Debugf("get certificate: %s: obtaining certificate for domain", clientHello.ServerName)
+					cert, err := s.CertificateService.ObtainCertificate(clientHello.ServerName)
+					if err != nil {
+						return nil, fmt.Errorf("get certificate %s: obtain certificate: %s", clientHello.ServerName, err)
+					}
+					c = &tls.Certificate{}
+					*c, err = tls.X509KeyPair([]byte(cert.Cert), []byte(cert.Key))
+					if err != nil {
+						return nil, fmt.Errorf("get certificate: %s: tls X509KeyPair: %s", clientHello.ServerName, err)
+					}
+					// Clean cached empty certificate.
+					s.certificateCache.InvalidateCertificate(clientHello.ServerName)
+				} else {
+					c, err = s.certificateCache.Certificate(clientHello.ServerName)
+					if err != nil {
+						return nil, fmt.Errorf("get certificate: %s: certificate cache: %s", clientHello.ServerName, err)
+					}
+				}
+			}
+		case nil:
+		default:
+			return nil, fmt.Errorf("get certificate: %s: certificate cache: %s", clientHello.ServerName, err)
+		}
+		if c != nil {
+			return c, nil
+		}
+		if len(tlsConfig.NameToCertificate) != 0 {
+			name := strings.ToLower(clientHello.ServerName)
+			for len(name) > 0 && name[len(name)-1] == '.' {
+				name = name[:len(name)-1]
+			}
+
+			if cert, ok := tlsConfig.NameToCertificate[name]; ok {
+				return cert, nil
+			}
+
+			labels := strings.Split(name, ".")
+			for i := range labels {
+				labels[i] = "*"
+				candidate := strings.Join(labels, ".")
+				if cert, ok := tlsConfig.NameToCertificate[candidate]; ok {
+					return cert, nil
+				}
+			}
+		}
+		return nil, fmt.Errorf("get certificate: %s: certificate not found", clientHello.ServerName)
 	}
 
 	if o.TLSCert != "" && o.TLSKey != "" {
