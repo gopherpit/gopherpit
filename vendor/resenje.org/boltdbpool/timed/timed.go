@@ -9,6 +9,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"sort"
 	"sync"
 	"time"
 
@@ -164,6 +165,7 @@ func (p *Pool) NewConnection(t time.Time) (conn *Connection, err error) {
 	}
 	if !found {
 		p.series = append(p.series, series)
+		sort.Strings(p.series)
 	}
 	p.mu.Unlock()
 
@@ -180,14 +182,6 @@ func (p *Pool) GetConnection(t time.Time) (conn *Connection, err error) {
 	series := p.seriesFromTime(t)
 	path := p.pathFromSeries(series)
 	if _, err = os.Stat(path); os.IsNotExist(err) {
-		p.mu.Lock()
-		for i := len(p.series) - 1; i >= 0; i-- {
-			if p.series[i] == series {
-				p.series = append(p.series[:i], p.series[i+1:]...)
-				break
-			}
-		}
-		p.mu.Unlock()
 		err = ErrUnknownDB
 		return
 	} else if err != nil {
@@ -214,9 +208,6 @@ func (p *Pool) NextConnection(t time.Time) (conn *Connection, err error) {
 		if s > series {
 			path = p.pathFromSeries(s)
 			if _, err = os.Stat(path); os.IsNotExist(err) {
-				p.mu.Lock()
-				p.series = append(p.series[:i], p.series[i+1:]...)
-				p.mu.Unlock()
 				continue
 			} else if err != nil {
 				return
@@ -250,9 +241,6 @@ func (p *Pool) PrevConnection(t time.Time) (conn *Connection, err error) {
 		if s < series {
 			path = p.pathFromSeries(s)
 			if _, err = os.Stat(path); os.IsNotExist(err) {
-				p.mu.Lock()
-				p.series = append(p.series[:i], p.series[i+1:]...)
-				p.mu.Unlock()
 				continue
 			} else if err != nil {
 				return
@@ -274,6 +262,11 @@ func (p *Pool) PrevConnection(t time.Time) (conn *Connection, err error) {
 		pool:       p,
 		series:     series,
 	}, nil
+}
+
+// Close closes underlying boltdbpool.Pool.
+func (p Pool) Close() {
+	p.pool.Close()
 }
 
 // Connection represents a boltdbpool.Connection for a particular

@@ -39,11 +39,14 @@ type AuthHandler struct {
 	// ErrorHandler will be used if there is an error. If it is nil, a panic will occur.
 	ErrorHandler func(w http.ResponseWriter, r *http.Request, err error)
 
-	// AuthFunc validates credentials.
-	AuthFunc func(r *http.Request, key, secret string) (valid bool, err error)
+	// AuthFunc validates credentials. It should return if credentials are valid,
+	// and optional entity which will be passed to PostAuthFunc.
+	AuthFunc func(r *http.Request, key, secret string) (valid bool, entity interface{}, err error)
 	// PostAuthFunc is a hook to log, set request context or preform any other action
-	// after credentials check.
-	PostAuthFunc func(w http.ResponseWriter, r *http.Request, key, secret string, valid bool) (rr *http.Request, err error)
+	// after credentials check. If not nil, it is always called, regardless of other
+	// configurations. It provides access to response writer, request and returned
+	// information from the AuthFunc: valid and entity.
+	PostAuthFunc func(w http.ResponseWriter, r *http.Request, valid bool, entity interface{}) (rr *http.Request, err error)
 
 	// AuthorizeAll will bypass all methods and authorize all requests.
 	AuthorizeAll bool
@@ -55,13 +58,13 @@ type AuthHandler struct {
 
 // ServeHTTP serves an HTTP response for a request.
 func (h AuthHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	key, secret, valid, err := h.authenticate(r)
+	valid, entity, err := h.authenticate(r)
 	if err != nil {
 		h.error(w, r, err)
 		return
 	}
 	if h.PostAuthFunc != nil {
-		rr, err := h.PostAuthFunc(w, r, key, secret, valid)
+		rr, err := h.PostAuthFunc(w, r, valid, entity)
 		if err != nil {
 			h.error(w, r, err)
 			return
@@ -80,7 +83,7 @@ func (h AuthHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h AuthHandler) authenticate(r *http.Request) (key, secret string, valid bool, err error) {
+func (h AuthHandler) authenticate(r *http.Request) (valid bool, entity interface{}, err error) {
 	if h.AuthorizeAll {
 		valid = true
 		return
@@ -102,6 +105,7 @@ func (h AuthHandler) authenticate(r *http.Request) (key, secret string, valid bo
 	}
 
 	if h.AuthFunc != nil {
+		var key, secret string
 		if h.KeyHeaderName != "" || h.SecretHeaderName != "" {
 			if h.KeyHeaderName != "" {
 				key = r.Header.Get(h.KeyHeaderName)
@@ -112,7 +116,7 @@ func (h AuthHandler) authenticate(r *http.Request) (key, secret string, valid bo
 			// Call AuthFunc and return only if there are provided data in headers.
 			// If not, auth data from Authorization header should be validated.
 			if key != "" || secret != "" {
-				valid, err = h.AuthFunc(r, key, secret)
+				valid, entity, err = h.AuthFunc(r, key, secret)
 				return
 			}
 		}
@@ -136,7 +140,7 @@ func (h AuthHandler) authenticate(r *http.Request) (key, secret string, valid bo
 
 			// This is the last auth method, so there is no need to check any values here,
 			// they will be returned ath the and of a function.
-			valid, err = h.AuthFunc(r, key, secret)
+			valid, entity, err = h.AuthFunc(r, key, secret)
 		}
 	}
 

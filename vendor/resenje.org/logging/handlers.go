@@ -6,9 +6,11 @@
 package logging
 
 import (
+	"fmt"
 	"io"
 	"os"
 	"sync"
+	"time"
 )
 
 // Handler is interface that declares what every logging handler
@@ -34,7 +36,7 @@ func (handler *NullHandler) Handle(record *Record) error {
 
 // HandleError prints provided error to stderr.
 func (handler *NullHandler) HandleError(err error) error {
-	os.Stderr.WriteString(err.Error())
+	os.Stderr.WriteString(fmt.Sprintf("%s %s\n", time.Now(), err.Error()))
 	return nil
 }
 
