@@ -30,7 +30,7 @@ func NewCertificateOptions() *CertificateOptions {
 	return &CertificateOptions{
 		DirectoryURL:        "https://acme-v01.api.letsencrypt.org/directory",
 		DirectoryURLStaging: "https://acme-staging.api.letsencrypt.org/directory",
-		RenewPeriod:         marshal.Duration(15 * 24 * time.Hour),
+		RenewPeriod:         marshal.Duration(20 * 24 * time.Hour),
 		RenewCheckPeriod:    marshal.Duration(23 * time.Hour),
 	}
 }
