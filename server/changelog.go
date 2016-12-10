@@ -268,6 +268,10 @@ func (s Server) updateChangelogRecords(u user.User, record packages.ChangelogRec
 				c.Field = "Redirect URL"
 				c.To = change.To
 				c.From = change.From
+			case "disabled":
+				c.Field = "Disabled"
+				c.To = change.To
+				c.From = change.From
 			default:
 				continue Loop3
 			}
