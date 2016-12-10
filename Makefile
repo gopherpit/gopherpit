@@ -29,7 +29,7 @@ endif
 BULMA_VERSION ?= 0.2.3
 FONTAWESOME_VERSION ?= 4.7.0
 VUE_VERSION ?= 2.1.4
-VUERESOURCE_VERSION ?= 1.0.3
+AXIOS_VERSION ?= 0.15.3
 LODASH_VERSION ?= 4.17.1
 LODASH_INCLUDE ?= debounce,throttle
 
@@ -100,8 +100,9 @@ assets:
 	# Vue.js
 	curl -sSL https://unpkg.com/vue@$(VUE_VERSION)/dist/vue.min.js >> assets/vendor.js
 	echo "\n" >> assets/vendor.js
-	# vue-resource
-	curl -sSL https://unpkg.com/vue-resource@$(VUERESOURCE_VERSION)/dist/vue-resource.min.js >> assets/vendor.js
+	# axios
+	curl -sSL https://unpkg.com/axios@$(AXIOS_VERSION)/dist/axios.min.js >> assets/vendor.js
+	echo "\n" >> assets/vendor.js
 
 	# Lodash
 	cd dist/frontend && \

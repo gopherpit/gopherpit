@@ -1,85 +1,63 @@
 "use strict";
 
-Vue.http.options.xhr = {withCredentials: true};
+axios.defaults.withCredentials = true;
+axios.defaults.xsrfCookieName = "secid";
+axios.defaults.xsrfHeaderName = "X-SecID";
 
-Vue.http.interceptors.push(function(request, next) {
-    if (!xsrfSafeMethod(request.method) && sameOrigin(request.url)) {
-        var cookie = getCookie("secid");
-        if (cookie != "") request.headers.set("X-SecID", cookie);
-    };
-    next();
-});
-
-function getCookie(name) {
-    var cookieValue = "";
-    if (document.cookie && document.cookie != '') {
-        var cookies = document.cookie.split(';');
-        for (var i = 0; i < cookies.length; i++) {
-            var cookie = cookies[i].replace(/^\s+|\s+$/g, '');;
-            if (cookie.substring(0, name.length + 1) == (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
-            }
+function standardHTTPError(store, response) {
+    var func = function(response) {
+        if (response.data === null) {
+            store.errors = ["Error communicating with the server."];
+            return
         }
+        switch (response.status) {
+            case 401:
+                store.errors = ["Invalid credentials."];
+                break;
+            case 403:
+                store.errors = ["Forbidden."];
+                break;
+            default:
+              if (response.data.errors === undefined) {
+                  store.errors = ["Server error."];
+              } else {
+                  store.errors = response.data.errors || [];
+              }
+        }
+        store.fieldErrors = response.data["field-errors"] || {};
     }
-    return cookieValue;
+    if (response != undefined) {
+        return func(response)
+    }
+    return func
 };
 
-function xsrfSafeMethod(method) {
-    return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
-};
-
-function sameOrigin(url) {
-    var host = document.location.host;
-    var protocol = document.location.protocol;
-    var sr_origin = '//' + host;
-    var origin = protocol + sr_origin;
-    return (url == origin || url.slice(0, origin.length + 1) == origin + '/') ||
-        (url == sr_origin || url.slice(0, sr_origin.length + 1) == sr_origin + '/') ||
-        !(/^(\/\/|http:|https:).*/.test(url));
-};
-
-function standardHTTPError(response) {
-    if (response.data === null) {
-        this.errors = ["Error communicating with the server."];
-        return
+function httpRequest(store, method, url, success, fail) {
+    store.isLoading = true;
+    store.errors = [];
+    store.fieldErrors = {};
+    if (fail === undefined) {
+        fail = standardHTTPError(store)
     }
-    switch (response.status) {
-        case 401:
-            this.errors = ["Invalid credentials."];
-            break;
-        case 403:
-            this.errors = ["Forbidden."];
-            break;
-        default:
-          if (response.data.errors === undefined) {
-              this.errors = ["Server error."];
-          } else {
-              this.errors = response.data.errors || [];
-          }
-    }
-    this.fieldErrors = response.data["field-errors"] || {};
-};
-
-function httpRequest(vue, method, url, success) {
-    vue.isLoading = true;
-    vue.errors = [];
-    vue.fieldErrors = {};
-    if (method == "POST") {
-        vue.$http.post(url, vue.fields).then(success, standardHTTPError).then(function(){
-            vue.isLoading = false;
-        })
-    } else if (method == "DELETE") {
-        vue.$http.delete(url, vue.fields).then(success, standardHTTPError).then(function(){
-            vue.isLoading = false;
-        })
-    }
+    axios({
+        method: method,
+        url: url,
+        data: store.fields
+    }).then(success).catch(function (error) {
+        if (error.response) {
+            fail(error.response)
+        } else {
+            store.errors = [error.message]
+        }
+    }).then(function(){
+        store.isLoading = false;
+    })
 }
 
-function httpPost(vue, url, success) {
-    httpRequest(vue, "POST", url, success)
+function httpPost(vue, url, success, fail) {
+    httpRequest(vue, "POST", url, success, fail)
 }
 
-function httpDelete(vue, url, success) {
-    httpRequest(vue, "DELETE", url, success)
+function httpDelete(vue, url, success, fail) {
+    httpRequest(vue, "DELETE", url, success, fail)
 }
