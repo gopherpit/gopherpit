@@ -9,16 +9,24 @@
 [[ define "title" ]][[ .Domain.FQDN ]] change owner - GopherPit[[ end ]]
 
 [[ define "script" ]]
-<script type="text/javascript">
-  "use strict";
-
-  $(function(){
-    var $form = $(".domain-user-form");
-    $form.ajaxform({
-      ok: function(data) {
-        window.location = encodeURI("/domain/[[ .Domain.FQDN ]]")
-      }
-    })
+<script>
+  new Vue({
+    el: "#domain-user-form",
+    data: {
+      fields: {
+        id: ""
+      },
+      errors: [],
+      fieldErrors: {},
+      isLoading: false
+    },
+    methods: {
+      submit: _.throttle(function() {
+        httpPost(this, '/i/domain/[[ .Domain.ID ]]/owner', function(response) {
+          window.location = encodeURI("/domain/[[ .Domain.FQDN ]]")
+        })
+      }, 500)
+    }
   })
 </script>
 [[ end ]]
@@ -64,11 +72,13 @@
   <div class="column is-6">
     <div class="content"><a href="/domain/[[ .Domain.FQDN ]]/team"><span class="icon is-small"><i class="fa fa-arrow-left"></i></span> Team</a></div>
 
-    <form class="domain-user-form" method="post" action="/i/domain/[[ .Domain.ID ]]/owner" autocomplete="off">
+    <form id="domain-user-form" method="post" v-on:submit.prevent="submit" v-bind:class="{'is-disabled': isLoading}">
+      <div class="notification is-danger" v-for="err in errors" v-cloak v-html="err"></div>
       <p class="content">You can transfer complete domain ownership to another user by e-mail, username or ID.</p>
       <label class="label">User e-mail, username or ID</label>
       <p class="control">
-        <input class="input" type="text" name="id" autofocus />
+        <input class="input" type="text" v-model="fields.id" autofocus>
+        <p class="control help is-danger" v-for="err in fieldErrors.id" v-cloak v-html="err"></p>
       </p>
       <p class="control">
         <nav class="level">
@@ -77,7 +87,7 @@
           <div class="level-right">
             <div class="level-item">
               <a class="ui button" href="/domain/[[ .Domain.FQDN ]]/team">Cancel</a> 
-              <button type="submit" class="button is-primary">Yes, change owner!</button>
+              <button type="submit" class="button is-primary" v-bind:class="{'is-loading': isLoading}">Yes, change owner!</button>
             </div>
           </div>
         </nav>
