@@ -26,8 +26,9 @@
     },
     methods: {
       submit: _.throttle(function() {
-        httpPost(this, '/i/user/notifications', function(response) {
-          this.isDone = true
+        var app = this;
+        httpPost(app, '/i/user/notifications', function(response) {
+          app.isDone = true
         })
       }, 500),
       reload() {

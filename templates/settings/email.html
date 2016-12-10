@@ -25,8 +25,9 @@
     },
     methods: {
       submit: _.throttle(function() {
-        httpPost(this, '/i/user/email', function(response) {
-          this.isDone = true
+        var app = this;
+        httpPost(app, '/i/user/email', function(response) {
+          app.isDone = true
         })
       }, 500)
     }
@@ -43,8 +44,9 @@
     },
     methods: {
       submit: _.throttle(function() {
-        httpPost(this, '/i/user/email/validation-email', function(response) {
-            this.isDone = true
+        var app = this;
+        httpPost(app, '/i/user/email/validation-email', function(response) {
+            app.isDone = true
         })
       }, 500)
     }

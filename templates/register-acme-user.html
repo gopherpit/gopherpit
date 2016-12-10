@@ -24,8 +24,9 @@
     },
     methods: {
       submit: _.throttle(function() {
-        httpPost(this, '/i/register-acme-user', function(response) {
-          this.isDone = true
+        var app = this;
+        httpPost(app, '/i/register-acme-user', function(response) {
+          app.isDone = true
         })
       }, 500)
     }
