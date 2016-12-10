@@ -199,14 +199,14 @@
                     </div>
                     <div class="level-right">
                       <div class="level-item">
-                        <button class="button modal-close-button" v-on:click.prevent="domainDelete.isModalActive = false">No</button>
-                        <button class="button is-danger" v-on:click.prevent="deleteDomain" v-bind:class="{'is-loading': domainDelete.isLoading}">Yes, delete it!</button>
+                        <a class="button modal-close-button" v-on:click.prevent="domainDelete.isModalActive = false">No</a>
+                        <a class="button is-danger" v-on:click.prevent="deleteDomain" v-bind:class="{'is-loading': domainDelete.isLoading}">Yes, delete it!</a>
                       </div>
                     </div>
                   </nav>
                 </div>
               </div>
-              <button class="modal-close" v-on:click="domainDelete.isModalActive = false"></button>
+              <a class="modal-close" v-on:click="domainDelete.isModalActive = false"></a>
             </div>
             [[ end ]]
           </div>

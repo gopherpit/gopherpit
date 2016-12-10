@@ -153,7 +153,7 @@
         <nav class="level">
           <div class="level-left">
             [[ if .Package.ID ]]
-            <button class="button is-danger is-outlined" v-on:click.prevent="packageDelete.isModalActive = true" tabindex="1">Delete</button>
+            <a class="button is-danger is-outlined" v-on:click.prevent="packageDelete.isModalActive = true" tabindex="1">Delete</a>
             <div class="modal" v-bind:class="{'is-active': packageDelete.isModalActive}" v-cloak>
               <div class="modal-background" v-on:click="packageDelete.isModalActive = false"></div>
               <div class="modal-container">
@@ -165,14 +165,14 @@
                     </div>
                     <div class="level-right">
                       <div class="level-item">
-                        <button class="button modal-close-button" v-on:click.prevent="packageDelete.isModalActive = false">No</button>
-                        <button class="button is-danger" v-on:click.prevent="deletePackage" v-bind:class="{'is-loading': packageDelete.isLoading}">Yes, delete it!</button>
+                        <a class="button modal-close-button" v-on:click.prevent="packageDelete.isModalActive = false">No</a>
+                        <a class="button is-danger" v-on:click.prevent="deletePackage" v-bind:class="{'is-loading': packageDelete.isLoading}">Yes, delete it!</a>
                       </div>
                     </div>
                   </nav>
                 </div>
               </div>
-              <button class="modal-close" v-on:click.prevent="packageDelete.isModalActive = false"></button>
+              <a class="modal-close" v-on:click.prevent="packageDelete.isModalActive = false"></a>
             </div>
             [[ end ]]
           </div>
