@@ -9,52 +9,44 @@
 [[ define "title" ]]Add domain - GopherPit[[ end ]]
 
 [[ define "script" ]]
-<script type="text/javascript">
-  "use strict";
-
-  $(function(){
-    var $form = $(".domain-form");
-    $form.ajaxform({
-      before: function() {
-        $form.find(".validation").remove();
+<script>
+  app = new Vue({
+    el: "#domain-form",
+    data: {
+      fields: {
+        fqdn: ""
       },
-      ok: function(data) {
-        if (data["fqdn"] != undefined) {
-          window.location = encodeURI("/domain/"+data["fqdn"])
-          return
-        };
-        window.location = "/"
-      },
-      err400after: function(jqXHR) {
-        var secrets = jqXHR.responseJSON['secrets'];
-        if (secrets != undefined) {
-          var $message = $($('#domain-validation').html());
-          if (secrets.length == 1) {
-            $message.find('.message-header').html("To verify this domain the following DNS record must be present.")
-          } else {
-            $message.find('.message-header').html("To verify this domain any of the following DNS records must be present.")
+      errors: [],
+      fieldErrors: {},
+      isLoading: false,
+      secrets: []
+    },
+    methods: {
+      submit: _.throttle(function() {
+        var app = this;
+        app.secrets = [];
+        httpPost(app, '/i/domain', function(response) {
+          if (response.data != undefined && response.data["fqdn"] != undefined) {
+            window.location = encodeURI("/domain/"+response.data["fqdn"])
+            return
           };
-          $.each(secrets, function(i, e) {
-            $message.find('p.secrets').append('<code>'+e.domain+' TXT '+e.secret+'</code><br />')
-          });
-          $form.prepend($message)
-        }
-      }
-    })
+          window.location = "/"
+        }, function(response){
+          standardHTTPError(app, response);
+          if (response.data === null) {
+            return
+          };
+          app.secrets = response.data['secrets'] || [];
+        })
+      }, 500)
+    }
+  });
+  new Vue({
+    el: "#help",
+    data: {
+      isNginxExampleModalActive: false
+    }
   })
-</script>
-
-<script type="text/html" id="domain-validation">
-<div class="validation content">
-  <article class="message is-danger">
-    <div class="message-header"></div>
-    <div class="message-body">
-    <p class="secrets"></p>
-    <p>After you add DNS record, come back to this form and submit this domain again.</p>
-    <p>Keep in mind that DNS propagation requires some time after the record is set, depending on TTL value.</p>
-    </div>
-  </article>
-</div>
 </script>
 [[ end ]]
 
@@ -64,9 +56,22 @@
     <h1 class="title is-1">New domain</h1>
     <p>A domain is DNS domain that serves as a logical unit under which you can specify import paths for packages and their repositories.</p>
 
-    <form class="domain-form" method="post" action="/i/domain" autocomplete="off">
+    <form id="domain-form" method="post" v-on:submit.prevent="submit" v-bind:class="{'is-disabled': isLoading}">
+      <div class="notification is-danger" v-for="err in errors" v-cloak v-html="err"></div>
+      <div class="content" v-if="secrets.length > 0" v-cloak>
+        <article class="message is-danger">
+          <div class="message-header" v-if="secrets.length == 1">To verify this domain the following DNS record must be present.</div>
+          <div class="message-header" v-else-if="secrets.length > 1">To verify this domain any of the following DNS records must be present.</div>
+          <div class="message-body">
+          <p v-for="secret in secrets"><code v-html="secret.domain +' TXT '+ secret.secret"></code></p>
+          <p>After you add DNS record, come back to this form and submit this domain again.</p>
+          <p>Keep in mind that DNS propagation requires some time after the record is set, depending on TTL value.</p>
+          </div>
+        </article>
+      </div>
       <p class="control">
-        <input class="input" type="text" name="fqdn" value="[[ .Domain.FQDN ]]" placeholder="Fully qualified domain name" autofocus />
+        <input class="input" type="text" v-model="fields.fqdn" placeholder="Fully qualified domain name" autofocus>
+        <p class="control help is-danger" v-for="err in fieldErrors.fqdn" v-cloak v-html="err"></p>
       </p>
       <p class="control">
         <nav class="level">
@@ -75,30 +80,28 @@
           <div class="level-right">
             <div class="level-item">
               <a class="button" href="/">Cancel</a>
-              <button type="submit" class="button is-primary" tabindex="0">Add</button>
+              <button type="submit" class="button is-primary" tabindex="0" v-bind:class="{'is-loading': isLoading}">Add</button>
             </div>
           </div>
         </nav>
       </p>
     </form>
   </div>
-  <div class="column">
+  <div class="column" id="help">
     <h2 class="title is-4">Your own domain or subdomain</h2>
     <div class="subtitle is-5">example.com or project.example.com</div>
     <p>Custom domain must have a CNAME DNS record with value: <code>[[ context "AliasCNAME" ]].</code><br />in order to be functional and to sucessfully request a TLS certificate. A verification of ownership is required by adding TXT DNS records with a unique value provided in the next step.</p>
-    <p>If you already use your domain to serve content over HTTP(S), you can configure your web server to proxy only <i>go get</i> requests <a class="nginx-proxy modal-button" data-target=".modal.nginx-proxy">nginx example</a>. In this case you can silence TLS warning message in domain settings.</p>
+    <p>If you already use your domain to serve content over HTTP(S), you can configure your web server to proxy only <i>go get</i> requests <a class="modal-button" v-on:click.prevent="isNginxExampleModalActive = true">nginx example</a>. In this case you can silence TLS warning message in domain settings.</p>
     <h2 class="title is-4">Provided subdomain</h2>
     <div class="subtitle is-5">my-project.[[ .DomainName ]]</div>
     <p>Also, you can use a subdomain under <strong>[[ .DomainName ]]</strong> as a domain for your packages, which will be functional <strong>right away</strong> as no verification or DNS setup is needed. The only limitation is that the subdomain is available.</p>
-  </div>
-</div>
 
-<div class="modal nginx-proxy">
-  <div class="modal-background"></div>
-  <div class="modal-container">
-    <div class="modal-content box">
-      <div class="title">Nginx proxy configuration example</div>
-      <pre class="message">
+    <div class="modal" v-bind:class="{'is-active': isNginxExampleModalActive}" v-cloak>
+      <div class="modal-background" v-on:click="isNginxExampleModalActive = false"></div>
+      <div class="modal-container">
+        <div class="modal-content box">
+          <div class="title">Nginx proxy configuration example</div>
+          <pre class="message">
 server {
     server_name example.com;
     ...
@@ -113,8 +116,11 @@ server {
         }
     }
 }</pre>
+        </div>
+      </div>
+      <button class="modal-close" v-on:click.prevent="isNginxExampleModalActive = false"></button>
     </div>
+
   </div>
-  <button class="modal-close"></button>
 </div>
 [[ end ]]

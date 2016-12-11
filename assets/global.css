@@ -1,3 +1,21 @@
+.icon.is-small {
+  vertical-align: baseline!important;
+}
+
+p.control.help {
+  margin-top: -8px;
+}
+
+p.help {
+  margin-bottom: 12px;
+}
+
+span.button {
+  cursor: default;
+}
+
+[v-cloak] { display:none; }
+
 .fa-pulse {
   display: inline-block;
   -moz-animation: pulse 3s infinite linear;
@@ -30,20 +48,4 @@
     0% {transform: scale(1);}
     50% {transform: scale(1.1);}
     100% {transform: scale(1);}
-}
-
-.icon.is-small {
-  vertical-align: baseline!important;
-}
-
-p.control.help {
-  margin-top: -8px;
-}
-
-p.help {
-  margin-bottom: 12px;
-}
-
-span.button {
-  cursor: default;
 }

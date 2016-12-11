@@ -10,30 +10,38 @@
 
 [[ define "hero-class" ]]is-dark is-bold[[ end ]]
 
+
 [[ define "script" ]]
-<script type="text/javascript">
-  "use strict";
-
-  $(function(){
-    var $form = $(".notifications-form");
-    $form.ajaxform({
-      ok: function(data) {
-        $form.replaceWith($('#notifications-form-success').html())
+<script>
+  new Vue({
+    el: "#notifications-form",
+    data: {
+      fields: {
+        "notifications-enabled": [[ if .User.NotificationsDisabled ]]false[[ else ]]true[[ end ]]
+      },
+      errors: [],
+      fieldErrors: {},
+      isLoading: false,
+      isDone: false
+    },
+    methods: {
+      submit: _.throttle(function() {
+        var app = this;
+        httpPost(app, '/i/user/notifications', function(response) {
+          app.isDone = true
+        })
+      }, 500),
+      reload() {
+        document.location.reload()
+      },
+      notificationsEnabledLabel() {
+        if (this.fields["notifications-enabled"]) {
+          return "Periodic messaging and notifications are enabled"
+        }
+        return "Periodic messaging and notifications are disabled"
       }
-    });
-    $("body").on("click", ".notification.notifications-form-success .delete", function() {
-      window.location.reload()
-    })
+    }
   })
-</script>
-[[ end ]]
-
-[[ define "head" ]]
-<script type="text/html" id="notifications-form-success">
-<div class="notification is-success notifications-form-success">
-  <div class="delete"></div>
-  Your notification settings is saved.
-</div>
 </script>
 [[ end ]]
 
@@ -67,22 +75,28 @@
         </ul>
       </aside>
     </div>
-    <div class="column">
+    <div class="column" id="notifications-form">
       [[ if .OptedOut ]]
       <div class="notification is-warning">Sending e-mail messages to the address [[ .User.Email ]] is blocked!</div>
       [[ else ]]
-      <form class="notifications-form" method="post" action="/i/user/notifications">
-        <label class="checkbox">
-          <input type="checkbox" [[ if not .User.NotificationsDisabled ]]checked[[ end ]] name="notifications-enabled">
-          I want to receive periodic messages from this site
-        </label>
+      <div class="notification is-success" v-if="isDone" v-cloak>
+        <div class="delete" v-on:click="reload"></div>
+        Your notification settings is saved.
+      </div>
+      <form method="post" v-on:submit.prevent="submit" v-bind:class="{'is-disabled': isLoading}" v-if="!isDone">
+        <div class="notification is-danger" v-for="err in errors" v-cloak v-html="err"></div>
+        <label class="checkbox" v-cloak>
+          <input type="checkbox" v-model="fields['notifications-enabled']">
+            {{ notificationsEnabledLabel() }}
+          </label>
+        <p class="control help is-danger" v-for="err in fieldErrors['notifications-enabled']" v-cloak v-html="err"></p>
         <p class="control">
           <nav class="level">
             <div class="level-left">
             </div>
             <div class="level-right">
               <div class="level-item">
-                <button type="submit" class="button is-primary">Save</button>
+                <button type="submit" class="button is-primary" v-bind:class="{'is-loading': isLoading}">Save</button>
               </div>
             </div>
           </nav>

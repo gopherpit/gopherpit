@@ -645,7 +645,9 @@ func (s Server) domainPackageEditHandler(w http.ResponseWriter, r *http.Request)
 		panic(err)
 	}
 
-	var pkg packages.Package
+	pkg := packages.Package{
+		VCS: packages.VCSGit,
+	}
 	var domain *packages.Domain
 	vars := mux.Vars(r)
 	domainID := vars["domain-id"]

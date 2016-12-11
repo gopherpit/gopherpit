@@ -9,31 +9,28 @@
 [[ define "title" ]]Email - GopherPit[[ end ]]
 
 [[ define "script" ]]
-<script type="text/javascript">
-  "use strict";
-
-  $(function() {
-    $(".opt-out, .remove-opt-out").ajaxbutton({
-      ok: function() {
-        window.location.reload()
-      }
-    })
+<script>
+  new Vue({
+    el: "#opt-out-settings",
+    data: {
+      fields: {},
+      errors: [],
+      fieldErrors: {},
+      isLoading: false
+    },
+    methods: {
+      optOut: _.throttle(function() {
+        httpPost(this, '/i/email/opt-out/[[ .Token ]]', function(response) {
+          window.location.reload()
+        })
+      }, 500),
+      removeOptOut: _.throttle(function() {
+        httpDelete(this, '/i/email/opt-out/[[ .Token ]]', function(response) {
+          window.location.reload()
+        })
+      }, 500)
+    }
   })
-</script>
-[[ end ]]
-
-[[ define "head" ]]
-<script type="text/html" id="opt-out-success">
-<div class="message">
-  <div class="header is-h3">You have opted out</div>
-  <p>No new messages will be sent to this e-mail address. If you change your mind in the future, you can opt in by visiting this page again.</p>
-</div>
-</script>
-<script type="text/html" id="remove-opt-out-success">
-<div class="message">
-  <div class="header is-h3">You have opted in</div>
-  <p>This site will send e-mail messages to this address freely.</p>
-</div>
 </script>
 [[ end ]]
 
@@ -47,12 +44,12 @@
       <p>By clicking on a button below you will <strong>allow</strong> sending new messages to address [[ .Email ]].</p>
     </div>
     <div>
-      <button class="button remove-opt-out" data-action="/i/email/opt-out/[[ .Token ]]" data-method="delete">I wish to be able to receive messages from this site</button>
+      <button class="button remove-opt-out" v-on:click="removeOptOut" v-bind:class="{'is-loading': isLoading}">I wish to be able to receive messages from this site</button>
     </div>
     [[ else ]]
     <div class="notification is-info">By clicking on a button below you will <strong>block</strong> sending new messages to address [[ .Email ]].</div>
     <div>
-      <button class="button opt-out" data-action="/i/email/opt-out/[[ .Token ]]" data-method="post">I wish to block sending messages from this site</button>
+      <button class="button opt-out" v-on:click="optOut" v-bind:class="{'is-loading': isLoading}">I wish to block sending messages from this site</button>
     </div>
     [[ end ]]
   </div>

@@ -8,65 +8,75 @@
 
 [[ define "title" ]]Login - GopherPit[[ end ]]
 
-[[ define "script" ]]
-[[ template "login-script" . ]]
-[[ end ]]
-
 [[ define "main" ]]
-<div class="column is-4 is-offset-4">
-  <h1 class="title is-1 has-text-centered"><img src="[[ "gopherpit.png" | asset ]]" alt="GopherPit" /></h1>
-  [[ template "login-form" . ]]
-</div>
+[[ template "login-form" . ]]
 [[ end ]]
 
-[[ define "login-script" ]]
-<script type="text/javascript">
-  "use strict";
-
-  $(function(){
-    var $form = $(".login-form");
-    $form.ajaxform({
-      ok: function(data) {
-        window.location.reload()
-      },
-      err401: function() {
-        $form.prepend(newNotification("Invalid credentials.", 'is-danger'))
-      },
-    })
-  })
-</script>
+[[ define "script" ]]
+[[ template "login-form-script" . ]]
 [[ end ]]
 
 [[ define "login-form" ]]
-<form class="login-form" method="post" action="/i/auth">
-  <p class="control has-icon">
-    <input class="input" name="username" type="text" placeholder="Email or username" autofocus />
-    <i class="fa fa-envelope"></i>
-  </p>
-  <p class="control has-icon">
-    <input class="input" name="password" type="password" placeholder="Password" />
-    <i class="fa fa-lock"></i>
-  </p>
-  <p class="control">
-    <label class="checkbox">
-      <input type="checkbox" name="remember-me" />
-      Remember me
-    </label>
-  </p>
-  <p class="control">
-    <nav class="level">
-      <div class="level-left">
-        <div class="level-item">
-          <a class="link" href="/password-reset">Forgot password?</a>
+<div class="column is-4 is-offset-4">
+  <h1 class="title is-1 has-text-centered"><img src="[[ "gopherpit.png" | asset ]]" alt="GopherPit" /></h1>
+  <form id="login-form" mehtod="post" v-on:submit.prevent="submit" v-bind:class="{'is-disabled': isLoading}">
+    <div class="notification is-danger" v-for="err in errors" v-cloak v-html="err"></div>
+    <p class="control has-icon">
+      <input class="input" type="text" id="login-username" autocomplete="username" placeholder="Email or username" autofocus v-model="fields.username">
+      <i class="fa fa-envelope"></i>
+      <p class="control help is-danger" v-for="err in fieldErrors.username" v-cloak v-html="err"></p>
+    </p>
+    <p class="control has-icon">
+      <input class="input" type="password" id="login-password" autocomplete="current-password" placeholder="Password" v-model="fields.password">
+      <i class="fa fa-lock"></i>
+      <p class="control help is-danger" v-for="err in fieldErrors.password" v-cloak v-html="err"></p>
+    </p>
+    <p class="control">
+      <label class="checkbox">
+        <input type="checkbox" v-model="fields.rememberMe">
+        Remember me
+      </label>
+    </p>
+    <p class="control">
+      <nav class="level">
+        <div class="level-left">
+          <div class="level-item">
+            <a class="link" href="/password-reset">Forgot password?</a>
+          </div>
         </div>
-      </div>
-      <div class="level-right">
-        <div class="level-item">
-          <a class="button" href="/registration">Register new accunt</a>
-          <button type="submit" class="button is-primary">Login</button>
+        <div class="level-right">
+          <div class="level-item">
+            <a class="button" href="/registration">Register new accunt</a>
+            <button type="submit" class="button is-primary" v-bind:class="{'is-loading': isLoading}">Login</button>
+          </div>
         </div>
-      </div>
-    </nav>
-  </p>
-</form>
+      </nav>
+    </p>
+  </form>
+</div>
+[[ end ]]
+
+[[ define "login-form-script" ]]
+<script>
+  new Vue({
+    el: "#login-form",
+    data: {
+      fields: {
+        username: "",
+        password: "",
+        rememberMe: false
+      },
+      errors: [],
+      fieldErrors: {},
+      isLoading: false
+    },
+    methods: {
+      submit: _.throttle(function() {
+        httpPost(this, '/i/auth', function(response) {
+          window.location.reload()
+        })
+      }, 500)
+    }
+  })
+</script>
 [[ end ]]

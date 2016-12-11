@@ -9,16 +9,24 @@
 [[ define "title" ]][[ .Domain.FQDN ]] revoke user [[ .DomainUser ]] - GopherPit[[ end ]]
 
 [[ define "script" ]]
-<script type="text/javascript">
-  "use strict";
-
-  $(function(){
-    var $form = $(".domain-user-form");
-    $form.ajaxform({
-      ok: function(data) {
-        window.location = encodeURI("/domain/[[ .Domain.FQDN ]]/team")
-      }
-    })
+<script>
+  new Vue({
+    el: "#domain-user-form",
+    data: {
+      fields: {
+        id: "[[ .DomainUser.ID ]]"
+      },
+      errors: [],
+      fieldErrors: {},
+      isLoading: false
+    },
+    methods: {
+      submit: _.throttle(function() {
+        httpDelete(this, '/i/domain/[[ .Domain.ID ]]/user', function(response) {
+          window.location = encodeURI("/domain/[[ .Domain.FQDN ]]/team")
+        })
+      }, 500)
+    }
   })
 </script>
 [[ end ]]
@@ -65,8 +73,8 @@
     <div class="content"><a href="/domain/[[ .Domain.FQDN ]]/team"><span class="icon is-small"><i class="fa fa-arrow-left"></i></span> Team</a></div>
 
     <p>Are you sure that you want to revoke access to user <strong>[[ .DomainUser.Name ]]</strong> GopherPit ID <code>[[ .DomainUser.ID ]]</code>[[ if .DomainUser.Username ]] and username <strong>[[ .DomainUser.Username ]]</strong>[[ end ]]?</p>
-    <form class="domain-user-form" method="delete" action="/i/domain/[[ .Domain.ID ]]/user" autocomplete="off">
-      <input type="hidden" name="id" value="[[ .DomainUser.ID ]]" />
+    <form id="domain-user-form" method="post" v-on:submit.prevent="submit" v-bind:class="{'is-disabled': isLoading}">
+      <div class="notification is-danger" v-for="err in errors" v-cloak v-html="err"></div>
       <p class="control">
         <nav class="level">
           <div class="level-left">
@@ -74,7 +82,7 @@
           <div class="level-right">
             <div class="level-item">
               <a class="ui button" href="/domain/[[ .Domain.FQDN ]]/team">Cancel</a> 
-              <button type="submit" class="button is-primary">Revoke access from user [[ .DomainUser ]]</button>
+              <button type="submit" class="button is-primary" v-bind:class="{'is-loading': isLoading}">Revoke access from user [[ .DomainUser ]]</button>
             </div>
           </div>
         </nav>

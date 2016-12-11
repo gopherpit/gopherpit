@@ -9,21 +9,42 @@
 [[ define "title" ]][[ .Domain.FQDN ]] package - GopherPit[[ end ]]
 
 [[ define "script" ]]
-<script type="text/javascript">
-  "use strict";
-
-  $(function(){
-    var $form = $(".package-form");
-    $form.ajaxform({
-      ok: function(data) {
-        window.location = encodeURI("/domain/[[ .Domain.FQDN | js ]]")
+<script>
+  new Vue({
+    el: "#package-form",
+    data: {
+      form: {
+        fields: {
+          path: "[[ .Package.Path ]]",
+          "repo-root": "[[ .Package.RepoRoot ]]",
+          vcs: "[[ .Package.VCS ]]",
+          "go-source": "[[ .Package.GoSource ]]",
+          "redirect-url": "[[ .Package.RedirectURL ]]",
+          "domain-id": "[[ .Domain.ID ]]",
+          disabled: [[ if .Package.Disabled ]]true[[ else ]]false[[ end ]]
+        },
+        errors: [],
+        fieldErrors: {},
+        isLoading: false,
+      },
+      packageDelete: {
+        isModalActive: false,
+        errors: [],
+        isLoading: false
       }
-    });
-    $(".button.delete-package").ajaxbutton({
-      ok: function() {
-        window.location = encodeURI("/domain/[[ .Domain.FQDN | js ]]")
-      }
-    })
+    },
+    methods: {
+      submit: _.throttle(function() {
+        httpPost(this.form, '[[ if .Package.ID ]]/i/package/[[ .Package.ID ]][[ else ]]/i/package[[ end ]]', function(response) {
+          window.location = encodeURI("/domain/[[ .Domain.FQDN ]]")
+        })
+      }, 500),
+      deletePackage: _.throttle(function() {
+        httpDelete(this.packageDelete, '/i/package/[[ .Package.ID ]]', function(response) {
+          window.location = encodeURI("/domain/[[ .Domain.FQDN ]]")
+        })
+      }, 500)
+    }
   })
 </script>
 [[ end ]]
@@ -69,27 +90,31 @@
   <div class="column is-9">
     <div class="content"><a href="/domain/[[ .Domain.FQDN ]]"><span class="icon is-small"><i class="fa fa-arrow-left"></i></span> Packages</a></div>
 
-    <form class="package-form" method="post" action="[[ if .Package.ID ]]/i/package/[[ .Package.ID ]][[ else ]]/i/package[[ end ]]">
+    <form id="package-form" method="post" v-on:submit.prevent="submit" v-bind:class="{'is-disabled': form.isLoading}">
+      <div class="notification is-danger" v-for="err in form.errors" v-cloak v-html="err"></div>
 
       <label class="label">Path</label>
       <p class="control has-addons">
         <span class="button is-unselectable">
           [[ .Domain.FQDN ]]
         </span>
-        <input class="input is-expanded" type="text" name="path" value="[[ .Package.Path ]]" autofocus />
+        <input class="input is-expanded" type="text" v-model="form.fields.path" autofocus>
+        <p class="control help is-danger" v-for="err in form.fieldErrors.path" v-cloak v-html="err"></p>
       </p>
       <p class="help">A Go remote import path.</p>
 
       <label class="label">Repository</label>
       <p class="control has-addons">
-        <input class="input is-expanded" type="text" name="repo-root" value="[[ .Package.RepoRoot ]]" />
+        <input class="input is-expanded" type="text" v-model="form.fields['repo-root']">
         <span class="select">
-          <select name="vcs">
+          <select v-model="form.fields.vcs">
             [[ range $vcs := .VCSInfos ]]
-            <option value="[[ $vcs.VCS ]]"[[ if eq $.Package.VCS $vcs.VCS ]] selected[[ end ]]>[[ $vcs.Name ]]</option>
+            <option value="[[ $vcs.VCS ]]">[[ $vcs.Name ]]</option>
             [[ end ]]
           </select>
         </span>
+        <p class="control help is-danger" v-for="err in form.fieldErrors.vcs" v-cloak v-html="err"></p>
+        <p class="control help is-danger" v-for="err in form.fieldErrors['repo-root']" v-cloak v-html="err"></p>
       </p>
       <p class="help">Repository must be a valid URI with a scheme valid hostname, optional port separated by a colon ":" and a path.<br><br>Examples:<br>
       https://github.com/gopherpit/gopherpit<br>
@@ -100,7 +125,8 @@
 
       <label class="label">Go Source</label>
       <p class="control">
-        <input class="input" type="text" name="go-source" value="[[ .Package.GoSource ]]" />
+        <input class="input" type="text" v-model="form.fields['go-source']">
+        <p class="control help is-danger" v-for="err in form.fieldErrors['go-source']" v-cloak v-html="err"></p>
         <p class="help">Value for HTML meta tag go-source, used for <a href="https://github.com/golang/gddo/wiki/Source-Code-Links" target="_blank">documentation links</a>. It is optional.
         <br><br>Example:<br>
         example.com/package https://github.com/example/package/ https://github.com/example/package/tree/master{/dir} https://github.com/example/package/blob/master{/dir}/{file}#L{line}
@@ -109,30 +135,51 @@
 
       <label class="label">Redirect URL</label>
       <p class="control">
-        <input class="input" type="text" name="redirect-url" value="[[ .Package.RedirectURL ]]" />
+        <input class="input" type="text" v-model="form.fields['redirect-url']">
+        <p class="control help is-danger" v-for="err in form.fieldErrors['redirect-url']" v-cloak v-html="err"></p>
         <span class="help">On a request not made by <i>go get</i> tool, a HTTP redirection will be made to this URL.</span>
       </p>
 
+      <br>
       <p class="control">
         <label class="checkbox">
-          <input type="checkbox" name="disabled"[[ if .Package.Disabled ]] checked[[ end ]]>
+          <input type="checkbox" v-model="form.fields.disabled">
           Disabled
         </label>
+        <p class="control help is-danger" v-for="err in form.fieldErrors.disabled" v-cloak v-html="err"></p>
       </p>
-
-      <input type="hidden" name="domain-id" value="[[ .Domain.ID ]]">
 
       <p class="control">
         <nav class="level">
           <div class="level-left">
             [[ if .Package.ID ]]
-            <a class="button is-danger is-outlined modal-button" data-target=".modal.delete-package" tabindex="1">Delete</a>
+            <a class="button is-danger is-outlined" v-on:click.prevent="packageDelete.isModalActive = true" tabindex="1">Delete</a>
+            <div class="modal" v-bind:class="{'is-active': packageDelete.isModalActive}" v-cloak>
+              <div class="modal-background" v-on:click="packageDelete.isModalActive = false"></div>
+              <div class="modal-container">
+                <div class="modal-content box">
+                  <div class="title">Delete package [[ .Domain.FQDN ]][[ .Package.Path ]]?</div>
+                  <div class="notification is-danger" v-for="err in packageDelete.errors" v-cloak v-html="err"></div>
+                  <nav class="level">
+                    <div class="level-left">
+                    </div>
+                    <div class="level-right">
+                      <div class="level-item">
+                        <a class="button modal-close-button" v-on:click.prevent="packageDelete.isModalActive = false">No</a>
+                        <a class="button is-danger" v-on:click.prevent="deletePackage" v-bind:class="{'is-loading': packageDelete.isLoading}">Yes, delete it!</a>
+                      </div>
+                    </div>
+                  </nav>
+                </div>
+              </div>
+              <a class="modal-close" v-on:click.prevent="packageDelete.isModalActive = false"></a>
+            </div>
             [[ end ]]
           </div>
           <div class="level-right">
             <div class="level-item">
               <a class="ui button" href="/domain/[[ .Domain.FQDN ]]">Cancel</a> 
-              <button type="submit" class="button is-primary">Save</button>
+              <button type="submit" class="button is-primary" v-bind:class="{'is-loading': form.isLoading}">Save</button>
             </div>
           </div>
         </nav>
@@ -140,26 +187,4 @@
     </form>
   </div>
 </div>
-
-[[ if .Package.ID ]]
-<div class="modal delete-package">
-  <div class="modal-background"></div>
-  <div class="modal-container">
-    <div class="modal-content box">
-      <div class="title">Delete package [[ .Domain.FQDN ]][[ .Package.Path ]]?</div>
-      <nav class="level">
-        <div class="level-left">
-        </div>
-        <div class="level-right">
-          <div class="level-item">
-            <button class="button modal-close-button">No</button>
-            <button class="button delete-package is-danger" data-method="delete" data-action="/i/package/[[ .Package.ID ]]">Yes, delete it!</button>
-          </div>
-        </div>
-      </nav>
-    </div>
-  </div>
-  <button class="modal-close"></button>
-</div>
-[[ end ]]
 [[ end ]]

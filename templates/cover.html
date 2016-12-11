@@ -6,9 +6,20 @@
 */]]
 
 
+[[ define "base-script" ]]
+<script>
+  new Vue({
+    el: "#header",
+    data: {
+      isActive: false
+    }
+  })
+</script>
+[[ end ]]
+
 [[ define "body" ]]
 <section class="hero is-fullheight [[ block "hero-class" . ]]is-light[[ end ]]">
-  <div class="hero-head">
+  <div class="hero-head" id="header">
     <header class="nav">
       <div class="container">
         <div class="nav-left">
@@ -16,12 +27,12 @@
             [[ block "brand" . ]]<img src="[[ "gopherpit-header-dark.png" | asset ]]" alt="GopherPit">[[ end ]]
           </a>
         </div>
-        <span class="nav-toggle">
+        <span class="nav-toggle" v-on:click="isActive = !isActive" v-bind:class="{'is-active': isActive}">
           <span></span>
           <span></span>
           <span></span>
         </span>
-        <div class="nav-right nav-menu">
+        <div class="nav-right nav-menu" v-bind:class="{'is-active': isActive}">
           <a class="nav-item" href="/login">Login</a>
           <span class="nav-item">
             <a class="button is-primary" href="/registration">

@@ -11,29 +11,31 @@
 [[ define "hero-class" ]]is-dark is-bold[[ end ]]
 
 [[ define "script" ]]
-<script type="text/javascript">
-  "use strict";
-
-  $(function(){
-    var $form = $(".basic-information-form");
-    $form.ajaxform({
-      ok: function(data) {
-        $form.replaceWith($('#basic-information-form-success').html())
+<script>
+  new Vue({
+    el: "#basic-information-form",
+    data: {
+      fields: {
+        name: "[[ .User.Name ]]",
+        username: "[[ .User.Username ]]"
+      },
+      errors: [],
+      fieldErrors: {},
+      isLoading: false,
+      isDone: false
+    },
+    methods: {
+      submit: _.throttle(function() {
+        var app = this;
+        httpPost(app, '/i/user', function(response) {
+          app.isDone = true
+        })
+      }, 500),
+      reload() {
+        document.location.reload()
       }
-    });
-    $("body").on("click", ".notification.basic-information-form-success .delete", function() {
-      window.location.reload()
-    })
+    }
   })
-</script>
-[[ end ]]
-
-[[ define "head" ]]
-<script type="text/html" id="basic-information-form-success">
-<div class="notification is-success basic-information-form-success">
-  <div class="delete"></div>
-  Your basic information is saved.
-</div>
 </script>
 [[ end ]]
 
@@ -67,15 +69,22 @@
         </ul>
       </aside>
     </div>
-    <div class="column">
-      <form class="basic-information-form" method="post" action="/i/user">
-        <label class="label">Your name or pseudonym</label>
+    <div class="column" id="basic-information-form">
+      <div class="notification is-success" v-if="isDone" v-cloak>
+        <div class="delete" v-on:click="reload"></div>
+        Your basic information is saved.
+      </div>
+      <form method="post" v-on:submit.prevent="submit" v-bind:class="{'is-disabled': isLoading}" v-if="!isDone">
+        <div class="notification is-danger" v-for="err in errors" v-cloak v-html="err"></div>
+        <label class="label">Your name</label>
         <p class="control">
-          <input class="input" name="name" type="text" value="[[ .User.Name ]]" placeholder="" autofocus />
+          <input class="input" v-model="fields.name" type="text" autofocus>
+          <p class="control help is-danger" v-for="err in fieldErrors.name" v-cloak v-html="err"></p>
         </p>
         <label class="label">Username</label>
         <p class="control">
-          <input class="input" name="username" type="text" value="[[ .User.Username ]]" placeholder="" />
+          <input class="input" v-model="fields.username" type="text">
+          <p class="control help is-danger" v-for="err in fieldErrors.username" v-cloak v-html="err"></p>
         </p>
         <p class="control">
           <nav class="level">
@@ -83,8 +92,7 @@
             </div>
             <div class="level-right">
               <div class="level-item">
-                <button type="reset" class="button">Reset</button>
-                <button type="submit" class="button is-primary">Save</button>
+                <button type="submit" class="button is-primary" v-bind:class="{'is-loading': isLoading}">Save</button>
               </div>
             </div>
           </nav>
