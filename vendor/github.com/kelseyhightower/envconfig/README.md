@@ -87,20 +87,30 @@ For example, consider the following struct:
 
 ```Go
 type Specification struct {
-    MultiWordVar string `envconfig:"multi_word_var"`
-    DefaultVar   string `default:"foobar"`
-    RequiredVar  string `required:"true"`
-    IgnoredVar   string `ignored:"true"`
+    ManualOverride1 string `envconfig:"manual_override_1"`
+    DefaultVar      string `default:"foobar"`
+    RequiredVar     string `required:"true"`
+    IgnoredVar      string `ignored:"true"`
+    AutoSplitVar    string `split_words:"true"`
 }
 ```
 
-Envconfig will process value for `MultiWordVar` by populating it with the
-value for `MYAPP_MULTI_WORD_VAR`.
+Envconfig has automatic support for CamelCased struct elements when the
+`split_words:"true"` tag is supplied. Without this tag, `AutoSplitVar` above
+would look for an environment variable called `MYAPP_AUTOSPLITVAR`. With the
+setting applied it will look for `MYAPP_AUTO_SPLIT_VAR`. Note that numbers
+will get globbed into the previous word. If the setting does not do the
+right thing, you may use a manual override.
+
+Envconfig will process value for `ManualOverride1` by populating it with the
+value for `MYAPP_MANUAL_OVERRIDE_1`. Without this struct tag, it would have
+instead looked up `MYAPP_MANUALOVERRIDE1`. With the `split_words:"true"` tag
+it would have looked up `MYAPP_MANUAL_OVERRIDE1`.
 
 ```Bash
-export MYAPP_MULTI_WORD_VAR="this will be the value"
+export MYAPP_MANUAL_OVERRIDE_1="this will be the value"
 
-# export MYAPP_MULTIWORDVAR="and this will not"
+# export MYAPP_MANUALOVERRIDE1="and this will not"
 ```
 
 If envconfig can't find an environment variable value for `MYAPP_DEFAULTVAR`,
