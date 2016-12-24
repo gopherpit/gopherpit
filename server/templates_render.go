@@ -80,6 +80,10 @@ func respondText(w http.ResponseWriter, tmpl *template.Template, data interface{
 	}
 }
 
+func (s Server) respond(w http.ResponseWriter, t tid, data interface{}) {
+	respond(w, s.template(t), data)
+}
+
 var errorTemplates = map[int][]tid{
 	http.StatusBadRequest:            {tidBadRequest, tidBadRequestPrivate},
 	http.StatusUnauthorized:          {tidUnauthorized, tidUnauthorizedPrivate},

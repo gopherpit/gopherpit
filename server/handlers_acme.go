@@ -103,14 +103,14 @@ func (s Server) acmeUserHandler(h http.Handler) http.Handler {
 						antixsrf.Generate(w, r, "/")
 					}
 					if u != nil {
-						respond(w, s.template(tidRegisterACMEUserPrivate), map[string]interface{}{
+						s.respond(w, tidRegisterACMEUserPrivate, map[string]interface{}{
 							"User":                u,
 							"ProductionDirectory": s.ACMEDirectoryURL,
 							"StagingDirectory":    s.ACMEDirectoryURLStaging,
 						})
 						return
 					}
-					respond(w, s.template(tidRegisterACMEUser), map[string]interface{}{
+					s.respond(w, tidRegisterACMEUser, map[string]interface{}{
 						"ProductionDirectory": s.ACMEDirectoryURL,
 						"StagingDirectory":    s.ACMEDirectoryURLStaging,
 					})
@@ -198,7 +198,7 @@ func (s Server) packageResolverHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	code = 200
-	respond(w, s.template(tidPackageResolution), map[string]interface{}{
+	s.respond(w, tidPackageResolution, map[string]interface{}{
 		"GoImport":    fmt.Sprintf("%s %s %s", resolution.ImportPrefix, resolution.VCS, resolution.RepoRoot),
 		"GoSource":    resolution.GoSource,
 		"RedirectURL": resolution.RedirectURL,

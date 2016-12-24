@@ -88,7 +88,7 @@ func (s Server) domainPackagesHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	respond(w, s.template(tidDomainPackages), map[string]interface{}{
+	s.respond(w, tidDomainPackages, map[string]interface{}{
 		"User":     u,
 		"Domain":   pkgs.Domain,
 		"Domains":  domains,
@@ -126,7 +126,7 @@ func (s Server) domainAddHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	respond(w, s.template(tidDomainAdd), map[string]interface{}{
+	s.respond(w, tidDomainAdd, map[string]interface{}{
 		"User":       u,
 		"Domain":     domain,
 		"DomainName": s.Domain,
@@ -221,7 +221,7 @@ func (s Server) domainChangelogHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	respond(w, s.template(tidDomainChangelog), map[string]interface{}{
+	s.respond(w, tidDomainChangelog, map[string]interface{}{
 		"User":             u,
 		"Domain":           domain,
 		"Domains":          domains,
@@ -277,7 +277,7 @@ func (s Server) domainTeamHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if domain.OwnerUserID != u.ID {
-		respond(w, s.template(tidDomainTeam), map[string]interface{}{
+		s.respond(w, tidDomainTeam, map[string]interface{}{
 			"Forbidden": true,
 			"User":      u,
 			"Domain":    domain,
@@ -316,7 +316,7 @@ func (s Server) domainTeamHandler(w http.ResponseWriter, r *http.Request) {
 		users = append(users, *domainUser)
 	}
 
-	respond(w, s.template(tidDomainTeam), map[string]interface{}{
+	s.respond(w, tidDomainTeam, map[string]interface{}{
 		"Forbidden": false,
 		"User":      u,
 		"Users":     users,
@@ -392,7 +392,7 @@ func (s Server) domainSettingsHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	respond(w, s.template(tidDomainSettings), map[string]interface{}{
+	s.respond(w, tidDomainSettings, map[string]interface{}{
 		"Forbidden":                  domain.OwnerUserID != u.ID,
 		"User":                       u,
 		"Domain":                     domain,
@@ -457,7 +457,7 @@ func (s Server) domainDomainUserGrantHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	respond(w, s.template(tidDomainUserGrant), map[string]interface{}{
+	s.respond(w, tidDomainUserGrant, map[string]interface{}{
 		"User":    u,
 		"Domain":  domain,
 		"Domains": domains,
@@ -557,7 +557,7 @@ func (s Server) domainDomainUserRevokeHandler(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	respond(w, s.template(tidDomainUserRevoke), map[string]interface{}{
+	s.respond(w, tidDomainUserRevoke, map[string]interface{}{
 		"User":       u,
 		"Domain":     domain,
 		"Domains":    domains,
@@ -620,7 +620,7 @@ func (s Server) domainDomainOwnerChangeHandler(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	respond(w, s.template(tidDomainOwnerChange), map[string]interface{}{
+	s.respond(w, tidDomainOwnerChange, map[string]interface{}{
 		"User":    u,
 		"Domain":  domain,
 		"Domains": domains,
@@ -715,7 +715,7 @@ func (s Server) domainPackageEditHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	respond(w, s.template(tidDomainPackageEdit), map[string]interface{}{
+	s.respond(w, tidDomainPackageEdit, map[string]interface{}{
 		"User":     u,
 		"Domain":   domain,
 		"Domains":  domains,
@@ -743,7 +743,7 @@ func (s Server) userPageHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	respond(w, s.template(tidUserPage), map[string]interface{}{
+	s.respond(w, tidUserPage, map[string]interface{}{
 		"User":     u,
 		"PageUser": pu,
 	})

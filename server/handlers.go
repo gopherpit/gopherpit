@@ -258,7 +258,7 @@ func (s *Server) htmlLoginRequiredHandler(h http.Handler) http.Handler {
 			if r.Header.Get(s.SessionCookieName) != "" {
 				s.logout(w, r)
 			}
-			respond(w, s.template(tidLogin), nil)
+			s.respond(w, tidLogin, nil)
 			return
 		}
 		h.ServeHTTP(w, r)
@@ -330,7 +330,7 @@ func (s *Server) htmlValidatedEmailRequiredHandler(h http.Handler) http.Handler 
 			return
 		}
 		if u.EmailUnvalidated {
-			respond(w, s.template(tidEmailUnvalidated), map[string]interface{}{
+			s.respond(w, tidEmailUnvalidated, map[string]interface{}{
 				"User": u,
 			})
 			return
