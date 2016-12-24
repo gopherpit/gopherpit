@@ -9,7 +9,7 @@
 // services for server to function is done in this package. It integrates
 // all server dependencies into a form of a single executable.
 
-package main // import "gopherpit.com/gopherpit/cli/gopherpit"
+package main // import "gopherpit.com/gopherpit/cmd/gopherpit"
 
 import (
 	"flag"

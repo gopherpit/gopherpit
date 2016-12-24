@@ -46,7 +46,7 @@ dist:
 
 dist/$(NAME): dist FORCE
 	$(GO) version
-	$(GO) build -ldflags "$(LDFLAGS)" -o $@ ./cli/$(NAME)
+	$(GO) build -ldflags "$(LDFLAGS)" -o $@ ./cmd/$(NAME)
 
 dist/assets: FORCE
 	rm -rf dist/assets
@@ -123,7 +123,7 @@ clean:
 
 .PHONY: test
 test:
-	$(GO) test -cover -v ./cli/...
+	$(GO) test -cover -v ./cmd/...
 	$(GO) test -cover -v ./pkg/...
 	$(GO) test -cover -v ./server/...
 	$(GO) test -cover -v ./services/...
@@ -131,7 +131,7 @@ test:
 
 .PHONY: vet
 vet:
-	$(GO) vet ./cli/...
+	$(GO) vet ./cmd/...
 	$(GO) vet ./pkg/...
 	$(GO) vet ./server/...
 	$(GO) vet ./services/...
@@ -139,7 +139,7 @@ vet:
 
 .PHONY: lint
 lint:
-	$(GOLINT) ./cli/...
+	$(GOLINT) ./cmd/...
 	$(GOLINT) ./pkg/...
 	$(GOLINT) ./server/...
 	$(GOLINT) ./services/...
@@ -170,25 +170,25 @@ package: package-linux-amd64 package-linux-arm package-darwin-amd64 package-free
 
 .PHONY: package-linux-amd64
 package-linux-amd64: dist/version dist/assets dist/static dist/templates dist/docker
-	GOOS=linux GOARCH=amd64 $(GO) build -ldflags "$(LDFLAGS)" -o dist/$(NAME) ./cli/$(NAME)
+	GOOS=linux GOARCH=amd64 $(GO) build -ldflags "$(LDFLAGS)" -o dist/$(NAME) ./cmd/$(NAME)
 	tar -C dist -czf dist/$(NAME)-$(VERSION)-linux-amd64.tar.gz $(NAME) version assets static templates
 	cd dist && zip $(NAME)-$(VERSION)-linux-amd64.zip $(NAME) version assets/* static/* templates/*
 
 .PHONY: package-linux-arm
 package-linux-arm: dist/version dist/assets dist/static dist/templates dist/docker
-	GOOS=linux GOARCH=arm $(GO) build -ldflags "$(LDFLAGS)" -o dist/$(NAME) ./cli/$(NAME)
+	GOOS=linux GOARCH=arm $(GO) build -ldflags "$(LDFLAGS)" -o dist/$(NAME) ./cmd/$(NAME)
 	tar -C dist -czf dist/$(NAME)-$(VERSION)-linux-arm.tar.gz $(NAME) version assets static templates
 	cd dist && zip $(NAME)-$(VERSION)-linux-arm.zip $(NAME) version assets/* static/* templates/*
 
 .PHONY: package-darwin-amd64
 package-darwin-amd64: dist/version dist/assets dist/static dist/templates dist/docker
-	GOOS=darwin GOARCH=amd64 $(GO) build -ldflags "$(LDFLAGS)" -o dist/$(NAME) ./cli/$(NAME)
+	GOOS=darwin GOARCH=amd64 $(GO) build -ldflags "$(LDFLAGS)" -o dist/$(NAME) ./cmd/$(NAME)
 	tar -C dist -czf dist/$(NAME)-$(VERSION)-darwin-amd64.tar.gz $(NAME) version assets static templates
 	cd dist && zip $(NAME)-$(VERSION)-darwin-amd64.zip $(NAME) version assets/* static/* templates/*
 
 .PHONY: package-freebsd-amd64
 package-freebsd-amd64: dist/version dist/assets dist/static dist/templates dist/docker
-	GOOS=freebsd GOARCH=amd64 $(GO) build -ldflags "$(LDFLAGS)" -o dist/$(NAME) ./cli/$(NAME)
+	GOOS=freebsd GOARCH=amd64 $(GO) build -ldflags "$(LDFLAGS)" -o dist/$(NAME) ./cmd/$(NAME)
 	tar -C dist -czf dist/$(NAME)-$(VERSION)-freebsd-amd64.tar.gz $(NAME) version assets static templates
 	cd dist && zip $(NAME)-$(VERSION)-freebsd-amd64.zip $(NAME) version assets/* static/* templates/*
 
