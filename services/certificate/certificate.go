@@ -156,7 +156,7 @@ type ACMEChallengeOptions struct {
 	KeyAuth *string `json:"key-auth,omitempty"`
 }
 
-// Errors that are related to the User Service.
+// Errors that are related to the Certificate Service.
 var (
 	CertificateNotFound   = NewError(1000, "certificate not found")
 	CertificateInvalid    = NewError(1001, "certificate invalid")
