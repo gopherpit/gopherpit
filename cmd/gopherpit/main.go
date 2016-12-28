@@ -524,8 +524,10 @@ COPYRIGHT
 		})
 	}
 	if service, ok := certificateService.(*boltCertificate.Service); ok {
-		// Start renewal of certificates.
-		s.Functions = append(s.Functions, service.PeriodicRenew)
+		if gopherpitOptions.ListenTLS != "" || gopherpitOptions.ListenInternalTLS != "" {
+			// Start renewal of certificates.
+			s.Functions = append(s.Functions, service.PeriodicRenew)
+		}
 	}
 
 	// Put the process in the background only if the Pid is not 1
