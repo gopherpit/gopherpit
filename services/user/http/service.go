@@ -24,6 +24,16 @@ type Service struct {
 	Client *apiClient.Client
 }
 
+// NewService creates a new Service and injects user.ErrorRegistry
+// in the API Client.
+func NewService(c *apiClient.Client) *Service {
+	if c == nil {
+		c = &apiClient.Client{}
+	}
+	c.ErrorRegistry = user.ErrorRegistry
+	return &Service{Client: c}
+}
+
 // User retrieves an existing User instance by making a HTTP GET request
 // to {Client.Endpoint}/users/{ref}.
 func (s Service) User(ref string) (u *user.User, err error) {

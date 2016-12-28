@@ -21,6 +21,16 @@ type Service struct {
 	Client *apiClient.Client
 }
 
+// NewService creates a new Service and injects notification.ErrorRegistry
+// in the API Client.
+func NewService(c *apiClient.Client) *Service {
+	if c == nil {
+		c = &apiClient.Client{}
+	}
+	c.ErrorRegistry = notification.ErrorRegistry
+	return &Service{Client: c}
+}
+
 // SendEmailResponse is expected structure of JSON-encoded response
 // body for SendEmail HTTP request.
 type SendEmailResponse struct {

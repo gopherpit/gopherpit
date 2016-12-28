@@ -22,6 +22,16 @@ type Service struct {
 	Client *apiClient.Client
 }
 
+// NewService creates a new Service and injects session.ErrorRegistry
+// in the API Client.
+func NewService(c *apiClient.Client) *Service {
+	if c == nil {
+		c = &apiClient.Client{}
+	}
+	c.ErrorRegistry = session.ErrorRegistry
+	return &Service{Client: c}
+}
+
 // Session retrieves a Session instance by making a HTTP GET request
 // to {Client.Endpoint}/sessions/{id}.
 func (s Service) Session(id string) (ses *session.Session, err error) {

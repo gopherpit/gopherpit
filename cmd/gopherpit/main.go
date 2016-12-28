@@ -299,17 +299,14 @@ COPYRIGHT
 	var sessionService session.Service
 	if servicesOptions.SessionEndpoint != "" {
 		c := &apiClient.Client{
-			Endpoint:      servicesOptions.SessionEndpoint,
-			Key:           servicesOptions.SessionKey,
-			UserAgent:     config.UserAgent,
-			ErrorRegistry: session.ErrorRegistry,
+			Endpoint:  servicesOptions.SessionEndpoint,
+			Key:       servicesOptions.SessionKey,
+			UserAgent: config.UserAgent,
 		}
 		if servicesOptions.SessionOptions != nil {
 			c.HTTPClient = httpClient.New(servicesOptions.SessionOptions)
 		}
-		sessionService = &httpSession.Service{
-			Client: c,
-		}
+		sessionService = httpSession.NewService(c)
 	} else {
 		db, err := boltSession.NewDB(filepath.Join(gopherpitOptions.StorageDir, "session.db"), gopherpitOptions.StorageFileMode.FileMode(), nil)
 		if err != nil {
@@ -327,17 +324,14 @@ COPYRIGHT
 	var userService user.Service
 	if servicesOptions.UserEndpoint != "" {
 		c := &apiClient.Client{
-			Endpoint:      servicesOptions.UserEndpoint,
-			Key:           servicesOptions.UserKey,
-			UserAgent:     config.UserAgent,
-			ErrorRegistry: user.ErrorRegistry,
+			Endpoint:  servicesOptions.UserEndpoint,
+			Key:       servicesOptions.UserKey,
+			UserAgent: config.UserAgent,
 		}
 		if servicesOptions.UserOptions != nil {
 			c.HTTPClient = httpClient.New(servicesOptions.UserOptions)
 		}
-		userService = &httpUser.Service{
-			Client: c,
-		}
+		userService = httpUser.NewService(c)
 	} else {
 		db, err := boltUser.NewDB(filepath.Join(gopherpitOptions.StorageDir, "user.db"), gopherpitOptions.StorageFileMode.FileMode(), nil)
 		if err != nil {
@@ -377,17 +371,14 @@ COPYRIGHT
 	var notificationService notification.Service
 	if servicesOptions.NotificationEndpoint != "" {
 		c := &apiClient.Client{
-			Endpoint:      servicesOptions.NotificationEndpoint,
-			Key:           servicesOptions.NotificationKey,
-			UserAgent:     config.UserAgent,
-			ErrorRegistry: notification.ErrorRegistry,
+			Endpoint:  servicesOptions.NotificationEndpoint,
+			Key:       servicesOptions.NotificationKey,
+			UserAgent: config.UserAgent,
 		}
 		if servicesOptions.NotificationOptions != nil {
 			c.HTTPClient = httpClient.New(servicesOptions.NotificationOptions)
 		}
-		notificationService = &httpNotification.Service{
-			Client: c,
-		}
+		notificationService = httpNotification.NewService(c)
 	} else {
 		db, err := boltNotification.NewDB(filepath.Join(gopherpitOptions.StorageDir, "notification.db"), gopherpitOptions.StorageFileMode.FileMode(), nil)
 		if err != nil {
@@ -409,17 +400,14 @@ COPYRIGHT
 	var certificateService certificate.Service
 	if servicesOptions.CertificateEndpoint != "" {
 		c := &apiClient.Client{
-			Endpoint:      servicesOptions.CertificateEndpoint,
-			Key:           servicesOptions.CertificateKey,
-			UserAgent:     config.UserAgent,
-			ErrorRegistry: certificate.ErrorRegistry,
+			Endpoint:  servicesOptions.CertificateEndpoint,
+			Key:       servicesOptions.CertificateKey,
+			UserAgent: config.UserAgent,
 		}
 		if servicesOptions.CertificateOptions != nil {
 			c.HTTPClient = httpClient.New(servicesOptions.CertificateOptions)
 		}
-		certificateService = &httpCertificate.Service{
-			Client: c,
-		}
+		certificateService = httpCertificate.NewService(c)
 	} else {
 		db, err := boltCertificate.NewDB(filepath.Join(gopherpitOptions.StorageDir, "certificate.db"), gopherpitOptions.StorageFileMode.FileMode(), nil)
 		if err != nil {
@@ -438,17 +426,14 @@ COPYRIGHT
 	var packagesService packages.Service
 	if servicesOptions.PackagesEndpoint != "" {
 		c := &apiClient.Client{
-			Endpoint:      servicesOptions.PackagesEndpoint,
-			Key:           servicesOptions.PackagesKey,
-			UserAgent:     config.UserAgent,
-			ErrorRegistry: packages.ErrorRegistry,
+			Endpoint:  servicesOptions.PackagesEndpoint,
+			Key:       servicesOptions.PackagesKey,
+			UserAgent: config.UserAgent,
 		}
 		if servicesOptions.PackagesOptions != nil {
 			c.HTTPClient = httpClient.New(servicesOptions.PackagesOptions)
 		}
-		packagesService = &httpPackages.Service{
-			Client: c,
-		}
+		packagesService = httpPackages.NewService(c)
 	} else {
 		db, err := boltPackages.NewDB(filepath.Join(gopherpitOptions.StorageDir, "packages.db"), gopherpitOptions.StorageFileMode.FileMode(), nil)
 		if err != nil {

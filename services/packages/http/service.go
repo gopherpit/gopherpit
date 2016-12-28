@@ -21,6 +21,16 @@ type Service struct {
 	Client *apiClient.Client
 }
 
+// NewService creates a new Service and injects packages.ErrorRegistry
+// in the API Client.
+func NewService(c *apiClient.Client) *Service {
+	if c == nil {
+		c = &apiClient.Client{}
+	}
+	c.ErrorRegistry = packages.ErrorRegistry
+	return &Service{Client: c}
+}
+
 func (s Service) Domain(ref string) (d *packages.Domain, err error) {
 	err = s.Client.JSON("GET", "/domains/"+ref, nil, nil, d)
 	return

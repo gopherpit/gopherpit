@@ -24,6 +24,16 @@ type Service struct {
 	Client *apiClient.Client
 }
 
+// NewService creates a new Service and injects certificate.ErrorRegistry
+// in the API Client.
+func NewService(c *apiClient.Client) *Service {
+	if c == nil {
+		c = &apiClient.Client{}
+	}
+	c.ErrorRegistry = certificate.ErrorRegistry
+	return &Service{Client: c}
+}
+
 // Certificate retrieves an existing Certificate instance by making a HTTP GET request
 // to {Client.Endpoint}/certificates/{fqdn}.
 func (s Service) Certificate(fqdn string) (c *certificate.Certificate, err error) {
