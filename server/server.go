@@ -72,7 +72,6 @@ type Options struct {
 	Headers                 map[string]string
 	XSRFCookieName          string
 	SessionCookieName       string
-	InternalCIDRs           []string
 	AssetsDir               string
 	StaticDir               string
 	TemplatesDir            string
