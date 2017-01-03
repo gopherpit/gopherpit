@@ -145,7 +145,7 @@ func (s Server) htmlRecoveryHandler(h http.Handler) http.Handler {
 
 // Recovery handler for JSON API routers.
 func (s Server) jsonRecoveryHandler(h http.Handler) http.Handler {
-	return s.staticRecoveryHandler(h, `{"message":"Server error","code": 500}`, "application/json; charset=utf-8")
+	return s.staticRecoveryHandler(h, `{"code":500,"message":"Server error"}`, "application/json; charset=utf-8")
 }
 
 // Recovery handler that does not write anything to response.
@@ -185,7 +185,7 @@ func jsonMaxBodyBytesHandler(h http.Handler) http.Handler {
 		Handler: h,
 		Limit:   2 * 1024 * 1024,
 		BodyFunc: func(r *http.Request) (string, error) {
-			return `{"message":"Request Entity Too Large error","code":413}`, nil
+			return `{"code":413,"message":"Request Entity Too Large error"}`, nil
 		},
 		ContentType:  "application/json; charset=utf-8",
 		ErrorHandler: nil,
@@ -203,9 +203,7 @@ func textNotFoundHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func jsonNotFoundHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.WriteHeader(http.StatusNotFound)
-	fmt.Fprintln(w, `{"message": "Not found", "code": 404}`)
+	jsonresponse.NotFound(w, nil)
 }
 
 func (s Server) htmlForbiddenHandler(w http.ResponseWriter, r *http.Request) {
@@ -229,9 +227,7 @@ func (s Server) jsonAntiXSRFHandler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := antixsrf.Verify(r); err != nil {
 			s.logger.Warningf("xsrf %s: %s", r.RequestURI, err)
-			w.Header().Set("Content-Type", "application/json; charset=utf-8")
-			w.WriteHeader(http.StatusForbidden)
-			fmt.Fprintln(w, `{"message": "Forbidden", "code": 403}`)
+			jsonresponse.Forbidden(w, nil)
 			return
 		}
 		h.ServeHTTP(w, r)
@@ -369,7 +365,7 @@ func (h textMethodHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 type jsonMethodHandler map[string]http.Handler
 
 func (h jsonMethodHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	httputils.HandleMethods(h, `{"message": "Method Not Allowed", "code": 405}`, "application/json; charset=utf-8", w, r)
+	httputils.HandleMethods(h, `{"code":405,"message":"Method Not Allowed"}`, "application/json; charset=utf-8", w, r)
 }
 
 func noCacheHeaderHandler(h http.Handler) http.Handler {
