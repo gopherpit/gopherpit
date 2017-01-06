@@ -168,7 +168,7 @@
             <div class="level-left">
               <div class="level-item">
                 <div class="notification is-danger" v-for="err in certificate.errors" v-cloak v-html="err"></div>
-                <a class="link" v-on:click.prevent="getCertificate" v-bind:class="{'is-loading': certificate.isLoading}">Try to get TLS Certificate again</a>
+                <a class="link" v-on:click.prevent="getCertificate" v-bind:class="{'is-disabled': certificate.isLoading}" v-if="certificate.errors.length == 0">Try to get TLS Certificate again</a>
               </div>
             </div>
             <div class="level-right">
