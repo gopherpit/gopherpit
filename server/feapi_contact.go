@@ -17,9 +17,9 @@ import (
 )
 
 type contactRequest struct {
-	Name    string `json:"contact-name"`
-	Email   string `json:"contact-email"`
-	Message string `json:"contact-message"`
+	Name    string `json:"name"`
+	Email   string `json:"email"`
+	Message string `json:"message"`
 }
 
 func (s Server) contactPrivateFEAPIHandler(w http.ResponseWriter, r *http.Request) {
@@ -39,7 +39,7 @@ func (s Server) contactPrivateFEAPIHandler(w http.ResponseWriter, r *http.Reques
 
 	if request.Message == "" {
 		s.logger.Warningf("contact private fe api: message empty")
-		errors.AddFieldError("contact-message", "The message is required.")
+		errors.AddFieldError("message", "The message is required.")
 		jsonresponse.BadRequest(w, errors)
 		return
 	}
@@ -71,24 +71,24 @@ func (s Server) contactFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	if request.Email == "" {
 		s.logger.Warning("contact fe api: request: email empty")
-		errors.AddFieldError("contact-email", "E-mail is required.")
+		errors.AddFieldError("email", "E-mail is required.")
 	} else {
 		emailParts := strings.Split(request.Email, "@")
 		if len(emailParts) != 2 {
 			s.logger.Warning("contact fe api: invalid email %s", request.Email)
-			errors.AddFieldError("contact-email", "E-mail address is invalid.")
+			errors.AddFieldError("email", "E-mail address is invalid.")
 		} else if _, err := net.ResolveIPAddr("ip", emailParts[1]); err != nil {
 			s.logger.Warning("contact fe api: invalid email domain %s", request.Email)
-			errors.AddFieldError("contact-email", "E-mail address has invalid domain.")
+			errors.AddFieldError("email", "E-mail address has invalid domain.")
 		}
 	}
 	if request.Message == "" {
 		s.logger.Warningf("contact fe api: message empty %s", request.Email)
-		errors.AddFieldError("contact-message", "The message is required.")
+		errors.AddFieldError("message", "The message is required.")
 	}
 	if request.Name == "" {
 		s.logger.Warningf("contact fe api: name empty %s", request.Email)
-		errors.AddFieldError("contact-name", "Your name is required.")
+		errors.AddFieldError("name", "Your name is required.")
 	}
 	if errors.HasErrors() {
 		jsonresponse.BadRequest(w, errors)
