@@ -24,6 +24,13 @@ type MessageResponse struct {
 	Message string `json:"message,omitempty"`
 }
 
+// NewMessage returns MessageResponse with a provided textual message.
+func NewMessage(message string) *MessageResponse {
+	return &MessageResponse{
+		Message: message,
+	}
+}
+
 // Respond writes a JSON-encoded body to http.ResponseWriter.
 func Respond(w http.ResponseWriter, statusCode int, response interface{}) {
 	if response == nil {

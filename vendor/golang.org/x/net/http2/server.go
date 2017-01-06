@@ -278,6 +278,16 @@ func (s *Server) ServeConn(c net.Conn, opts *ServeConnOpts) {
 		pushEnabled:       true,
 	}
 
+	// The net/http package sets the write deadline from the
+	// http.Server.WriteTimeout during the TLS handshake, but then
+	// passes the connection off to us with the deadline already
+	// set. Disarm it here so that it is not applied to additional
+	// streams opened on this connection.
+	// TODO: implement WriteTimeout fully. See Issue 18437.
+	if sc.hs.WriteTimeout != 0 {
+		sc.conn.SetWriteDeadline(time.Time{})
+	}
+
 	if s.NewWriteScheduler != nil {
 		sc.writeSched = s.NewWriteScheduler()
 	} else {
@@ -936,9 +946,15 @@ func (sc *serverConn) startFrameWrite(wr FrameWriteRequest) {
 	if st != nil {
 		switch st.state {
 		case stateHalfClosedLocal:
-			panic("internal error: attempt to send frame on half-closed-local stream")
+			switch wr.write.(type) {
+			case StreamError, handlerPanicRST, writeWindowUpdate:
+				// RFC 7540 Section 5.1 allows sending RST_STREAM, PRIORITY, and WINDOW_UPDATE
+				// in this state. (We never send PRIORITY from the server, so that is not checked.)
+			default:
+				panic(fmt.Sprintf("internal error: attempt to send frame on a half-closed-local stream: %v", wr))
+			}
 		case stateClosed:
-			panic(fmt.Sprintf("internal error: attempt to send a write %v on a closed stream", wr))
+			panic(fmt.Sprintf("internal error: attempt to send frame on a closed stream: %v", wr))
 		}
 	}
 	if wpp, ok := wr.write.(*writePushPromise); ok {
@@ -2589,7 +2605,7 @@ func (sc *serverConn) startPush(msg startPushRequest) {
 			scheme:    msg.url.Scheme,
 			authority: msg.url.Host,
 			path:      msg.url.RequestURI(),
-			header:    msg.header,
+			header:    cloneHeader(msg.header), // clone since handler runs concurrently with writing the PUSH_PROMISE
 		})
 		if err != nil {
 			// Should not happen, since we've already validated msg.url.

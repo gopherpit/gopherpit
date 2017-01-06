@@ -8,8 +8,8 @@ package httputils
 // FormErrors represent structure errors returned by API server to
 // request based on HTML form data.
 type FormErrors struct {
-	Errors      []string            `json:"errors"`
-	FieldErrors map[string][]string `json:"field-errors"`
+	Errors      []string            `json:"errors,omitempty"`
+	FieldErrors map[string][]string `json:"field-errors,omitempty"`
 }
 
 // AddError appends an error to a list of general errors.
