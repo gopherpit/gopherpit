@@ -47,7 +47,9 @@
     <label class="label">E-mail</label>
     <p class="control has-icon">
       <input class="input" type="email" v-model="fields.email" placeholder="User email">
-      <i class="fa fa-envelope"></i>
+      <span class="icon is-small">
+        <i class="fa fa-envelope"></i>
+      </span>
       <p class="control help is-danger" v-for="err in fieldErrors.email" v-cloak v-html="err"></p>
     </p>
     <label class="label">Directory</label>

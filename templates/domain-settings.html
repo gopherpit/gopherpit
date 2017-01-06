@@ -168,7 +168,7 @@
             <div class="level-left">
               <div class="level-item">
                 <div class="notification is-danger" v-for="err in certificate.errors" v-cloak v-html="err"></div>
-                <a class="button" v-on:click.prevent="getCertificate" v-bind:class="{'is-loading': certificate.isLoading}">Try to get TLS Certificate again</a>
+                <a class="link" v-on:click.prevent="getCertificate" v-bind:class="{'is-loading': certificate.isLoading}">Try to get TLS Certificate again</a>
               </div>
             </div>
             <div class="level-right">
@@ -212,8 +212,10 @@
           </div>
           <div class="level-right">
             <div class="level-item">
-              <a class="ui button" href="/[[ if .Domain.ID ]]domain/[[ .Domain.FQDN ]][[ end ]]">Cancel</a> 
-              <button type="submit" class="button is-primary" v-bind:class="{'is-loading': form.isLoading}">Save</button>
+              <p class="control">
+                <a class="ui button" href="/[[ if .Domain.ID ]]domain/[[ .Domain.FQDN ]][[ end ]]">Cancel</a> 
+                <button type="submit" class="button is-primary" v-bind:class="{'is-loading': form.isLoading}">Save</button>
+              </p>
             </div>
           </div>
         </nav>

@@ -81,8 +81,10 @@
           </div>
           <div class="level-right">
             <div class="level-item">
-              <a class="ui button" href="/domain/[[ .Domain.FQDN ]]/team">Cancel</a> 
-              <button type="submit" class="button is-primary" v-bind:class="{'is-loading': isLoading}">Revoke access from user [[ .DomainUser ]]</button>
+              <p class="control">
+                <a class="ui button" href="/domain/[[ .Domain.FQDN ]]/team">Cancel</a> 
+                <button type="submit" class="button is-primary" v-bind:class="{'is-loading': isLoading}">Revoke access from user [[ .DomainUser ]]</button>
+              </p>
             </div>
           </div>
         </nav>

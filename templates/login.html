@@ -23,12 +23,16 @@
     <div class="notification is-danger" v-for="err in errors" v-cloak v-html="err"></div>
     <p class="control has-icon">
       <input class="input" type="text" id="login-username" autocomplete="username" placeholder="Email or username" autofocus v-model="fields.username">
-      <i class="fa fa-envelope"></i>
+      <span class="icon is-small">
+        <i class="fa fa-envelope"></i>
+      </span>
       <p class="control help is-danger" v-for="err in fieldErrors.username" v-cloak v-html="err"></p>
     </p>
     <p class="control has-icon">
       <input class="input" type="password" id="login-password" autocomplete="current-password" placeholder="Password" v-model="fields.password">
-      <i class="fa fa-lock"></i>
+      <span class="icon is-small">
+        <i class="fa fa-lock"></i>
+      </span>
       <p class="control help is-danger" v-for="err in fieldErrors.password" v-cloak v-html="err"></p>
     </p>
     <p class="control">
@@ -45,9 +49,11 @@
           </div>
         </div>
         <div class="level-right">
-          <div class="level-item">
-            <a class="button" href="/registration">Register new accunt</a>
-            <button type="submit" class="button is-primary" v-bind:class="{'is-loading': isLoading}">Login</button>
+          <div class="level-item control">
+            <p class="control">
+              <a class="button" href="/registration">Register new accunt</a>
+              <button type="submit" class="button is-primary" v-bind:class="{'is-loading': isLoading}">Login</button>
+            </p>
           </div>
         </div>
       </nav>

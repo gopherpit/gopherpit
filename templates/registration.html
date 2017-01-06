@@ -43,31 +43,41 @@
     <div class="notification is-danger" v-for="err in errors" v-cloak v-html="err"></div>
     <p class="control has-icon">
       <input class="input" type="text" v-model="fields.name" placeholder="Name" autofocus>
-      <i class="fa fa-user"></i>
+      <span class="icon is-small">
+        <i class="fa fa-user"></i>
+      </span>
       <span class="help">Your name is required and it will be visible to other users.</span>
       <p class="control help is-danger" v-for="err in fieldErrors.name" v-cloak v-html="err"></p>
     </p>
     <p class="control has-icon">
       <input class="input" type="email" v-model="fields.email" placeholder="E-mail address">
-      <i class="fa fa-envelope"></i>
+      <span class="icon is-small">
+        <i class="fa fa-envelope"></i>
+      </span>
       <span class="help">Your e-mail is required, but it will never be revealed to other user or visitors.</span>
       <p class="control help is-danger" v-for="err in fieldErrors.email" v-cloak v-html="err"></p>
     </p>
     <p class="control has-icon">
       <input class="input" type="text" v-model="fields.username" placeholder="Pick a username">
-      <i class="fa fa-user"></i>
+      <span class="icon is-small">
+        <i class="fa fa-user"></i>
+      </span>
       <span class="help">Username is optional and can be set or removed later. It can be used instead of account ID or E-mail address as a reference to gain a team access.</span>
       <p class="control help is-danger" v-for="err in fieldErrors.username" v-cloak v-html="err"></p>
     </p>
     <p class="control has-icon">
       <input class="input" type="password" v-model="fields.password1" placeholder="Password">
-      <i class="fa fa-lock"></i>
+      <span class="icon is-small">
+        <i class="fa fa-lock"></i>
+      </span>
       <span class="help">Pick a strong password.</span>
       <p class="control help is-danger" v-for="err in fieldErrors.password1" v-cloak v-html="err"></p>
     </p>
     <p class="control has-icon">
       <input class="input" type="password" v-model="fields.password2" placeholder="Password, again">
-      <i class="fa fa-lock"></i>
+      <span class="icon is-small">
+        <i class="fa fa-lock"></i>
+      </span>
       <span class="help">Confirm it, just to be sure you entered it right the first time.</span>
       <p class="control help is-danger" v-for="err in fieldErrors.password2" v-cloak v-html="err"></p>
     </p>
