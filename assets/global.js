@@ -18,7 +18,7 @@ function standardHTTPError(store, response) {
                 store.errors = ["Forbidden."];
                 break;
             default:
-              if (response.data.errors === undefined) {
+              if (!response.data.errors && !response.data["field-errors"]) {
                   store.errors = ["Server error."];
               } else {
                   store.errors = response.data.errors || [];
