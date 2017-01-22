@@ -117,6 +117,7 @@ clean:
 	rm -rf \
 		dist/$(NAME) \
 		dist/version \
+		dist/static \
 		dist/assets \
 		dist/templates \
 		dist/bulma
@@ -148,7 +149,8 @@ lint:
 .PHONY: autoreload
 autoreload:
 	echo -n -e "\033]0;$(NAME) - $@\007"
-	rm -rf dist/assets dist/templates
+	rm -rf dist/static dist/assets dist/templates
+	ln -s ../static dist/static
 	ln -s ../assets dist/assets
 	ln -s ../templates dist/templates
 	reflex --only-files -s -r '(\.html|dist/$(NAME))$$' -- ./dist/$(NAME)
