@@ -6,7 +6,6 @@
 package config
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -14,13 +13,14 @@ import (
 	"time"
 
 	"github.com/kelseyhightower/envconfig"
+	yaml "gopkg.in/yaml.v2"
 	"resenje.org/marshal"
 )
 
 // SessionOptions defines parameters related to session storage.
 type SessionOptions struct {
-	CleanupPeriod   marshal.Duration `json:"cleanup-period" envconfig:"CLEANUP_PERIOD"`
-	DefaultLifetime marshal.Duration `json:"default-lifetime" envconfig:"DEFAULT_LIFETIME"`
+	CleanupPeriod   marshal.Duration `json:"cleanup-period" yaml:"cleanup-period" envconfig:"CLEANUP_PERIOD"`
+	DefaultLifetime marshal.Duration `json:"default-lifetime" yaml:"default-lifetime" envconfig:"DEFAULT_LIFETIME"`
 }
 
 // NewSessionOptions initializes SessionOptions with default values.
@@ -31,15 +31,16 @@ func NewSessionOptions() *SessionOptions {
 	}
 }
 
-// Update updates options by loading session.json files from:
-//  - defaults subdirectory of the directory where service executable is.
-//  - configDir parameter
-func (o *SessionOptions) Update(configDir string) error {
-	for _, dir := range []string{
-		defaultsDir,
-		configDir,
-	} {
-		f := filepath.Join(dir, "session.json")
+// Update updates options by loading session.json files.
+func (o *SessionOptions) Update(dirs ...string) error {
+	for _, dir := range dirs {
+		f := filepath.Join(dir, "session.yaml")
+		if _, err := os.Stat(f); !os.IsNotExist(err) {
+			if err := loadYAML(f, o); err != nil {
+				return fmt.Errorf("load yaml config: %s", err)
+			}
+		}
+		f = filepath.Join(dir, "session.json")
 		if _, err := os.Stat(f); !os.IsNotExist(err) {
 			if err := loadJSON(f, o); err != nil {
 				return fmt.Errorf("load json config: %s", err)
@@ -54,7 +55,7 @@ func (o *SessionOptions) Update(configDir string) error {
 
 // String returns a JSON representation of the options.
 func (o *SessionOptions) String() string {
-	data, _ := json.MarshalIndent(o, "", "    ")
+	data, _ := yaml.Marshal(o)
 	return string(data)
 }
 

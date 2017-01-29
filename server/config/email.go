@@ -6,26 +6,26 @@
 package config
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/kelseyhightower/envconfig"
+	yaml "gopkg.in/yaml.v2"
 )
 
 // EmailOptions defines parameters for email sending.
 type EmailOptions struct {
-	NotifyAddresses []string `json:"notify-addresses" envconfig:"NOTIFY_ADDRESS"`
-	DefaultFrom     string   `json:"default-from" envconfig:"DEFAULT_FROM"`
-	SubjectPrefix   string   `json:"subject-prefix" envconfig:"SUBJECT_PREFIX"`
-	SMTPIdentity    string   `json:"smtp-identity" envconfig:"SMTP_IDENTITY"`
-	SMTPUsername    string   `json:"smtp-username" envconfig:"SMTP_USERNAME"`
-	SMTPPassword    string   `json:"smtp-password" envconfig:"SMTP_PASSWORD"`
-	SMTPHost        string   `json:"smtp-host" envconfig:"SMTP_HOST"`
-	SMTPPort        int      `json:"smtp-port" envconfig:"SMTP_PORT"`
-	SMTPSkipVerify  bool     `json:"smtp-skip-verify" envconfig:"SMTP_SKIP_VERIFY"`
+	NotifyAddresses []string `json:"notify-addresses" yaml:"notify-addresses" envconfig:"NOTIFY_ADDRESS"`
+	DefaultFrom     string   `json:"default-from" yaml:"default-from" envconfig:"DEFAULT_FROM"`
+	SubjectPrefix   string   `json:"subject-prefix" yaml:"subject-prefix" envconfig:"SUBJECT_PREFIX"`
+	SMTPIdentity    string   `json:"smtp-identity" yaml:"smtp-identity" envconfig:"SMTP_IDENTITY"`
+	SMTPUsername    string   `json:"smtp-username" yaml:"smtp-username" envconfig:"SMTP_USERNAME"`
+	SMTPPassword    string   `json:"smtp-password" yaml:"smtp-password" envconfig:"SMTP_PASSWORD"`
+	SMTPHost        string   `json:"smtp-host" yaml:"smtp-host" envconfig:"SMTP_HOST"`
+	SMTPPort        int      `json:"smtp-port" yaml:"smtp-port" envconfig:"SMTP_PORT"`
+	SMTPSkipVerify  bool     `json:"smtp-skip-verify" yaml:"smtp-skip-verify" envconfig:"SMTP_SKIP_VERIFY"`
 }
 
 // NewEmailOptions initializes EmailOptions with default values.
@@ -43,15 +43,16 @@ func NewEmailOptions() *EmailOptions {
 	}
 }
 
-// Update updates options by loading email.json files from:
-//  - defaults subdirectory of the directory where service executable is.
-//  - configDir parameter
-func (o *EmailOptions) Update(configDir string) error {
-	for _, dir := range []string{
-		defaultsDir,
-		configDir,
-	} {
-		f := filepath.Join(dir, "email.json")
+// Update updates options by loading email.json files.
+func (o *EmailOptions) Update(dirs ...string) error {
+	for _, dir := range dirs {
+		f := filepath.Join(dir, "email.yaml")
+		if _, err := os.Stat(f); !os.IsNotExist(err) {
+			if err := loadYAML(f, o); err != nil {
+				return fmt.Errorf("load yaml config: %s", err)
+			}
+		}
+		f = filepath.Join(dir, "email.json")
 		if _, err := os.Stat(f); !os.IsNotExist(err) {
 			if err := loadJSON(f, o); err != nil {
 				return fmt.Errorf("load json config: %s", err)
@@ -66,7 +67,7 @@ func (o *EmailOptions) Update(configDir string) error {
 
 // String returns a JSON representation of the options.
 func (o *EmailOptions) String() string {
-	data, _ := json.MarshalIndent(o, "", "    ")
+	data, _ := yaml.Marshal(o)
 	return string(data)
 }
 

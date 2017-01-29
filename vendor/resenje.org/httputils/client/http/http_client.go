@@ -133,13 +133,13 @@ func New(options *Options) *http.Client {
 // optionsJSON is a helper structure to marshal
 // duration values into human friendly format.
 type optionsJSON struct {
-	Timeout             marshal.Duration `json:"timeout,omitempty"`
-	KeepAlive           marshal.Duration `json:"keep-alive,omitempty"`
-	TLSHandshakeTimeout marshal.Duration `json:"tls-handshake-timeout,omitempty"`
-	TLSSkipVerify       bool             `json:"tls-skip-verify,omitempty"`
-	RetryTimeMax        marshal.Duration `json:"retry-time-max,omitempty"`
-	RetrySleepMax       marshal.Duration `json:"retry-sleep-max,omitempty"`
-	RetrySleepBase      marshal.Duration `json:"retry-sleep-base,omitempty"`
+	Timeout             marshal.Duration `json:"timeout,omitempty" yaml:"timeout,omitempty"`
+	KeepAlive           marshal.Duration `json:"keep-alive,omitempty" yaml:"keep-alive,omitempty"`
+	TLSHandshakeTimeout marshal.Duration `json:"tls-handshake-timeout,omitempty" yaml:"tls-handshake-timeout,omitempty"`
+	TLSSkipVerify       bool             `json:"tls-skip-verify,omitempty" yaml:"tls-skip-verify,omitempty"`
+	RetryTimeMax        marshal.Duration `json:"retry-time-max,omitempty" yaml:"retry-time-max,omitempty"`
+	RetrySleepMax       marshal.Duration `json:"retry-sleep-max,omitempty" yaml:"retry-sleep-max,omitempty"`
+	RetrySleepBase      marshal.Duration `json:"retry-sleep-base,omitempty" yaml:"retry-sleep-base,omitempty"`
 }
 
 // MarshalJSON implements of json.Marshaler interface.
@@ -161,6 +161,39 @@ func (o Options) MarshalJSON() ([]byte, error) {
 func (o *Options) UnmarshalJSON(data []byte) error {
 	v := &optionsJSON{}
 	if err := json.Unmarshal(data, v); err != nil {
+		return err
+	}
+	*o = Options{
+		Timeout:             v.Timeout.Duration(),
+		KeepAlive:           v.KeepAlive.Duration(),
+		TLSHandshakeTimeout: v.TLSHandshakeTimeout.Duration(),
+		TLSSkipVerify:       v.TLSSkipVerify,
+		RetryTimeMax:        v.RetryTimeMax.Duration(),
+		RetrySleepMax:       v.RetrySleepMax.Duration(),
+		RetrySleepBase:      v.RetrySleepBase.Duration(),
+	}
+	return nil
+}
+
+// MarshalYAML implements of yaml.Marshaler interface.
+// It marshals string representations of time.Duration.
+func (o Options) MarshalYAML() (interface{}, error) {
+	return optionsJSON{
+		Timeout:             marshal.Duration(o.Timeout),
+		KeepAlive:           marshal.Duration(o.KeepAlive),
+		TLSHandshakeTimeout: marshal.Duration(o.TLSHandshakeTimeout),
+		TLSSkipVerify:       o.TLSSkipVerify,
+		RetryTimeMax:        marshal.Duration(o.RetryTimeMax),
+		RetrySleepMax:       marshal.Duration(o.RetrySleepMax),
+		RetrySleepBase:      marshal.Duration(o.RetrySleepBase),
+	}, nil
+}
+
+// UnmarshalYAML implements yaml.Unamrshaler interface.
+// It parses time.Duration as strings.
+func (o *Options) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	v := &optionsJSON{}
+	if err := unmarshal(v); err != nil {
 		return err
 	}
 	*o = Options{

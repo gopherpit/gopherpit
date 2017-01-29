@@ -14,6 +14,8 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+
+	yaml "gopkg.in/yaml.v2"
 )
 
 var (
@@ -44,25 +46,22 @@ var (
 
 	// BaseDir is the directory where the service's executable is located.
 	BaseDir = func() string {
-		baseDir := filepath.Dir(os.Args[0])
-		baseDir, err := filepath.Abs(baseDir)
+		baseDir, err := filepath.Abs(filepath.Dir(os.Args[0]))
 		if err != nil {
 			panic(err)
 		}
 		return baseDir
 	}()
 
-	defaultsDir = filepath.Join(BaseDir, "defaults")
-
-	// ConfigDir is default directory where configuration files are located.
-	// Set the version on build with: go build -ldflags "-X gopherpit.com/gopherpit/server/config.ConfigDir=$(CONFIG_DIR)"
-	ConfigDir = "/etc/" + Name
+	// Dir is default directory where configuration files are located.
+	// Set the version on build with: go build -ldflags "-X gopherpit.com/gopherpit/server/config.Dir=$(CONFIG_DIR)"
+	Dir = "/etc/" + Name
 )
 
 // Options interface defines functionality to update, verify, prepare
 // and display configuration.
 type Options interface {
-	Update(configDir string) error
+	Update(dirs ...string) error
 	Verify() (help string, err error)
 	Prepare() error
 	String() string
@@ -79,9 +78,9 @@ func Prepare(options []Options) error {
 }
 
 // Update updates configuration options from external files.
-func Update(options []Options, configDir string) error {
+func Update(options []Options, dirs ...string) error {
 	for _, o := range options {
-		if err := o.Update(configDir); err != nil {
+		if err := o.Update(dirs...); err != nil {
 			return err
 		}
 	}
@@ -116,6 +115,17 @@ func loadJSON(filename string, o Options) error {
 			line, col := getLineColFromOffset(data, e.Offset)
 			return fmt.Errorf("%s:%d:%d: expected json %s value but got %s", filename, line, col, e.Type, e.Value)
 		}
+		return fmt.Errorf("%s: %v", filename, err)
+	}
+	return nil
+}
+
+func loadYAML(filename string, o Options) error {
+	data, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return fmt.Errorf("%s: %v", filename, err)
+	}
+	if err = yaml.Unmarshal(data, o); err != nil {
 		return fmt.Errorf("%s: %v", filename, err)
 	}
 	return nil

@@ -15,7 +15,7 @@ ROOT_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 
 LDFLAGS = -X $(GO_PACKAGE_PATH)/server/config.Version="$(VERSION)"
 ifdef CONFIG_DIR
-LDFLAGS += -X $(GO_PACKAGE_PATH)/server/config.ConfigDir="$(CONFIG_DIR)"
+LDFLAGS += -X $(GO_PACKAGE_PATH)/server/config.Dir="$(CONFIG_DIR)"
 endif
 ifdef SALT
 LDFLAGS += -X $(GO_PACKAGE_PATH)/server/config.Salt="$(SALT)"
@@ -153,7 +153,7 @@ autoreload:
 	ln -s ../static dist/static
 	ln -s ../assets dist/assets
 	ln -s ../templates dist/templates
-	reflex --only-files -s -r '(\.html|dist/$(NAME))$$' -- ./dist/$(NAME)
+	reflex --only-files -s -r '(\.html|dist/$(NAME))$$' -- ./dist/$(NAME) --debug
 
 .PHONY: autobuild
 autobuild:

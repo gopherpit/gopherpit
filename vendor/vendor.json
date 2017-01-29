@@ -191,32 +191,32 @@
 		{
 			"checksumSHA1": "cd6dGD9vANTJAt1u9hJQYEyUb2s=",
 			"path": "resenje.org/httputils",
-			"revision": "57e8c0807e2d4edbda23644da366cb6465728a4b",
-			"revisionTime": "2016-12-18T17:00:11Z"
+			"revision": "f8cf2a24cb5cb9fa12757866f096aa70585e7122",
+			"revisionTime": "2017-01-29T19:33:04Z"
 		},
 		{
 			"checksumSHA1": "YFC8PoTxkhgrK8HeGrwEj0kQM2M=",
 			"path": "resenje.org/httputils/client/api",
-			"revision": "57e8c0807e2d4edbda23644da366cb6465728a4b",
-			"revisionTime": "2016-12-18T17:00:11Z"
+			"revision": "f8cf2a24cb5cb9fa12757866f096aa70585e7122",
+			"revisionTime": "2017-01-29T19:33:04Z"
 		},
 		{
-			"checksumSHA1": "kUmZ2BN2M0dFREZPjlscEhQRwQU=",
+			"checksumSHA1": "TPB0gQJ9CArLy0hF5oD8YFw64nw=",
 			"path": "resenje.org/httputils/client/http",
-			"revision": "57e8c0807e2d4edbda23644da366cb6465728a4b",
-			"revisionTime": "2016-12-18T17:00:11Z"
+			"revision": "f8cf2a24cb5cb9fa12757866f096aa70585e7122",
+			"revisionTime": "2017-01-29T19:33:04Z"
 		},
 		{
 			"checksumSHA1": "yzihEkvP/Fm9MhKIZWy7TTbQnY8=",
 			"path": "resenje.org/httputils/file-server",
-			"revision": "57e8c0807e2d4edbda23644da366cb6465728a4b",
-			"revisionTime": "2016-12-18T17:00:11Z"
+			"revision": "f8cf2a24cb5cb9fa12757866f096aa70585e7122",
+			"revisionTime": "2017-01-29T19:33:04Z"
 		},
 		{
 			"checksumSHA1": "8F3EPAh5Kw6YTd8Ih3tIKF1n2Ow=",
 			"path": "resenje.org/httputils/log/access",
-			"revision": "57e8c0807e2d4edbda23644da366cb6465728a4b",
-			"revisionTime": "2016-12-18T17:00:11Z"
+			"revision": "f8cf2a24cb5cb9fa12757866f096aa70585e7122",
+			"revisionTime": "2017-01-29T19:33:04Z"
 		},
 		{
 			"checksumSHA1": "ESJ5jzY/7kfuVZCLmZYA4BjMJf8=",

@@ -6,7 +6,6 @@
 package config
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -14,15 +13,16 @@ import (
 	"time"
 
 	"github.com/kelseyhightower/envconfig"
+	yaml "gopkg.in/yaml.v2"
 	"resenje.org/marshal"
 )
 
 // CertificateOptions defines parameters related to service's core functionality.
 type CertificateOptions struct {
-	DirectoryURL        string           `json:"directory-url" envconfig:"DIRECTORY_URL"`
-	DirectoryURLStaging string           `json:"directory-url-staging" envconfig:"DIRECTORY_URL_STAGING"`
-	RenewPeriod         marshal.Duration `json:"renew-period" envconfig:"RENEW_PERIOD"`
-	RenewCheckPeriod    marshal.Duration `json:"renew-check-period" envconfig:"RENEW_CHECK_PERIOD"`
+	DirectoryURL        string           `json:"directory-url" yaml:"directory-url" envconfig:"DIRECTORY_URL"`
+	DirectoryURLStaging string           `json:"directory-url-staging" yaml:"directory-url-staging" envconfig:"DIRECTORY_URL_STAGING"`
+	RenewPeriod         marshal.Duration `json:"renew-period" yaml:"renew-period" envconfig:"RENEW_PERIOD"`
+	RenewCheckPeriod    marshal.Duration `json:"renew-check-period" yaml:"renew-check-period" envconfig:"RENEW_CHECK_PERIOD"`
 }
 
 // NewCertificateOptions initializes CertificateOptions with default values.
@@ -35,15 +35,16 @@ func NewCertificateOptions() *CertificateOptions {
 	}
 }
 
-// Update updates options by loading certificate.json files from:
-//  - defaults subdirectory of the directory where service executable is.
-//  - configDir parameter
-func (o *CertificateOptions) Update(configDir string) error {
-	for _, dir := range []string{
-		defaultsDir,
-		configDir,
-	} {
-		f := filepath.Join(dir, "certificate.json")
+// Update updates options by loading certificate.json files.
+func (o *CertificateOptions) Update(dirs ...string) error {
+	for _, dir := range dirs {
+		f := filepath.Join(dir, "certificate.yaml")
+		if _, err := os.Stat(f); !os.IsNotExist(err) {
+			if err := loadYAML(f, o); err != nil {
+				return fmt.Errorf("load yaml config: %s", err)
+			}
+		}
+		f = filepath.Join(dir, "certificate.json")
 		if _, err := os.Stat(f); !os.IsNotExist(err) {
 			if err := loadJSON(f, o); err != nil {
 				return fmt.Errorf("load json config: %s", err)
@@ -64,7 +65,7 @@ func (o *CertificateOptions) Verify() (help string, err error) {
 
 // String returns a JSON representation of the options.
 func (o *CertificateOptions) String() string {
-	data, _ := json.MarshalIndent(o, "", "    ")
+	data, _ := yaml.Marshal(o)
 	return string(data)
 }
 

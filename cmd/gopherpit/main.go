@@ -16,6 +16,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"syscall"
 	"time"
 
@@ -52,7 +53,8 @@ var (
 	cli = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 
 	// Command line interface options.
-	configDir = cli.String("config-dir", config.ConfigDir, "Directory that contains configuration files.")
+	configDir = cli.String("config-dir", "", "Directory that contains configuration files.")
+	debug     = cli.Bool("debug", false, "Debug mode.")
 	help      = cli.Bool("h", false, "Show program usage.")
 
 	// Usage function.
@@ -133,9 +135,15 @@ COPYRIGHT
 		servicesOptions,
 	}
 
+	if *configDir == "" {
+		*configDir = os.Getenv(strings.ToUpper(config.Name) + "_CONFIGDIR")
+	}
+	if *configDir == "" {
+		*configDir = config.Dir
+	}
 	// Update options structures based on files in configDir and environment
 	// variables.
-	if err := config.Update(options, *configDir); err != nil {
+	if err := config.Update(options, filepath.Join(config.BaseDir, "defaults"), *configDir); err != nil {
 		fmt.Fprintln(os.Stderr, "Error:", err)
 		os.Exit(2)
 	}
@@ -189,15 +197,15 @@ COPYRIGHT
 
 	case "config":
 		// Print loaded configuration.
-		fmt.Println("gopherpit:", gopherpitOptions.String())
-		fmt.Println("logging:", loggingOptions.String())
-		fmt.Println("email:", emailOptions.String())
-		fmt.Println("ldap:", ldapOptions.String())
-		fmt.Println("session:", sessionOptions.String())
-		fmt.Println("user:", userOptions.String())
-		fmt.Println("certificate:", certificateOptions.String())
-		fmt.Println("services:", servicesOptions.String())
-		fmt.Println("config-dir:", *configDir)
+		fmt.Printf("# gopherpit\n---\n%s\n", gopherpitOptions.String())
+		fmt.Printf("# logging\n---\n%s\n", loggingOptions.String())
+		fmt.Printf("# email\n---\n%s\n", emailOptions.String())
+		fmt.Printf("# ldap\n---\n%s\n", ldapOptions.String())
+		fmt.Printf("# session\n---\n%s\n", sessionOptions.String())
+		fmt.Printf("# user\n---\n%s\n", userOptions.String())
+		fmt.Printf("# certificate\n---\n%s\n", certificateOptions.String())
+		fmt.Printf("# services\n---\n%s\n", servicesOptions.String())
+		fmt.Printf("# config directories\n---\n- %s\n- %s\n", *configDir, filepath.Join(config.BaseDir, "defaults"))
 		return
 
 	default:
@@ -226,13 +234,6 @@ COPYRIGHT
 		os.Exit(2)
 	}
 
-	// If command is not `daemon`, force logging to stderr
-	// even if gopherpitOptions.LogDir is specified.
-	forceLogToStderr := false
-	if arg0 != "daemon" && syscall.Getpid() != 1 {
-		forceLogToStderr = true
-	}
-
 	// Initialize the service with loaded options.
 	s, err := service.NewService(
 		config.Name,
@@ -255,7 +256,7 @@ COPYRIGHT
 			AuditLogDisabled:            loggingOptions.AuditLogDisabled,
 			AuditSyslogFacility:         loggingOptions.AuditSyslogFacility,
 			AuditSyslogTag:              loggingOptions.AuditSyslogTag,
-			ForceLogToStderr:            forceLogToStderr,
+			ForceLogToStderr:            *debug,
 			PidFileName:                 gopherpitOptions.PidFileName,
 			PidFileMode:                 gopherpitOptions.PidFileMode.FileMode(),
 			DaemonLogFileName:           loggingOptions.DaemonLogFileName,
