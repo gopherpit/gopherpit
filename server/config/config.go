@@ -46,7 +46,15 @@ var (
 
 	// BaseDir is the directory where the service's executable is located.
 	BaseDir = func() string {
-		baseDir, err := filepath.Abs(filepath.Dir(os.Args[0]))
+		path := os.Args[0]
+		for {
+			p, err := os.Readlink(path)
+			if err != nil || p == path {
+				break
+			}
+			path = p
+		}
+		baseDir, err := filepath.Abs(filepath.Dir(path))
 		if err != nil {
 			panic(err)
 		}
