@@ -153,6 +153,12 @@
 			"revisionTime": "2016-09-23T00:08:11Z"
 		},
 		{
+			"checksumSHA1": "QpWY2ygzClg3Bw+GHjD7yXlcTxw=",
+			"path": "gopkg.in/yaml.v2",
+			"revision": "4c78c975fe7c825c6d1466c42be594d1d6f3aba6",
+			"revisionTime": "2017-01-25T14:37:19Z"
+		},
+		{
 			"checksumSHA1": "qzZkLLKAJOEFiRCJfnc4LPbSD5g=",
 			"path": "resenje.org/antixsrf",
 			"revision": "5b260614d9b174042d03f55159d174274cf90d17",
