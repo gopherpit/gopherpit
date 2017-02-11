@@ -176,7 +176,7 @@ func (s Server) packageGitUploadPackHandler(w http.ResponseWriter, r *http.Reque
 }
 
 var (
-	errRefNotFound = errors.New("referenece not found")
+	errRefNotFound = errors.New("reference not found")
 	httpClient     = &http.Client{
 		Timeout: 15 * time.Second,
 	}
