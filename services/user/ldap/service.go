@@ -84,7 +84,7 @@ func NewService(userService user.Service, logger *logging.Logger, o Options) *Se
 // Authenticate authenticates a user over LDAP and if authentication fails
 // it falls back to authentication by wrapped user service. If the user did not exist
 // in wrapped user service, it will be created.
-func (s Service) Authenticate(ref, password string) (u *user.User, err error) {
+func (s *Service) Authenticate(ref, password string) (u *user.User, err error) {
 	if !s.Enabled {
 		return s.Service.Authenticate(ref, password)
 	}
@@ -125,7 +125,7 @@ func (s Service) Authenticate(ref, password string) (u *user.User, err error) {
 	return
 }
 
-func (s Service) ldapConnection() (*ldap.Conn, error) {
+func (s *Service) ldapConnection() (*ldap.Conn, error) {
 	s.mu.RLock()
 	idleCount := len(s.connections)
 	s.mu.RUnlock()
@@ -161,7 +161,7 @@ func (s Service) ldapConnection() (*ldap.Conn, error) {
 	return l, nil
 }
 
-func (s Service) releaseLDAPConnection(l *ldap.Conn) {
+func (s *Service) releaseLDAPConnection(l *ldap.Conn) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -179,7 +179,7 @@ func (s Service) ldapConnectionsCount() int {
 	return len(s.connections)
 }
 
-func (s Service) ldapAuthSingle(u *user.User, password, group string) (newUserOptions *user.Options, err error) {
+func (s *Service) ldapAuthSingle(u *user.User, password, group string) (newUserOptions *user.Options, err error) {
 	var l *ldap.Conn
 	l, err = s.ldapConnection()
 	if err != nil {
@@ -285,7 +285,7 @@ func (s Service) ldapAuthSingle(u *user.User, password, group string) (newUserOp
 	return
 }
 
-func (s Service) ldapAuth(u *user.User, password, group string) (newUserOptions *user.Options, err error) {
+func (s *Service) ldapAuth(u *user.User, password, group string) (newUserOptions *user.Options, err error) {
 	i := 0
 	for {
 		i++
