@@ -15,7 +15,7 @@ import (
 // getUser retrieves a user.User from configured user service or from context.
 func (s Server) user(r *http.Request) (u *user.User, rr *http.Request, err error) {
 	rr = r
-	if uv := r.Context().Value(contextUserKey); uv != nil {
+	if uv := r.Context().Value(contextKeyUser); uv != nil {
 		var ok bool
 		if u, ok = uv.(*user.User); ok {
 			return
@@ -23,7 +23,7 @@ func (s Server) user(r *http.Request) (u *user.User, rr *http.Request, err error
 	}
 	defer func() {
 		if u != nil {
-			rr = r.WithContext(context.WithValue(r.Context(), contextUserKey, u))
+			rr = r.WithContext(context.WithValue(r.Context(), contextKeyUser, u))
 		}
 	}()
 

@@ -18,7 +18,7 @@ import (
 // The session is also cached in http.Request context.
 func (s Server) saveSession(w http.ResponseWriter, r *http.Request, ses *session.Session, domain, path string) (rr *http.Request, err error) {
 	defer func() {
-		rr = r.WithContext(context.WithValue(r.Context(), contextSessionKey, ses))
+		rr = r.WithContext(context.WithValue(r.Context(), contextKeySession, ses))
 	}()
 
 	if ses == nil {
@@ -64,7 +64,7 @@ func (s Server) saveSession(w http.ResponseWriter, r *http.Request, ses *session
 
 func (s Server) session(r *http.Request) (ses *session.Session, rr *http.Request, err error) {
 	rr = r
-	if sv := r.Context().Value(contextSessionKey); sv != nil {
+	if sv := r.Context().Value(contextKeySession); sv != nil {
 		var ok bool
 		if ses, ok = sv.(*session.Session); ok {
 			return
@@ -72,7 +72,7 @@ func (s Server) session(r *http.Request) (ses *session.Session, rr *http.Request
 	}
 	defer func() {
 		if ses != nil {
-			rr = r.WithContext(context.WithValue(r.Context(), contextSessionKey, ses))
+			rr = r.WithContext(context.WithValue(r.Context(), contextKeySession, ses))
 		}
 	}()
 

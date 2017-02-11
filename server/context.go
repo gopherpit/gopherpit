@@ -5,7 +5,9 @@
 
 package server
 
+type contextKey int
+
 const (
-	contextSessionKey = iota
-	contextUserKey
+	contextKeySession contextKey = iota
+	contextKeyUser
 )
