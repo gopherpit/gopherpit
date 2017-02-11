@@ -30,7 +30,7 @@ BULMA_VERSION ?= 0.3.1
 FONTAWESOME_VERSION ?= 4.7.0
 VUE_VERSION ?= 2.1.10
 AXIOS_VERSION ?= 0.15.3
-LODASH_VERSION ?= 4.17.2
+LODASH_VERSION ?= 4.17.4
 LODASH_INCLUDE ?= debounce,throttle
 
 NODEJS ?= docker run -it --rm -v $$(pwd):/usr/src/app -w /usr/src/app node
