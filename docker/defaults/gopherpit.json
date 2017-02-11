@@ -1,6 +1,0 @@
-{
-    "listen": ":80",
-    "listen-tls": ":443",
-    "listen-internal": ":6060",
-    "storage-dir": "/storage"
-}
