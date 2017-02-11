@@ -82,13 +82,14 @@ func (c changelogs) Less(i, j int) bool {
 func (s Server) updateChangelogRecords(u user.User, record packages.ChangelogRecord, records *[]changelogRecord, users *map[string]*user.User) (err error) {
 	if _, ok := (*users)[record.UserID]; !ok {
 		ru, err := s.UserService.UserByID(record.UserID)
-		if err != nil {
-			if err != user.UserNotFound {
-				(*users)[record.UserID] = nil
-			}
+		switch err {
+		case nil:
+			(*users)[record.UserID] = ru
+		case user.UserNotFound:
+			(*users)[record.UserID] = nil
+		default:
 			return err
 		}
-		(*users)[record.UserID] = ru
 	}
 
 	r := changelogRecord{
@@ -121,13 +122,14 @@ func (s Server) updateChangelogRecords(u user.User, record packages.ChangelogRec
 				if change.To != nil {
 					if _, ok := (*users)[*change.To]; !ok {
 						ru, err := s.UserService.UserByID(*change.To)
-						if err != nil {
-							if err != user.UserNotFound {
-								(*users)[*change.To] = nil
-							}
+						switch err {
+						case nil:
+							(*users)[*change.To] = ru
+						case user.UserNotFound:
+							(*users)[*change.To] = nil
+						default:
 							return err
 						}
-						(*users)[*change.To] = ru
 					}
 					if *change.To == u.ID {
 						c.To = stringToPtr("You")
@@ -145,13 +147,14 @@ func (s Server) updateChangelogRecords(u user.User, record packages.ChangelogRec
 				if change.From != nil {
 					if _, ok := (*users)[*change.From]; !ok {
 						ru, err := s.UserService.UserByID(*change.From)
-						if err != nil {
-							if err != user.UserNotFound {
-								(*users)[*change.From] = nil
-							}
+						switch err {
+						case nil:
+							(*users)[*change.From] = ru
+						case user.UserNotFound:
+							(*users)[*change.From] = nil
+						default:
 							return err
 						}
-						(*users)[*change.From] = ru
 					}
 					if *change.From == u.ID {
 						c.From = stringToPtr("You")
@@ -196,13 +199,14 @@ func (s Server) updateChangelogRecords(u user.User, record packages.ChangelogRec
 				if change.To != nil {
 					if _, ok := (*users)[*change.To]; !ok {
 						ru, err := s.UserService.UserByID(*change.To)
-						if err != nil {
-							if err != user.UserNotFound {
-								(*users)[*change.To] = nil
-							}
+						switch err {
+						case nil:
+							(*users)[*change.To] = ru
+						case user.UserNotFound:
+							(*users)[*change.To] = nil
+						default:
 							return err
 						}
-						(*users)[*change.To] = ru
 					}
 					if (*users)[*change.To] == nil {
 						c.To = change.To
