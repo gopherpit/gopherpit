@@ -14,7 +14,7 @@ import (
 const (
 	// StandardTimeFormat defines a representaion of timestamps in log lines.
 	StandardTimeFormat = "2006-01-02 15:04:05.000Z07:00"
-	tolerance          = 25 * time.Millisecond
+	tolerance          = 100 * time.Millisecond
 )
 
 // Formatter is interface for defining new custom log messages formats.
@@ -29,7 +29,7 @@ type StandardFormatter struct {
 }
 
 // Format constructs string for logging. Time of logging is added to log message.
-// Also, if time of logging is more then 25 miliseconds in the passt, both
+// Also, if time of logging is more then 100 miliseconds in the passt, both
 // times will be added to message (time when application sent log and time when
 // message was processed). Otherwise, only time of processing will be written.
 func (formatter *StandardFormatter) Format(record *Record) string {
