@@ -94,6 +94,8 @@ type Package struct {
 	Path        string  `json:"path"`
 	VCS         VCS     `json:"vcs"`
 	RepoRoot    string  `json:"repo-root"`
+	RefType     string  `json:"ref-type"`
+	RefName     string  `json:"ref-name"`
 	GoSource    string  `json:"go-source,omitempty"`
 	RedirectURL string  `json:"redirect-url,omitempty"`
 	Disabled    bool    `json:"disabled,omitempty"`
@@ -108,6 +110,8 @@ type PackageOptions struct {
 	Path        *string `json:"path,omitempty"`
 	VCS         *VCS    `json:"vcs,omitempty"`
 	RepoRoot    *string `json:"repo-root,omitempty"`
+	RefType     *string `json:"ref-type"`
+	RefName     *string `json:"ref-name"`
 	GoSource    *string `json:"go-source,omitempty"`
 	RedirectURL *string `json:"redirect-url,omitempty"`
 	Disabled    *bool   `json:"disabled,omitempty"`
@@ -127,6 +131,8 @@ type PackageResolution struct {
 	ImportPrefix string `json:"import-prefix"`
 	VCS          VCS    `json:"vcs"`
 	RepoRoot     string `json:"repo-root"`
+	RefType      string `json:"ref-type"`
+	RefName      string `json:"ref-name"`
 	GoSource     string `json:"go-source,omitempty"`
 	RedirectURL  string `json:"redirect-url,omitempty"`
 	Disabled     bool   `json:"disabled,omitempty"`

@@ -41,6 +41,18 @@ func (s *Server) htmlServerError(w http.ResponseWriter, r *http.Request, err err
 	s.respondInternalServerError(w, r)
 }
 
+func textServerError(w http.ResponseWriter, err error) {
+	if _, ok := err.(net.Error); ok {
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		w.WriteHeader(http.StatusServiceUnavailable)
+		fmt.Fprintln(w, http.StatusText(http.StatusServiceUnavailable))
+		return
+	}
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	w.WriteHeader(http.StatusInternalServerError)
+	fmt.Fprintln(w, http.StatusText(http.StatusInternalServerError))
+}
+
 // statusResponse is a response of a status API handler.
 type statusResponse struct {
 	Name    string `json:"name"`

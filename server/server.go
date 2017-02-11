@@ -801,6 +801,18 @@ func (s *Server) Serve(o ServeOptions) error {
 					httputils.HTTPToHTTPSRedirectHandler(w, r)
 					return
 				}
+				switch {
+				case strings.HasSuffix(r.URL.Path, "/info/refs"):
+					// Handle git refs info if git reference is set.
+					if notFound := s.packageGitInfoRefsHandler(w, r); !notFound {
+						return
+					}
+				case strings.HasSuffix(r.URL.Path, "/git-upload-pack"):
+					// Handle git upload pack if git reference is set.
+					if notFound := s.packageGitUploadPackHandler(w, r); !notFound {
+						return
+					}
+				}
 				// Handle go get domain/...
 				if r.URL.Query().Get("go-get") == "1" {
 					s.packageResolverHandler(w, r)
@@ -863,6 +875,18 @@ func (s *Server) Serve(o ServeOptions) error {
 		server := &http.Server{
 			Addr: o.Listen,
 			Handler: s.nilRecoveryHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				switch {
+				case strings.HasSuffix(r.URL.Path, "/info/refs"):
+					// Handle git refs info if git reference is set.
+					if notFound := s.packageGitInfoRefsHandler(w, r); !notFound {
+						return
+					}
+				case strings.HasSuffix(r.URL.Path, "/git-upload-pack"):
+					// Handle git upload pack if git reference is set.
+					if notFound := s.packageGitUploadPackHandler(w, r); !notFound {
+						return
+					}
+				}
 				// Handle go get domain/...
 				if r.URL.Query().Get("go-get") == "1" {
 					s.packageResolverHandler(w, r)

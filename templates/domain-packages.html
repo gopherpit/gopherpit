@@ -63,7 +63,7 @@
               [[ range $package := .Packages ]]
               <tr [[ if $package.Disabled ]]class="negative"[[ end ]]>
                 <td><a href="/package/[[ $package.ID ]]"><code>[[ $package.Path ]]</code></a>[[ if $package.Disabled ]] (disabled)[[ end ]] </td>
-                <td>[[ $package.RepoRoot ]]</td>
+                <td>[[ $package.RepoRoot ]][[ if and $package.RefType $package.RefName ]]@[[ $package.RefType ]]:[[ $package.RefName ]][[ end ]]</td>
                 <td class="has-text-right"><a href="/package/[[ $package.ID ]]"><span class="icon"><i class="fa fa-pencil"></i></span></a> <a href="https://[[ $.Domain.FQDN ]][[ $package.Path ]]?go-get=1" target="_blank"><span class="icon"><i class="fa fa-external-link"></i></span></a></td></td>
               </tr>
               [[ end ]]

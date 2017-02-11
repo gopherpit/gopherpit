@@ -34,6 +34,8 @@ type packageRecord struct {
 	Path        string       `json:"path,omitempty"`
 	VCS         packages.VCS `json:"vcs,omitempty"`
 	RepoRoot    string       `json:"repo-root,omitempty"`
+	RefType     string       `json:"ref-type,omitempty"`
+	RefName     string       `json:"ref-name,omitempty"`
 	GoSource    string       `json:"go-source,omitempty"`
 	RedirectURL string       `json:"redirect-url,omitempty"`
 	Disabled    bool         `json:"disabled,omitempty"`
@@ -45,6 +47,8 @@ func (p packageRecord) export(tx *bolt.Tx) (pkg *packages.Package, err error) {
 		Path:        p.Path,
 		VCS:         p.VCS,
 		RepoRoot:    p.RepoRoot,
+		RefType:     p.RefType,
+		RefName:     p.RefName,
 		GoSource:    p.GoSource,
 		RedirectURL: p.RedirectURL,
 		Disabled:    p.Disabled,
@@ -123,6 +127,26 @@ func (p *packageRecord) update(tx *bolt.Tx, o *packages.PackageOptions) (changes
 			})
 		}
 		p.RepoRoot = *o.RepoRoot
+	}
+	if o.RefType != nil {
+		if p.RefType != *o.RefType {
+			changes = append(changes, packages.Change{
+				Field: "ref-type",
+				From:  stringToStringPtr(p.RefType),
+				To:    stringToStringPtr(*o.RefType),
+			})
+		}
+		p.RefType = *o.RefType
+	}
+	if o.RefName != nil {
+		if p.RefName != *o.RefName {
+			changes = append(changes, packages.Change{
+				Field: "ref-name",
+				From:  stringToStringPtr(p.RefName),
+				To:    stringToStringPtr(*o.RefName),
+			})
+		}
+		p.RefName = *o.RefName
 	}
 	if o.GoSource != nil {
 		if p.GoSource != *o.GoSource {

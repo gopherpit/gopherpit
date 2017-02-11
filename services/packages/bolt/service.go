@@ -609,6 +609,8 @@ func (s Service) ResolvePackage(path string) (resolution *packages.PackageResolu
 		resolution.ImportPrefix = fqdn + path
 		resolution.VCS = p.VCS
 		resolution.RepoRoot = p.RepoRoot
+		resolution.RefType = p.RefType
+		resolution.RefName = p.RefName
 		resolution.GoSource = p.GoSource
 		resolution.RedirectURL = p.RedirectURL
 		resolution.Disabled, err = isDomainDisabled(tx, domainID)

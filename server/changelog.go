@@ -260,6 +260,14 @@ func (s Server) updateChangelogRecords(u user.User, record packages.ChangelogRec
 				c.Field = "Repository"
 				c.To = change.To
 				c.From = change.From
+			case "ref-type":
+				c.Field = "Reference type"
+				c.To = change.To
+				c.From = change.From
+			case "ref-name":
+				c.Field = "Reference name"
+				c.To = change.To
+				c.From = change.From
 			case "go-source":
 				c.Field = "Go Source"
 				c.To = change.To

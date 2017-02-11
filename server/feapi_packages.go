@@ -542,12 +542,14 @@ func (s Server) domainOwnerChangeFEAPIHandler(w http.ResponseWriter, r *http.Req
 }
 
 type packageFEAPIRequest struct {
-	DomainID    string           `json:"domain-id"`
+	DomainID    string           `json:"domainId"`
 	Path        string           `json:"path"`
 	VCS         packages.VCS     `json:"vcs"`
-	RepoRoot    string           `json:"repo-root"`
-	GoSource    string           `json:"go-source"`
-	RedirectURL string           `json:"redirect-url"`
+	RepoRoot    string           `json:"repoRoot"`
+	RefType     string           `json:"refType"`
+	RefName     string           `json:"refName"`
+	GoSource    string           `json:"goSource"`
+	RedirectURL string           `json:"redirectUrl"`
 	Disabled    marshal.Checkbox `json:"disabled"`
 }
 
@@ -577,7 +579,7 @@ func (s Server) packageFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 
 	request.DomainID = strings.TrimSpace(request.DomainID)
 	if request.DomainID == "" {
-		errors.AddFieldError("domain-id", "Domain is required.")
+		errors.AddFieldError("domainId", "Domain is required.")
 	}
 
 	request.Path = strings.TrimSpace(request.Path)
@@ -589,18 +591,20 @@ func (s Server) packageFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 		errors.AddFieldError("vcs", "VCS is required.")
 	}
 
+	var repoRoot *url.URL
 	request.RepoRoot = strings.TrimSpace(request.RepoRoot)
 	if request.RepoRoot == "" {
-		errors.AddFieldError("repo-root", "Repository is required.")
+		errors.AddFieldError("repoRoot", "Repository is required.")
 	} else {
-		repoRoot, err := url.Parse(request.RepoRoot)
+		var err error
+		repoRoot, err = url.Parse(request.RepoRoot)
 		switch {
 		case err != nil:
 			s.logger.Warningf("package fe api: %s %s: invalid repository url: %s: %s", request.DomainID, request.Path, request.RepoRoot, err)
-			errors.AddFieldError("repo-root", "Invalid Repository URL.")
+			errors.AddFieldError("repoRoot", "Invalid Repository URL.")
 		case request.VCS != "":
 			if repoRoot.Scheme == "" {
-				errors.AddFieldError("repo-root", fmt.Sprintf("Repository URL requires a URL scheme (%s).", strings.Join(vcsSchemas[request.VCS], ", ")))
+				errors.AddFieldError("repoRoot", fmt.Sprintf("Repository URL requires a URL scheme (%s).", strings.Join(vcsSchemas[request.VCS], ", ")))
 				break
 			}
 			ok := false
@@ -618,16 +622,30 @@ func (s Server) packageFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 						break
 					}
 				}
-				errors.AddFieldError("repo-root", fmt.Sprintf("Invalid scheme \"%s\". For %s repository it should be one of (%s).", repoRoot.Scheme, vcs, strings.Join(vcsSchemas[request.VCS], ", ")))
+				errors.AddFieldError("repoRoot", fmt.Sprintf("Invalid scheme \"%s\". For %s repository it should be one of (%s).", repoRoot.Scheme, vcs, strings.Join(vcsSchemas[request.VCS], ", ")))
 			}
 			if !hostAndPortRegex.MatchString(repoRoot.Host) {
-				errors.AddFieldError("repo-root", fmt.Sprintf("Invalid domain and port \"%s\".", repoRoot.Host))
+				errors.AddFieldError("repoRoot", fmt.Sprintf("Invalid domain and port \"%s\".", repoRoot.Host))
 			}
 		}
 	}
 
+	switch request.RefType {
+	case "", "tag", "branch":
+	default:
+		errors.AddFieldError("refType", "Reference type must be branch or tag.")
+	}
+
+	if request.RefType != "" && request.RefName == "" {
+		errors.AddFieldError("refName", "Reference name is required if reference type is selected.")
+	}
+
+	if request.RefName != "" && (request.VCS != packages.VCSGit || (request.VCS == packages.VCSGit && !(repoRoot.Scheme == "http" || repoRoot.Scheme == "https"))) {
+		errors.AddFieldError("refName", "Reference change is allowed only for Git HTTP and HTTPS repositeries.")
+	}
+
 	if request.RedirectURL != "" && !urlRegex.MatchString(request.RedirectURL) {
-		errors.AddFieldError("redirect-url", "Invalid URL.")
+		errors.AddFieldError("redirectUrl", "Invalid URL.")
 	}
 
 	if errors.HasErrors() {
@@ -648,6 +666,8 @@ func (s Server) packageFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 			Path:        &request.Path,
 			VCS:         &request.VCS,
 			RepoRoot:    &request.RepoRoot,
+			RefType:     &request.RefType,
+			RefName:     &request.RefName,
 			GoSource:    &request.GoSource,
 			RedirectURL: &request.RedirectURL,
 			Disabled:    &disabled,
@@ -658,6 +678,8 @@ func (s Server) packageFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 			Path:        &request.Path,
 			VCS:         &request.VCS,
 			RepoRoot:    &request.RepoRoot,
+			RefType:     &request.RefType,
+			RefName:     &request.RefName,
 			GoSource:    &request.GoSource,
 			RedirectURL: &request.RedirectURL,
 			Disabled:    &disabled,
