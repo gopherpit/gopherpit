@@ -47,7 +47,7 @@ func NewLDAPOptions() *LDAPOptions {
 		Secure:               true,
 		Username:             "",
 		Password:             "",
-		DN:                   "dc=my-organization,dc=com",
+		DN:                   "dc=example,dc=com",
 		DNUsers:              "ou=Users",
 		DNGroups:             "ou=Groups",
 		AttributeUsername:    "uid",
