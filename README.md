@@ -59,7 +59,7 @@ $ ./gopherpit config
 
 All default configuration options are optimized for local testing. Each production environment requires its own specific settings, some of which are addressed in this introduction.
 
-Each section of the configuration can be overridden by a JSON file with the same name under a configuration directory, which is printed at the end of the config command output, by default it is `/etc/gopherpit`.
+Each section of the configuration can be overridden by a JSON or YAML file with the same name under a configuration directory, which is printed at the end of the config command output, by default it is `/etc/gopherpit`.
 
 For example, to change the `log` directory, create a file `/etc/gopherpit/logging.json` with the following content:
 
@@ -67,6 +67,12 @@ For example, to change the `log` directory, create a file `/etc/gopherpit/loggin
 {
     "log-dir": "/path/to/log"
 }
+```
+
+Or you can achieve the same effect with YAML file `/etc/gopherpit/logging.yaml`:
+
+```yaml
+log-dir: /path/to/log
 ```
 
 Make sure that the directory can be created by the user under which GopherPit daemon is started. After starting the daemon, logs are saved there.
