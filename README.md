@@ -61,20 +61,20 @@ $ ./gopherpit config
 
 All default configuration options are optimized for local testing. Each production environment requires its own specific settings, some of which are addressed in this introduction.
 
-Each section of the configuration can be overridden by a JSON or YAML file with the same name under a configuration directory, which is printed at the end of the config command output, by default it is `/etc/gopherpit`.
+Each section of the configuration can be overridden by a YAML or JSON file with the same name under a configuration directory, which is printed at the end of the config command output, by default it is `/etc/gopherpit`.
 
-For example, to change the `log` directory, create a file `/etc/gopherpit/logging.json` with the following content:
+For example, to change the `log` directory, create a file `/etc/gopherpit/logging.yaml` with the following content:
+
+```yaml
+log-dir: /path/to/log
+```
+
+Or you can achieve the same effect with a JSON file `/etc/gopherpit/logging.json`:
 
 ```json
 {
     "log-dir": "/path/to/log"
 }
-```
-
-Or you can achieve the same effect with YAML file `/etc/gopherpit/logging.yaml`:
-
-```yaml
-log-dir: /path/to/log
 ```
 
 Make sure that the directory can be created by the user under which GopherPit daemon is started. After starting the daemon, logs are saved there.
@@ -85,12 +85,10 @@ Every configuration parameter has a corresponding environment variable. For exam
 $ GOPHERPIT_LOGGING_LOG_DIR=/path/to/log ./gopherpit daemon
 ```
 
-Beside `log` directory, `storage` directory should be configured, too, but in different file (section). Create `/etc/gopherpit/gopherpit.json` file and add the following:
+Beside `log` directory, `storage` directory should be configured, too, but in different file (section). Create `/etc/gopherpit/gopherpit.yaml` file and add the following:
 
-```json
-{
-    "storage-dir": "/path/to/storage"
-}
+```yaml
+storage-dir: /path/to/storage
 ```
 
 Storage directory is used by GopherPit to store permanent or temporary data and it should be outside of the GopherPit installation directory.
@@ -103,15 +101,13 @@ To be able to fully utilize GopherPit, it is required for service to listen to d
 $ GOPHERPIT_DOMAIN=gopherpit.example.com GOPHERPIT_LISTEN=:80 GOPHERPIT_LISTEN_TLS=:443 ./gopherpit daemon
 ```
 
-Or if you prefer to have an explicit configuration, set this options in `/etc/gopherpit/gopherpit.json`:
+Or if you prefer to have an explicit configuration, set this options in `/etc/gopherpit/gopherpit.yaml`:
 
-```json
-{
-    "listen": ":80",
-    "listen-tls": ":443",
-    "domain": "gopherpit.example.com",
-    "storage-dir": "/path/to/storage"
-}
+```yaml
+listen: :80
+listen-tls: :443
+domain: gopherpit.example.com
+storage-dir: /path/to/storage
 ```
 
 And just start:
@@ -143,43 +139,37 @@ ACME provider allows automatic obtaining of TLS certificates for domains added t
 
 ## Static TLS certificates
 
-It is not required to use ACME provider for TLS certificates. If you already have certificates for the domain, just include them in `gopherpit.json` configuration:
+It is not required to use ACME provider for TLS certificates. If you already have certificates for the domain, just include them in `gopherpit.yaml` configuration:
 
-```json
-{
-    "tls-cert": "/path/to/certificate-chain.pem",
-    "tls-key": "/path/to/certificate-key.key"
-}
+```yaml
+tls-cert: /path/to/certificate-chain.pem
+tls-key: /path/to/certificate-key.key
 ```
 
 ## SMTP issues and options
 
-Default configuration for SMTP integration is to verify the certificate of SMTP server and that it listens on localhost port 25. Postfix and other MTAs may not have a valid certificate for localhost. In that case, either change the `smtp-host` in `email.json` configuration file, or in the same file set `smtp-skip-verify` to `true`. It is possible to have this type of error in log files `notifier api send email: x509: certificate is valid for gopherpit.example.com, not localhost`.
+Default configuration for SMTP integration is to verify the certificate of SMTP server and that it listens on localhost port 25. Postfix and other MTAs may not have a valid certificate for localhost. In that case, either change the `smtp-host` in `email.yaml` configuration file, or in the same file set `smtp-skip-verify` to `true`. It is possible to have this type of error in log files `notifier api send email: x509: certificate is valid for gopherpit.example.com, not localhost`.
 
-Some may use Gmail as SMTP server, and example of that `email.json` configuration in this case is:
+Some may use Gmail as SMTP server, and example of that `email.yaml` configuration in this case is:
 
-```json
-{
-    "smtp-username": "me@gmail.com",
-    "smtp-password": "your password",
-    "smtp-host": "smtp.gmail.com",
-    "smtp-port": 25
-}
+```yaml
+smtp-username: me@gmail.com
+smtp-password: your password
+smtp-host: smtp.gmail.com
+smtp-port: 25
 ```
 
 ## Other notable options
 
 Beside other options, the following are important for production deployments.
 
-### gopherpit.json
+### gopherpit.yaml
 
-```json
-{
-    "listen-internal": ":6060",
-    "pid-file": "/path/to/gopherpit.pid",
-    "google-analytics-id": "",
-    "contact-recipient-email": "gopherpit@localhost"
-}
+```yaml
+listen-internal: :6060
+pid-file: /path/to/gopherpit.pid
+google-analytics-id: "UA-123456x-1"
+contact-recipient-email: gopherpit@localhost
 ```
 
 Option "listen-internal" defines a listening address for "internal" debug and management server. It used for inspecting debug profiles, server status and handling maintenance mode.
@@ -190,12 +180,10 @@ If "google-analytics-id" is not empty string, a Google Analytics block of code i
 
 E-mails with content from the contact form is sent to address specified under "contact-recipient-email".
 
-### email.json
+### email.yaml
 
-```json
-{
-    "default-from": "gopherpit@localhost"
-}
+```yaml
+default-from: gopherpit@localhost
 ```
 
 All e-mail messages to GopherPit users have "From" field set from value defined under "default-from".
