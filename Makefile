@@ -26,7 +26,7 @@ ifndef CGO_ENABLED
 export CGO_ENABLED=0
 endif
 
-BULMA_VERSION ?= 0.3.0
+BULMA_VERSION ?= 0.3.1
 FONTAWESOME_VERSION ?= 4.7.0
 VUE_VERSION ?= 2.1.8
 AXIOS_VERSION ?= 0.15.3
@@ -81,8 +81,8 @@ assets:
 		$(NODEJS) npm install && \
 		$(NODEJS) npm run build
 	cd dist/frontend/node_modules/bulma && \
-		$(NODEJS) npm install clean-css && \
-		$(NODEJS) ./node_modules/clean-css/bin/cleancss -o css/bulma.min.css css/bulma.css
+		$(NODEJS) npm install clean-css-cli && \
+		$(NODEJS) ./node_modules/clean-css-cli/bin/cleancss -o css/bulma.min.css css/bulma.css
 	cat dist/frontend/node_modules/bulma/css/bulma.min.css >> assets/vendor.css
 
 	# FontAwesome
