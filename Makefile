@@ -17,9 +17,6 @@ LDFLAGS = -w -X $(GO_PACKAGE_PATH)/server/config.Version="$(VERSION)"
 ifdef CONFIG_DIR
 LDFLAGS += -X $(GO_PACKAGE_PATH)/server/config.Dir="$(CONFIG_DIR)"
 endif
-ifdef SALT
-LDFLAGS += -X $(GO_PACKAGE_PATH)/server/config.Salt="$(SALT)"
-endif
 LDFLAGS += -X $(GO_PACKAGE_PATH)/server/config.BuildInfo="$(shell git describe --long --dirty --always || true)"
 
 ifndef CGO_ENABLED
