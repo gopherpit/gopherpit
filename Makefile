@@ -13,7 +13,7 @@ GOLINT ?= golint
 
 ROOT_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 
-LDFLAGS = -X $(GO_PACKAGE_PATH)/server/config.Version="$(VERSION)"
+LDFLAGS = -w -X $(GO_PACKAGE_PATH)/server/config.Version="$(VERSION)"
 ifdef CONFIG_DIR
 LDFLAGS += -X $(GO_PACKAGE_PATH)/server/config.Dir="$(CONFIG_DIR)"
 endif
