@@ -13,6 +13,8 @@ COPY static /app/static
 COPY templates /app/templates
 COPY docker/defaults /app/defaults
 
+RUN ln -s /app/gopherpit /usr/local/bin/gopherpit
+
 VOLUME /log /config /storage
 
 EXPOSE 80 443 6060
