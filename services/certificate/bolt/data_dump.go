@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/boltdb/bolt"
-	"resenje.org/logging"
 
 	"gopherpit.com/gopherpit/pkg/data-dump"
 )
@@ -43,7 +42,7 @@ func (s Service) DataDump(ifModifiedSince *time.Time) (dump *dataDump.Dump, err 
 	go func() {
 		defer func() {
 			if err := recover(); err != nil {
-				logging.Errorf("certificate service database dump: %s", err)
+				s.Logger.Errorf("certificate service database dump: %s", err)
 			}
 		}()
 		if err := s.DB.View(func(tx *bolt.Tx) error {

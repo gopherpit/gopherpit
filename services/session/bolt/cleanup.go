@@ -10,14 +10,13 @@ import (
 	"time"
 
 	"github.com/boltdb/bolt"
-	"resenje.org/logging"
 )
 
 type sessionCheck struct {
 	Expires time.Time `json:"expires,omitempty"`
 }
 
-func cleanup(db *bolt.DB, logger *logging.Logger) {
+func cleanup(db *bolt.DB, logger Logger) {
 	if err := db.View(func(tx *bolt.Tx) error {
 		if sessionCount(tx) == 0 {
 			return nil
@@ -49,31 +48,25 @@ func cleanup(db *bolt.DB, logger *logging.Logger) {
 
 // PeriodicCleanup deletes expired session on a period defined in
 // Service.CleanupPeriod.
-func (s Service) PeriodicCleanup(logger *logging.Logger) (err error) {
-	if logger == nil {
-		logger, err = logging.GetLogger("default")
-		if err != nil {
-			return
-		}
-	}
+func (s Service) PeriodicCleanup() (err error) {
 	if s.CleanupPeriod <= 0 {
-		logger.Info("session cleanup: disabled")
+		s.Logger.Info("session cleanup: disabled")
 		return
 	}
-	logger.Info("session cleanup: initialized")
+	s.Logger.Info("session cleanup: initialized")
 	go func() {
 		defer func() {
 			if err := recover(); err != nil {
-				logger.Errorf("session cleanup: panic: %s", err)
+				s.Logger.Errorf("session cleanup: panic: %s", err)
 			}
 		}()
 		ticker := time.NewTicker(s.CleanupPeriod)
 		defer ticker.Stop()
-		cleanup(s.DB, logger)
+		cleanup(s.DB, s.Logger)
 		for {
 			select {
 			case <-ticker.C:
-				cleanup(s.DB, logger)
+				cleanup(s.DB, s.Logger)
 			}
 		}
 	}()

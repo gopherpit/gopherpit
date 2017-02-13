@@ -15,7 +15,6 @@ import (
 	"github.com/boltdb/bolt"
 	"golang.org/x/crypto/sha3"
 	"gopkg.in/gomail.v2"
-	"resenje.org/logging"
 
 	"gopherpit.com/gopherpit/services/notification"
 )
@@ -31,6 +30,13 @@ var (
 	keyTimeFormat = "20060102150405"
 )
 
+// Logger defines interface for logging messages with various severity levels.
+type Logger interface {
+	Info(a ...interface{})
+	Infof(format string, a ...interface{})
+	Errorf(format string, a ...interface{})
+}
+
 // Service implements gopherpit.com/gopherpit/services/notification.Service interface.
 type Service struct {
 	DB *bolt.DB
@@ -42,7 +48,7 @@ type Service struct {
 	SMTPIdentity   string
 	SMTPSkipVerify bool
 	CleanupPeriod  time.Duration
-	Logger         *logging.Logger
+	Logger         Logger
 
 	dialer *gomail.Dialer
 }

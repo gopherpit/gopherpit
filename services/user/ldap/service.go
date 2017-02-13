@@ -15,7 +15,6 @@ import (
 	"time"
 
 	ldap "gopkg.in/ldap.v2"
-	"resenje.org/logging"
 
 	"gopherpit.com/gopherpit/pkg/data-dump"
 	"gopherpit.com/gopherpit/services/user"
@@ -36,6 +35,11 @@ var (
 	errUserUsernameMissing = ldapError("user username is missing")
 	errUserGroupSearch     = ldapError("user not found in group search")
 )
+
+// Logger defines interface for logging messages with various severity levels.
+type Logger interface {
+	Debugf(format string, a ...interface{})
+}
 
 // Options are holds LDAP specific parameters.
 type Options struct {
@@ -64,14 +68,14 @@ type Service struct {
 	user.Service
 	Options
 
-	logger *logging.Logger
+	logger Logger
 
 	connections []*ldap.Conn
 	mu          *sync.RWMutex
 }
 
 // NewService returns a new instance of Service.
-func NewService(userService user.Service, logger *logging.Logger, o Options) *Service {
+func NewService(userService user.Service, logger Logger, o Options) *Service {
 	return &Service{
 		Service:     userService,
 		Options:     o,

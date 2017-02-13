@@ -15,7 +15,6 @@ import (
 
 	"github.com/boltdb/bolt"
 	"github.com/xenolf/lego/acme"
-	"resenje.org/logging"
 	"resenje.org/recovery"
 
 	"gopherpit.com/gopherpit/services/certificate"
@@ -25,6 +24,15 @@ var (
 	mmapFlags  int
 	emailRegex = regexp.MustCompile("^[^@]+@[^@]+\\.[^@]+$")
 )
+
+// Logger defines interface for logging messages with various severity levels.
+type Logger interface {
+	Debug(a ...interface{})
+	Info(a ...interface{})
+	Infof(format string, a ...interface{})
+	Warningf(format string, a ...interface{})
+	Errorf(format string, a ...interface{})
+}
 
 // Service implements gopherpit.com/gopherpit/services/certificate.Service interface.
 type Service struct {
@@ -42,7 +50,7 @@ type Service struct {
 	// RecoveryService recovers from panics, and logs and informs about it.
 	RecoveryService recovery.Service
 	// Default logger for this service.
-	Logger *logging.Logger
+	Logger Logger
 
 	acmeUserCache *acmeUser
 }
@@ -129,13 +137,6 @@ func (s Service) IsCertificateBeingObtained(fqdn string) (yes bool, err error) {
 
 // UpdateCertificate alters the fields of existing Certificate.
 func (s Service) UpdateCertificate(fqdn string, o *certificate.Options) (c *certificate.Certificate, err error) {
-	logger := s.Logger
-	if logger == nil {
-		logger, err = logging.GetLogger("default")
-		if err != nil {
-			return
-		}
-	}
 	var expirationTime *time.Time
 	if o.Cert != nil {
 		certs, err := loadPEMCertificates([]byte(*o.Cert))
@@ -146,7 +147,7 @@ func (s Service) UpdateCertificate(fqdn string, o *certificate.Options) (c *cert
 		for _, cert := range certs {
 			c, err := x509.ParseCertificate(cert)
 			if err != nil {
-				logger.Warningf("update certificate: %s: x509 parse certificate: %s", fqdn, err)
+				s.Logger.Warningf("update certificate: %s: x509 parse certificate: %s", fqdn, err)
 				return nil, certificate.CertificateInvalid
 			}
 			for _, name := range c.DNSNames {
@@ -164,7 +165,7 @@ func (s Service) UpdateCertificate(fqdn string, o *certificate.Options) (c *cert
 			}
 		}
 		if expirationTime == nil {
-			logger.Warningf("update certificate: %s: expiration time not found for dns name", fqdn)
+			s.Logger.Warningf("update certificate: %s: expiration time not found for dns name", fqdn)
 			return nil, certificate.CertificateInvalid
 		}
 	}

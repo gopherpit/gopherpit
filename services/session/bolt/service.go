@@ -20,6 +20,14 @@ var (
 	mmapFlags int
 )
 
+// Logger defines interface for logging messages with various severity levels.
+type Logger interface {
+	Debug(a ...interface{})
+	Debugf(format string, a ...interface{})
+	Info(a ...interface{})
+	Errorf(format string, a ...interface{})
+}
+
 // Service implements gopherpit.com/gopherpit/services/session.Service interface.
 type Service struct {
 	DB *bolt.DB
@@ -30,6 +38,7 @@ type Service struct {
 	// CleanupPeriod defines a period on which deletion of expired
 	// session is executed.
 	CleanupPeriod time.Duration
+	Logger        Logger
 }
 
 // NewDB opens a new BoltDB database.

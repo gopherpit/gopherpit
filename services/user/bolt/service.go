@@ -20,6 +20,13 @@ var (
 	mmapFlags int
 )
 
+// Logger defines interface for logging messages with various severity levels.
+type Logger interface {
+	Info(a ...interface{})
+	Infof(format string, a ...interface{})
+	Errorf(format string, a ...interface{})
+}
+
 // Service implements gopherpit.com/gopherpit/services/user.Service interface.
 type Service struct {
 	DB *bolt.DB
@@ -32,6 +39,8 @@ type Service struct {
 	// If UsernameRequired is true, user.UsernameMissing will be returned
 	// on CreateUser or UpdateUser if Username if empty string.
 	UsernameRequired bool
+
+	Logger Logger
 }
 
 // NewDB opens a new BoltDB database.

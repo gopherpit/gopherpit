@@ -10,29 +10,22 @@ import (
 	"time"
 
 	"github.com/boltdb/bolt"
-	"resenje.org/logging"
 
 	"gopherpit.com/gopherpit/services/user"
 )
 
 // PeriodicCleanup deletes expired password resets and email validations
 // periodically.
-func (s Service) PeriodicCleanup(logger *logging.Logger) (err error) {
-	if logger == nil {
-		logger, err = logging.GetLogger("default")
-		if err != nil {
-			return
-		}
-	}
-	logger.Info("user password resets cleanup: initialized")
-	logger.Info("user email validations cleanup: initialized")
+func (s Service) PeriodicCleanup() (err error) {
+	s.Logger.Info("user password resets cleanup: initialized")
+	s.Logger.Info("user email validations cleanup: initialized")
 	go func() {
 		for {
 			// Clean email validations
 			go func() {
 				defer func() {
 					if err := recover(); err != nil {
-						logger.Errorf("user email validations cleanup: panic: %s", err)
+						s.Logger.Errorf("user email validations cleanup: panic: %s", err)
 					}
 				}()
 				now := time.Now()
@@ -54,7 +47,7 @@ func (s Service) PeriodicCleanup(logger *logging.Logger) (err error) {
 								if err := bucket.Delete(k); err != nil {
 									return err
 								}
-								logger.Infof("user email validations cleanup: deleted validation for user id %s email %s as user is not found", emailValidation.UserID, emailValidation.Email)
+								s.Logger.Infof("user email validations cleanup: deleted validation for user id %s email %s as user is not found", emailValidation.UserID, emailValidation.Email)
 							}
 							return nil
 						}
@@ -62,19 +55,19 @@ func (s Service) PeriodicCleanup(logger *logging.Logger) (err error) {
 							if err := bucket.Delete(k); err != nil {
 								return err
 							}
-							logger.Infof("user email validations cleanup: deleted validation for user id %s email %s", emailValidation.UserID, emailValidation.Email)
+							s.Logger.Infof("user email validations cleanup: deleted validation for user id %s email %s", emailValidation.UserID, emailValidation.Email)
 						}
 						return nil
 					})
 				}); err != nil {
-					logger.Errorf("user email validations cleanup: %s", err)
+					s.Logger.Errorf("user email validations cleanup: %s", err)
 				}
 			}()
 			// Clean password resets
 			go func() {
 				defer func() {
 					if err := recover(); err != nil {
-						logger.Errorf("user password resets cleanup: panic: %s", err)
+						s.Logger.Errorf("user password resets cleanup: panic: %s", err)
 					}
 				}()
 				now := time.Now()
@@ -95,12 +88,12 @@ func (s Service) PeriodicCleanup(logger *logging.Logger) (err error) {
 							if err := bucket.Delete(k); err != nil {
 								return err
 							}
-							logger.Infof("clean passwords reset: deleted password reset for user id %s", passwordReset.UserID)
+							s.Logger.Infof("clean passwords reset: deleted password reset for user id %s", passwordReset.UserID)
 						}
 						return nil
 					})
 				}); err != nil {
-					logger.Errorf("user password resets cleanup: %s", err)
+					s.Logger.Errorf("user password resets cleanup: %s", err)
 				}
 			}()
 			time.Sleep(3 * time.Hour)

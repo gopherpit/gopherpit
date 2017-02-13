@@ -23,10 +23,16 @@ var (
 	mmapFlags int
 )
 
+// Logger defines interface for logging messages with various severity levels.
+type Logger interface {
+	Errorf(format string, a ...interface{})
+}
+
 // Service implements gopherpit.com/gopherpit/services/packages.Service interface.
 type Service struct {
 	DB        *bolt.DB
 	Changelog *timed.Pool
+	Logger    Logger
 }
 
 // NewDB opens a new BoltDB database.

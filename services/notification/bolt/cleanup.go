@@ -9,14 +9,13 @@ import (
 	"time"
 
 	"github.com/boltdb/bolt"
-	"resenje.org/logging"
 )
 
 type sessionCheck struct {
 	Expires time.Time `json:"expires,omitempty"`
 }
 
-func cleanup(db *bolt.DB, logger *logging.Logger) {
+func cleanup(db *bolt.DB, logger Logger) {
 	now := time.Now()
 	if err := db.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(bucketNameMessageIDs)
@@ -32,42 +31,36 @@ func cleanup(db *bolt.DB, logger *logging.Logger) {
 				if err := bucket.Delete(k); err != nil {
 					return err
 				}
-				logging.Infof("expired email message cleanup: deleted id %x", k)
+				logger.Infof("expired email message cleanup: deleted id %x", k)
 			}
 			return nil
 		})
 	}); err != nil {
-		logging.Errorf("expired email message cleanup: %s", err)
+		logger.Errorf("expired email message cleanup: %s", err)
 	}
 }
 
 // PeriodicCleanup deletes expired email message IDs on a period
 // defined in Service.CleanupPeriod.
-func (s Service) PeriodicCleanup(logger *logging.Logger) (err error) {
-	if logger == nil {
-		logger, err = logging.GetLogger("default")
-		if err != nil {
-			return
-		}
-	}
+func (s Service) PeriodicCleanup() (err error) {
 	if s.CleanupPeriod <= 0 {
-		logger.Info("expired email message cleanup: disabled")
+		s.Logger.Info("expired email message cleanup: disabled")
 		return
 	}
-	logger.Info("expired email message cleanup: initialized")
+	s.Logger.Info("expired email message cleanup: initialized")
 	go func() {
 		defer func() {
 			if err := recover(); err != nil {
-				logger.Errorf("expired email message cleanup: panic: %s", err)
+				s.Logger.Errorf("expired email message cleanup: panic: %s", err)
 			}
 		}()
 		ticker := time.NewTicker(s.CleanupPeriod)
 		defer ticker.Stop()
-		cleanup(s.DB, logger)
+		cleanup(s.DB, s.Logger)
 		for {
 			select {
 			case <-ticker.C:
-				cleanup(s.DB, logger)
+				cleanup(s.DB, s.Logger)
 			}
 		}
 	}()
