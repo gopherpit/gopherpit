@@ -318,6 +318,7 @@ COPYRIGHT
 			DB:              db,
 			DefaultLifetime: sessionOptions.DefaultLifetime.Duration(),
 			CleanupPeriod:   sessionOptions.CleanupPeriod.Duration(),
+			Logger:          logger,
 		}
 	}
 	// User service can be configured to use different implementations.
@@ -342,6 +343,7 @@ COPYRIGHT
 		userService = &boltUser.Service{
 			DB: db,
 			PasswordNoReuseMonths: userOptions.PasswordNoReuseMonths,
+			Logger:                logger,
 		}
 	}
 	if ldapOptions.Enabled {
@@ -449,6 +451,7 @@ COPYRIGHT
 		packagesService = &boltPackages.Service{
 			DB:        db,
 			Changelog: changelog,
+			Logger:    logger,
 		}
 	}
 
@@ -509,19 +512,19 @@ COPYRIGHT
 	if service, ok := sessionService.(*boltSession.Service); ok {
 		// Start session cleanup.
 		s.Functions = append(s.Functions, func() error {
-			return service.PeriodicCleanup(logger)
+			return service.PeriodicCleanup()
 		})
 	}
 	if service, ok := userService.(*boltUser.Service); ok {
 		// Start user cleanup of email validations and password resets.
 		s.Functions = append(s.Functions, func() error {
-			return service.PeriodicCleanup(logger)
+			return service.PeriodicCleanup()
 		})
 	}
 	if service, ok := notificationService.(*boltNotification.Service); ok {
 		// Start celanup of expired email message IDs.
 		s.Functions = append(s.Functions, func() error {
-			return service.PeriodicCleanup(logger)
+			return service.PeriodicCleanup()
 		})
 	}
 	if service, ok := certificateService.(*boltCertificate.Service); ok {
