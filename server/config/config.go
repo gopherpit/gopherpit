@@ -12,8 +12,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"os"
+	"path/filepath"
 
-	"github.com/kardianos/osext"
 	yaml "gopkg.in/yaml.v2"
 )
 
@@ -45,11 +46,15 @@ var (
 
 	// BaseDir is the directory where the service's executable is located.
 	BaseDir = func() string {
-		baseDir, err := osext.ExecutableFolder()
+		path, err := os.Executable()
 		if err != nil {
 			panic(err)
 		}
-		return baseDir
+		path, err = filepath.EvalSymlinks(path)
+		if err != nil {
+			panic(err)
+		}
+		return filepath.Dir(path)
 	}()
 
 	// Dir is default directory where configuration files are located.
