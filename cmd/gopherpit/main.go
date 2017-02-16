@@ -12,6 +12,7 @@
 package main // import "gopherpit.com/gopherpit/cmd/gopherpit"
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"os"
@@ -532,6 +533,13 @@ COPYRIGHT
 			// Start renewal of certificates.
 			s.Functions = append(s.Functions, service.PeriodicRenew)
 		}
+	}
+
+	s.ShutdownFunc = func() error {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		srv.Shutdown(ctx)
+		cancel()
+		return nil
 	}
 
 	// Put the process in the background only if the Pid is not 1

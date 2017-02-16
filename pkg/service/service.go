@@ -44,6 +44,8 @@ type Service struct {
 	// A list of non-blocking or short-lived functions to be executed on
 	// Service.Start.
 	Functions []func() error
+	// A function to be executed after receiving SIGINT or SIGTERM.
+	ShutdownFunc func() error
 	// Instance of resenje.org/daemon.Daemon.
 	Daemon *daemon.Daemon
 }
@@ -372,6 +374,12 @@ func (s Service) Start() error {
 	if s.Daemon != nil && s.Daemon.PidFileName != "" {
 		// Remove Pid file only if there is a daemon
 		s.Daemon.Cleanup()
+	}
+
+	if s.ShutdownFunc != nil {
+		if err := s.ShutdownFunc(); err != nil {
+			logging.Errorf("Shutdown: %s", err)
+		}
 	}
 
 	logging.Info("Service stop")

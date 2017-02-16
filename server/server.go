@@ -6,6 +6,7 @@
 package server // import "gopherpit.com/gopherpit/server"
 
 import (
+	"context"
 	"crypto/rand"
 	"crypto/tls"
 	"fmt"
@@ -55,6 +56,8 @@ type Server struct {
 	certificateCache certificateCache.Cache
 
 	salt []byte
+
+	servers []*http.Server
 
 	templateFunctions template.FuncMap
 	templateCache     map[string]*template.Template
@@ -822,6 +825,7 @@ func (s *Server) Serve(o ServeOptions) error {
 			})),
 			TLSConfig: tlsConfig,
 		}
+		s.servers = append(s.servers, server)
 
 		go func() {
 			defer s.RecoveryService.Recover()
@@ -895,6 +899,7 @@ func (s *Server) Serve(o ServeOptions) error {
 				handler.ServeHTTP(w, r)
 			})),
 		}
+		s.servers = append(s.servers, server)
 
 		go func() {
 			defer s.RecoveryService.Recover()
@@ -922,6 +927,7 @@ func (s *Server) Serve(o ServeOptions) error {
 			Handler:   s.nilRecoveryHandler(s.internalHandler),
 			TLSConfig: tlsConfig,
 		}
+		s.servers = append(s.servers, server)
 
 		go func() {
 			defer s.RecoveryService.Recover()
@@ -944,6 +950,7 @@ func (s *Server) Serve(o ServeOptions) error {
 			Addr:    o.ListenInternal,
 			Handler: s.nilRecoveryHandler(s.internalHandler),
 		}
+		s.servers = append(s.servers, server)
 
 		go func() {
 			defer s.RecoveryService.Recover()
@@ -965,4 +972,22 @@ func (s Server) Version() string {
 		return fmt.Sprintf("%s-%s", s.Options.Version, s.BuildInfo)
 	}
 	return s.Options.Version
+}
+
+// Shutdown gracefully terminates HTTP servers.
+func (s *Server) Shutdown(ctx context.Context) {
+	s.logger.Debug("Shutting down HTTP servers")
+	wg := sync.WaitGroup{}
+	for _, server := range s.servers {
+		wg.Add(1)
+		go func(server *http.Server) {
+			defer s.RecoveryService.Recover()
+			defer wg.Done()
+
+			if err := server.Shutdown(ctx); err != nil {
+				s.logger.Errorf("Server shutdown: %s", err)
+			}
+		}(server)
+	}
+	wg.Wait()
 }
