@@ -21,12 +21,6 @@
 			"revisionTime": "2017-01-18T13:43:44Z"
 		},
 		{
-			"checksumSHA1": "Mnp6EGM0pdGxMe19f6dg+ipjaSo=",
-			"path": "github.com/kardianos/osext",
-			"revision": "9b883c5eb462dd5cb1b0a7a104fe86bc6b9bd391",
-			"revisionTime": "2017-02-07T19:16:55Z"
-		},
-		{
 			"checksumSHA1": "pyUcq4sKKVm0KzBSZIPpHsmDF6k=",
 			"path": "github.com/kelseyhightower/envconfig",
 			"revision": "8bf4bbfc795e2c7c8a5ea47b707453ed019e2ad4",
