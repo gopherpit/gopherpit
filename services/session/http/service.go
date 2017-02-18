@@ -35,6 +35,7 @@ func NewService(c *apiClient.Client) *Service {
 // Session retrieves a Session instance by making a HTTP GET request
 // to {Client.Endpoint}/sessions/{id}.
 func (s Service) Session(id string) (ses *session.Session, err error) {
+	ses = &session.Session{}
 	err = s.Client.JSON("GET", "/sessions/"+id, nil, nil, ses)
 	return
 }
@@ -47,6 +48,7 @@ func (s Service) CreateSession(o *session.Options) (ses *session.Session, err er
 	if err != nil {
 		return
 	}
+	ses = &session.Session{}
 	err = s.Client.JSON("POST", "/sessions", nil, bytes.NewReader(body), ses)
 	return
 }
@@ -59,6 +61,7 @@ func (s Service) UpdateSession(id string, o *session.Options) (ses *session.Sess
 	if err != nil {
 		return
 	}
+	ses = &session.Session{}
 	err = s.Client.JSON("POST", "/sessions/"+id, nil, bytes.NewReader(body), ses)
 	return
 }
