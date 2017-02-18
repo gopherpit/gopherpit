@@ -49,6 +49,7 @@ func (s Service) AddDomain(o *packages.DomainOptions, byUserID string) (d *packa
 	if err != nil {
 		return
 	}
+	d = &packages.Domain{}
 	err = s.Client.JSON("POST", "/domains", nil, bytes.NewReader(body), d)
 	return
 }
@@ -66,6 +67,7 @@ func (s Service) UpdateDomain(ref string, o *packages.DomainOptions, byUserID st
 	if err != nil {
 		return
 	}
+	d = &packages.Domain{}
 	err = s.Client.JSON("POST", "/domains/"+ref, nil, bytes.NewReader(body), d)
 	return
 }
@@ -81,6 +83,7 @@ func (s Service) DeleteDomain(ref, byUserID string) (d *packages.Domain, err err
 	if err != nil {
 		return
 	}
+	d = &packages.Domain{}
 	err = s.Client.JSON("DELETE", "/domains/"+ref, nil, bytes.NewReader(body), d)
 	return
 }
@@ -174,6 +177,7 @@ func (s Service) AddPackage(o *packages.PackageOptions, byUserID string) (p *pac
 	if err != nil {
 		return
 	}
+	p = &packages.Package{}
 	err = s.Client.JSON("POST", "/packages", nil, bytes.NewReader(body), p)
 	return
 }
@@ -191,6 +195,7 @@ func (s Service) UpdatePackage(id string, o *packages.PackageOptions, byUserID s
 	if err != nil {
 		return
 	}
+	p = &packages.Package{}
 	err = s.Client.JSON("POST", "/packages/"+id, nil, bytes.NewReader(body), p)
 	return
 }
@@ -206,6 +211,7 @@ func (s Service) DeletePackage(id string, byUserID string) (p *packages.Package,
 	if err != nil {
 		return
 	}
+	p = &packages.Package{}
 	err = s.Client.JSON("DELETE", "/packages/"+id, nil, bytes.NewReader(body), p)
 	return
 }
@@ -223,16 +229,19 @@ func (s Service) PackagesByDomain(domainRef, startName string, limit int) (page 
 }
 
 func (s Service) ResolvePackage(path string) (resolution *packages.PackageResolution, err error) {
+	resolution = &packages.PackageResolution{}
 	err = s.Client.JSON("GET", "/paths/"+path, nil, nil, resolution)
 	return
 }
 
 func (s Service) ChangelogRecord(domainRef, id string) (record *packages.ChangelogRecord, err error) {
+	record = &packages.ChangelogRecord{}
 	err = s.Client.JSON("GET", "/changelogs/"+domainRef+"/record/"+id, nil, nil, record)
 	return
 }
 
 func (s Service) DeleteChangelogRecord(domainRef, id string) (record *packages.ChangelogRecord, err error) {
+	record = &packages.ChangelogRecord{}
 	err = s.Client.JSON("DELETE", "/changelogs/"+domainRef+"/record/"+id, nil, nil, record)
 	return
 }
