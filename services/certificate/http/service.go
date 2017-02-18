@@ -37,6 +37,7 @@ func NewService(c *apiClient.Client) *Service {
 // Certificate retrieves an existing Certificate instance by making a HTTP GET request
 // to {Client.Endpoint}/certificates/{fqdn}.
 func (s Service) Certificate(fqdn string) (c *certificate.Certificate, err error) {
+	c = &certificate.Certificate{}
 	err = s.Client.JSON("GET", "/certificates/"+fqdn, nil, nil, c)
 	return
 }
@@ -57,6 +58,7 @@ func (s Service) ObtainCertificate(fqdn string) (c *certificate.Certificate, err
 	if err != nil {
 		return
 	}
+	c = &certificate.Certificate{}
 	err = s.Client.JSON("POST", "/certificates", nil, bytes.NewReader(body), c)
 	return
 }
@@ -85,6 +87,7 @@ func (s Service) UpdateCertificate(fqdn string, o *certificate.Options) (c *cert
 	if err != nil {
 		return
 	}
+	c = &certificate.Certificate{}
 	err = s.Client.JSON("POST", "/certificates/"+fqdn, nil, bytes.NewReader(body), c)
 	return
 }
@@ -92,6 +95,7 @@ func (s Service) UpdateCertificate(fqdn string, o *certificate.Options) (c *cert
 // DeleteCertificate deletes an existing Certificate by making a HTTP DELETE request
 // to {Client.Endpoint}/certificates/{fqdn}.
 func (s Service) DeleteCertificate(fqdn string) (c *certificate.Certificate, err error) {
+	c = &certificate.Certificate{}
 	err = s.Client.JSON("DELETE", "/certificates/"+fqdn, nil, nil, c)
 	return
 }
@@ -106,6 +110,7 @@ func (s Service) Certificates(start string, limit int) (page *certificate.Certif
 	if limit > 0 {
 		query.Set("limit", strconv.Itoa(limit))
 	}
+	page = &certificate.CertificatesPage{}
 	err = s.Client.JSON("GET", "/certificates", query, nil, page)
 	return
 }
@@ -124,6 +129,7 @@ func (s Service) CertificatesInfoByExpiry(since time.Time, start string, limit i
 	if !since.IsZero() {
 		query.Set("since", since.String())
 	}
+	page = &certificate.InfosPage{}
 	err = s.Client.JSON("GET", "/certificates-info-by-expiry", query, nil, page)
 	return
 }
@@ -153,6 +159,7 @@ func (s Service) RegisterACMEUser(directoryURL, email string) (u *certificate.AC
 	if err != nil {
 		return
 	}
+	u = &certificate.ACMEUser{}
 	err = s.Client.JSON("POST", "/acme/user", nil, bytes.NewReader(body), u)
 	return
 }
@@ -160,6 +167,7 @@ func (s Service) RegisterACMEUser(directoryURL, email string) (u *certificate.AC
 // ACMEChallenge returns an instance of ACMEChallenge for a FQDN by making a
 // HTTP GET request to {Client.Endpoint}/acme/challenges/{fqdn}.
 func (s Service) ACMEChallenge(fqdn string) (c *certificate.ACMEChallenge, err error) {
+	c = &certificate.ACMEChallenge{}
 	err = s.Client.JSON("GET", "/acme/challenges/"+fqdn, nil, nil, c)
 	return
 }
@@ -172,6 +180,7 @@ func (s Service) UpdateACMEChallenge(fqdn string, o *certificate.ACMEChallengeOp
 	if err != nil {
 		return
 	}
+	c = &certificate.ACMEChallenge{}
 	err = s.Client.JSON("POST", "/acme/challenges/"+fqdn, nil, bytes.NewReader(body), c)
 	return
 }
@@ -179,6 +188,7 @@ func (s Service) UpdateACMEChallenge(fqdn string, o *certificate.ACMEChallengeOp
 // DeleteACMEChallenge deletes an existing ACMEChallenge for a provided FQDN
 // and returns it by making a HTTP DELETE request to {Client.Endpoint}/acme/challenges/{fqdn}.
 func (s Service) DeleteACMEChallenge(fqdn string) (c *certificate.ACMEChallenge, err error) {
+	c = &certificate.ACMEChallenge{}
 	err = s.Client.JSON("DELETE", "/acme/challenges/"+fqdn, nil, nil, c)
 	return
 }
@@ -193,6 +203,7 @@ func (s Service) ACMEChallenges(start string, limit int) (page *certificate.ACME
 	if limit > 0 {
 		query.Set("limit", strconv.Itoa(limit))
 	}
+	page = &certificate.ACMEChallengesPage{}
 	err = s.Client.JSON("GET", "/acme/challenges", query, nil, page)
 	return
 }
