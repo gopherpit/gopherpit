@@ -136,7 +136,7 @@ recordLoop:
 	for {
 		select {
 		case record := <-logger.recordChannel:
-			record.process()
+			record.process(logger)
 		case state := <-logger.stateChannel:
 			switch state {
 			case stopped:
@@ -285,7 +285,6 @@ func (logger *Logger) log(level Level, format string, a ...interface{}) {
 		Level:   level,
 		Message: message,
 		Time:    time.Now(),
-		logger:  logger,
 	}
 }
 

@@ -57,14 +57,11 @@ type WriteHandler struct {
 	Level     Level
 	Formatter Formatter
 	Writer    io.Writer
-	lock      sync.RWMutex
 }
 
 // Handle writes all provided log records to writer provided during creation.
 func (handler *WriteHandler) Handle(record *Record) error {
-	handler.lock.Lock()
 	_, err := handler.Writer.Write([]byte(handler.Formatter.Format(record) + "\n"))
-	handler.lock.Unlock()
 	return err
 }
 

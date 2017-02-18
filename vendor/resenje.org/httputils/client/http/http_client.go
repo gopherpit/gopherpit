@@ -8,7 +8,6 @@ package httpClient // import "resenje.org/httputils/client/http"
 import (
 	"crypto/tls"
 	"encoding/json"
-	"errors"
 	"math/rand"
 	"net"
 	"net/http"
@@ -53,6 +52,13 @@ type Options struct {
 
 // New creates a net/http.Client with options from Options.
 func New(options *Options) *http.Client {
+	return &http.Client{
+		Transport: Transport(options),
+	}
+}
+
+// Transport creates a net/http.Transport with options from Options.
+func Transport(options *Options) *http.Transport {
 	if options.Timeout == 0 {
 		options.Timeout = 30 * time.Second
 	}
@@ -111,23 +117,7 @@ func New(options *Options) *http.Client {
 		TLSClientConfig:     &tls.Config{InsecureSkipVerify: options.TLSSkipVerify},
 	}
 	http2.ConfigureTransport(transport)
-	return &http.Client{
-		Transport: transport,
-		CheckRedirect: func(req *http.Request, via []*http.Request) error {
-			if len(via) >= 10 {
-				return errors.New("stopped after 10 redirects")
-			}
-			if len(via) == 0 {
-				return nil
-			}
-			for attr, val := range via[0].Header {
-				if _, ok := req.Header[attr]; !ok {
-					req.Header[attr] = val
-				}
-			}
-			return nil
-		},
-	}
+	return transport
 }
 
 // optionsJSON is a helper structure to marshal

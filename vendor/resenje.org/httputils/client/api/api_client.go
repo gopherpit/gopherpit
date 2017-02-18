@@ -35,12 +35,20 @@ type Client struct {
 	// Headers is optional additional headers that will be passed on
 	// each request.
 	Headers map[string]string
+	// BasicAuth holds information for HTTP Basic Auth.
+	BasicAuth *BasicAuth
 	// ErrorRegistry maps error codes to actual errors. It is used to
 	// identify errors from the services and pass them as return values.
 	ErrorRegistry ErrorRegistry
 	// HTTPClient is net/http.Client to be used for making HTTP requests.
 	// If Client is nil, DefaultClient is used.
 	HTTPClient *http.Client
+}
+
+// BasicAuth holds information for HTTP Basic Auth.
+type BasicAuth struct {
+	Username string
+	Password string
 }
 
 // New returns a new instance of Client with default values.
@@ -85,6 +93,9 @@ func (c Client) Request(method, path string, query url.Values, body io.Reader, a
 			keyHeader = DefaultKeyHeader
 		}
 		req.Header.Set(keyHeader, c.Key)
+	}
+	if c.BasicAuth != nil {
+		req.SetBasicAuth(c.BasicAuth.Username, c.BasicAuth.Password)
 	}
 
 	httpClient := c.HTTPClient

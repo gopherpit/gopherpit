@@ -15,11 +15,9 @@ type Record struct {
 	Time    time.Time `json:"time"`
 	Level   Level     `json:"level"`
 	Message string    `json:"message"`
-	logger  *Logger
 }
 
-func (record *Record) process() {
-	logger := record.logger
+func (record *Record) process(logger *Logger) {
 	logger.lock.RLock()
 
 	if record.Level <= logger.Level {
