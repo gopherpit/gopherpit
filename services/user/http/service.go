@@ -37,6 +37,7 @@ func NewService(c *apiClient.Client) *Service {
 // User retrieves an existing User instance by making a HTTP GET request
 // to {Client.Endpoint}/users/{ref}.
 func (s Service) User(ref string) (u *user.User, err error) {
+	u = &user.User{}
 	err = s.Client.JSON("GET", "/users/"+ref, nil, nil, u)
 	return
 }
@@ -44,6 +45,7 @@ func (s Service) User(ref string) (u *user.User, err error) {
 // UserByID retrieves an existing User instance by making a HTTP GET request
 // to {Client.Endpoint}/users-by-id/{id}.
 func (s Service) UserByID(id string) (u *user.User, err error) {
+	u = &user.User{}
 	err = s.Client.JSON("GET", "/users-by-id/"+id, nil, nil, u)
 	return
 }
@@ -51,6 +53,7 @@ func (s Service) UserByID(id string) (u *user.User, err error) {
 // UserByEmail retrieves an existing User instance by making a HTTP GET request
 // to {Client.Endpoint}/users-by-email/{email}.
 func (s Service) UserByEmail(email string) (u *user.User, err error) {
+	u = &user.User{}
 	err = s.Client.JSON("GET", "/users-by-email/"+email, nil, nil, u)
 	return
 }
@@ -58,6 +61,7 @@ func (s Service) UserByEmail(email string) (u *user.User, err error) {
 // UserByUsername retrieves an existing User instance by making a HTTP GET
 // request to {Client.Endpoint}/users-by-username/{username}.
 func (s Service) UserByUsername(username string) (u *user.User, err error) {
+	u = &user.User{}
 	err = s.Client.JSON("GET", "/users-by-username/"+username, nil, nil, u)
 	return
 }
@@ -70,6 +74,7 @@ func (s Service) CreateUser(o *user.Options) (u *user.User, err error) {
 	if err != nil {
 		return
 	}
+	u = &user.User{}
 	err = s.Client.JSON("POST", "/users", nil, bytes.NewReader(body), u)
 	return
 }
@@ -82,6 +87,7 @@ func (s Service) UpdateUser(ref string, o *user.Options) (u *user.User, err erro
 	if err != nil {
 		return
 	}
+	u = &user.User{}
 	err = s.Client.JSON("POST", "/users/"+ref, nil, bytes.NewReader(body), u)
 	return
 }
@@ -89,6 +95,7 @@ func (s Service) UpdateUser(ref string, o *user.Options) (u *user.User, err erro
 // DeleteUser deletes an existing User by making a HTTP DELETE request
 // to {Client.Endpoint}/users/{ref}.
 func (s Service) DeleteUser(ref string) (u *user.User, err error) {
+	u = &user.User{}
 	err = s.Client.JSON("DELETE", "/users/"+ref, nil, nil, u)
 	return
 }
@@ -237,6 +244,7 @@ func (s Service) ChangeEmail(ref, token string) (u *user.User, err error) {
 	if err != nil {
 		return
 	}
+	u = &user.User{}
 	err = s.Client.JSON("POST", "/users/"+ref+"/email-change", nil, bytes.NewReader(body), u)
 	return
 }
@@ -268,6 +276,7 @@ func (s Service) UsersByID(startID string, limit int) (page *user.UsersPage, err
 	if limit > 0 {
 		query.Set("limit", strconv.Itoa(limit))
 	}
+	page = &user.UsersPage{}
 	err = s.Client.JSON("GET", "/users-by-id", query, nil, page)
 	return
 }
@@ -283,6 +292,7 @@ func (s Service) UsersByEmail(startEmail string, limit int) (page *user.UsersPag
 	if limit > 0 {
 		query.Set("limit", strconv.Itoa(limit))
 	}
+	page = &user.UsersPage{}
 	err = s.Client.JSON("GET", "/users-by-email", query, nil, page)
 	return
 }
@@ -298,6 +308,7 @@ func (s Service) UsersByUsername(startUsername string, limit int) (page *user.Us
 	if limit > 0 {
 		query.Set("limit", strconv.Itoa(limit))
 	}
+	page = &user.UsersPage{}
 	err = s.Client.JSON("GET", "/users-by-username", query, nil, page)
 	return
 }
