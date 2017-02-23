@@ -640,7 +640,7 @@ func (s Server) packageFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 		errors.AddFieldError("refName", "Reference name is required if reference type is selected.")
 	}
 
-	if request.RefName != "" && (request.VCS != packages.VCSGit || (request.VCS == packages.VCSGit && !(repoRoot.Scheme == "http" || repoRoot.Scheme == "https"))) {
+	if request.RefName != "" && (request.VCS != packages.VCSGit || (request.VCS == packages.VCSGit && repoRoot != nil && !(repoRoot.Scheme == "http" || repoRoot.Scheme == "https"))) {
 		errors.AddFieldError("refName", "Reference change is allowed only for Git HTTP and HTTPS repositeries.")
 	}
 
