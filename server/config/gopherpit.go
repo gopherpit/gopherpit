@@ -163,7 +163,7 @@ func (o *GopherPitOptions) Prepare() error {
 		filepath.Dir(o.PidFileName),
 	} {
 		if dir != "" {
-			if err := os.MkdirAll(dir, 0755); err != nil {
+			if err := os.MkdirAll(dir, 0777); err != nil {
 				return err
 			}
 		}
