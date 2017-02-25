@@ -3,7 +3,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package service // import "gopherpit.com/gopherpit/pkg/service"
+package application // import "gopherpit.com/gopherpit/pkg/application"
 
 import (
 	"encoding/json"
@@ -21,18 +21,20 @@ import (
 
 	"resenje.org/daemon"
 	"resenje.org/logging"
+
+	"gopherpit.com/gopherpit/pkg/info"
 )
 
 var (
-	defaultFileMode         os.FileMode = 0644
-	defaultDirectoryMode    os.FileMode = 0755
+	defaultFileMode         os.FileMode = 0666
+	defaultDirectoryMode    os.FileMode = 0777
 	defaultaemonLogFileName             = "daemon.log"
 )
 
-// Service provides common functionalities of a system service, like
+// App provides common functionalities of an application, like
 // setting a working directory, logging, putting process in the background
 // aka daemonizing and starting arbitrary functions that provide core logic.
-type Service struct {
+type App struct {
 	name string
 
 	homeDir string
@@ -42,7 +44,7 @@ type Service struct {
 	daemonLogFileMode os.FileMode
 
 	// A list of non-blocking or short-lived functions to be executed on
-	// Service.Start.
+	// App.Start.
 	Functions []func() error
 	// A function to be executed after receiving SIGINT or SIGTERM.
 	ShutdownFunc func() error
@@ -50,9 +52,9 @@ type Service struct {
 	Daemon *daemon.Daemon
 }
 
-// Options contain optional parameters for Service.
+// Options contain optional parameters for App.
 type Options struct {
-	// Working directory of a service after daemonizing.
+	// Working directory after daemonizing.
 	HomeDir string
 	// Directory for log files. If it is not set, logging will be configured
 	// to print messages to stderr.
@@ -109,9 +111,9 @@ type Options struct {
 	DaemonLogFileMode os.FileMode
 }
 
-// NewService creates a new instance of Service, based on provided Options.
-func NewService(name string, o Options) (s *Service, err error) {
-	s = &Service{
+// NewApp creates a new instance of App, based on provided Options.
+func NewApp(name string, o Options) (a *App, err error) {
+	a = &App{
 		name:      name,
 		Functions: []func() error{},
 		homeDir:   o.HomeDir,
@@ -130,17 +132,17 @@ func NewService(name string, o Options) (s *Service, err error) {
 		if pidFileMode == 0 {
 			pidFileMode = defaultFileMode
 		}
-		s.Daemon = &daemon.Daemon{
+		a.Daemon = &daemon.Daemon{
 			PidFileName: o.PidFileName,
 			PidFileMode: pidFileMode,
 		}
-		s.daemonLogFileMode = o.DaemonLogFileMode
-		if s.daemonLogFileMode == 0 {
-			s.daemonLogFileMode = defaultFileMode
+		a.daemonLogFileMode = o.DaemonLogFileMode
+		if a.daemonLogFileMode == 0 {
+			a.daemonLogFileMode = defaultFileMode
 		}
-		s.daemonLogFileName = o.DaemonLogFileName
-		if s.daemonLogFileName == "" {
-			s.daemonLogFileName = defaultaemonLogFileName
+		a.daemonLogFileName = o.DaemonLogFileName
+		if a.daemonLogFileName == "" {
+			a.daemonLogFileName = defaultaemonLogFileName
 		}
 	}
 
@@ -164,7 +166,7 @@ func NewService(name string, o Options) (s *Service, err error) {
 			Level:          o.LogLevel,
 			Formatter:      &logging.StandardFormatter{TimeFormat: logging.StandardTimeFormat},
 			Directory:      o.LogDir,
-			FilenameLayout: "2006/01/02/" + s.name + ".log",
+			FilenameLayout: "2006/01/02/" + a.name + ".log",
 			FileMode:       logFileMode,
 			DirectoryMode:  logDirectoryMode,
 		})
@@ -248,10 +250,10 @@ func NewService(name string, o Options) (s *Service, err error) {
 	return
 }
 
-// Start executes all function in Service.Functions, starts a goroutine
+// Start executes all function in App.Functions, starts a goroutine
 // that receives USR1 signal to dump debug data and blocks until INT or TERM
 // signals are received.
-func (s Service) Start() error {
+func (a App) Start() error {
 	// We want some fancy signal features
 	signalChannel := make(chan os.Signal)
 	signal.Notify(signalChannel, syscall.SIGUSR1, syscall.SIGUSR2)
@@ -263,17 +265,17 @@ func (s Service) Start() error {
 			switch sig {
 			case syscall.SIGUSR1:
 				var dir string
-				if s.homeDir != "" {
-					dir = filepath.Join(s.homeDir, "debug", time.Now().UTC().Format("2006-01-02_15.04.05.000000"))
+				if a.homeDir != "" {
+					dir = filepath.Join(a.homeDir, "debug", time.Now().UTC().Format("2006-01-02_15.04.05.000000"))
 					if err := os.MkdirAll(dir, defaultDirectoryMode); err != nil {
 						logging.Errorf("debug dump: create debug log dir: %s", err)
 						continue Loop
 					}
 				}
 
-				info, err := json.MarshalIndent(NewInfo(), "", "    ")
+				info, err := json.MarshalIndent(info.NewInformation(), "", "    ")
 				if err != nil {
-					logging.Errorf("debug dump: decode service info: %s", err)
+					logging.Errorf("debug dump: decode application info: %s", err)
 				}
 				if dir != "" {
 					f, err := os.OpenFile(filepath.Join(dir, "info"), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, defaultFileMode)
@@ -283,7 +285,7 @@ func (s Service) Start() error {
 					}
 					f.Write(info)
 					if err := f.Close(); err != nil {
-						logging.Errorf("debug dump: close service info file: %s", err)
+						logging.Errorf("debug dump: close application info file: %s", err)
 					}
 				} else {
 					fmt.Fprintln(os.Stderr, string(info))
@@ -355,11 +357,11 @@ func (s Service) Start() error {
 		}
 	}()
 
-	logging.Info("Service start")
+	logging.Info("Application start")
 	logging.Infof("Pid %d", os.Getpid())
 
 	// Start all async functions
-	for _, function := range s.Functions {
+	for _, function := range a.Functions {
 		if err := function(); err != nil {
 			return err
 		}
@@ -371,25 +373,25 @@ func (s Service) Start() error {
 	signal.Notify(interruptChannel, syscall.SIGINT, syscall.SIGTERM)
 	// Blocking part
 	logging.Noticef("Received signal: %v", <-interruptChannel)
-	if s.Daemon != nil && s.Daemon.PidFileName != "" {
+	if a.Daemon != nil && a.Daemon.PidFileName != "" {
 		// Remove Pid file only if there is a daemon
-		s.Daemon.Cleanup()
+		a.Daemon.Cleanup()
 	}
 
-	if s.ShutdownFunc != nil {
-		if err := s.ShutdownFunc(); err != nil {
+	if a.ShutdownFunc != nil {
+		if err := a.ShutdownFunc(); err != nil {
 			logging.Errorf("Shutdown: %s", err)
 		}
 	}
 
-	logging.Info("Service stop")
+	logging.Info("Application stop")
 	// Process remaining log messages
 	logging.WaitForAllUnprocessedRecords()
 	return nil
 }
 
 // Daemonize puts process in the background.
-func (s Service) Daemonize() {
+func (a App) Daemonize() {
 	nullFile, err := os.OpenFile(os.DevNull, os.O_RDWR, 0)
 	if err != nil {
 		fmt.Println(err)
@@ -397,8 +399,8 @@ func (s Service) Daemonize() {
 	}
 
 	var daemonFile *os.File
-	if s.daemonLogFileName != "" && s.logDir != "" {
-		daemonFile, err = os.OpenFile(filepath.Join(s.logDir, s.daemonLogFileName), os.O_WRONLY|os.O_CREATE|os.O_APPEND, s.daemonLogFileMode)
+	if a.daemonLogFileName != "" && a.logDir != "" {
+		daemonFile, err = os.OpenFile(filepath.Join(a.logDir, a.daemonLogFileName), os.O_WRONLY|os.O_CREATE|os.O_APPEND, a.daemonLogFileMode)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
@@ -407,8 +409,8 @@ func (s Service) Daemonize() {
 		daemonFile = nullFile
 	}
 
-	if err := s.Daemon.Daemonize(
-		s.homeDir,  // workDir
+	if err := a.Daemon.Daemonize(
+		a.homeDir,  // workDir
 		nullFile,   // inFile
 		daemonFile, // outFIle
 		daemonFile, // errFile

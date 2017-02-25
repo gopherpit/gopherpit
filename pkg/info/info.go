@@ -3,7 +3,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package service
+package info // import "gopherpit.com/gopherpit/pkg/info"
 
 import (
 	"os"
@@ -13,8 +13,8 @@ import (
 	"resenje.org/marshal"
 )
 
-// Info represents selected data provided by memstats and pprof.
-type Info struct {
+// Information represents selected data provided by memstats and pprof.
+type Information struct {
 	// Server's hostname.
 	Host string `json:"host"`
 	// Server's operating system.
@@ -76,15 +76,15 @@ type Info struct {
 	StackCount map[string]int `json:"stack-count"`
 }
 
-// NewInfo creates and populates a new instance of ServiceInfo.
-func NewInfo() *Info {
-	i := &Info{}
+// NewInformation creates and populates a new instance of info.Information.
+func NewInformation() *Information {
+	i := &Information{}
 	i.Update()
 	return i
 }
 
-// Update updates Info with current data.
-func (i *Info) Update() {
+// Update updates Information with current data.
+func (i *Information) Update() {
 	host, err := os.Hostname()
 	if err != nil {
 		host = ""

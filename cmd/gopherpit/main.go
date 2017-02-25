@@ -28,7 +28,7 @@ import (
 	"resenje.org/logging"
 	"resenje.org/recovery"
 
-	"gopherpit.com/gopherpit/pkg/service"
+	"gopherpit.com/gopherpit/pkg/application"
 	"gopherpit.com/gopherpit/server"
 	"gopherpit.com/gopherpit/server/config"
 	"gopherpit.com/gopherpit/services/certificate"
@@ -152,16 +152,16 @@ COPYRIGHT
 	// Validate the command provided as first non-option argument.
 	switch arg0 {
 	case "":
-		// No command is interpreted as starting the service in the foreground.
+		// No command is interpreted as starting the application in the foreground.
 
 	case "daemon":
-		// Daemon command is interpreted as starting the service in the
+		// Daemon command is interpreted as starting the application in the
 		// background. This command is verified at the end of this function.
 		// This behavior provides functionality to validate configuration,
 		// prepare storage and return errors before the process is daemonized.
 
 	case "stop":
-		err := service.StopDaemon(daemon.Daemon{
+		err := application.StopDaemon(daemon.Daemon{
 			PidFileName: gopherpitOptions.PidFileName,
 		})
 		if err != nil {
@@ -216,7 +216,7 @@ COPYRIGHT
 		os.Exit(2)
 	}
 
-	// Continue to starting the service.
+	// Continue to starting the application.
 
 	// Verify options values and provide help and error message in case of
 	// an error.
@@ -235,10 +235,10 @@ COPYRIGHT
 		os.Exit(2)
 	}
 
-	// Initialize the service with loaded options.
-	s, err := service.NewService(
+	// Initialize the application with loaded options.
+	app, err := application.NewApp(
 		config.Name,
-		service.Options{
+		application.Options{
 			HomeDir:                     gopherpitOptions.StorageDir,
 			LogDir:                      loggingOptions.LogDir,
 			LogLevel:                    loggingOptions.LogLevel,
@@ -500,7 +500,7 @@ COPYRIGHT
 	// Append Server functions.
 	// All functions must be non-blocking or short-lived.
 	// They will be executed in the same goroutine in the same order.
-	s.Functions = append(s.Functions, func() error {
+	app.Functions = append(app.Functions, func() error {
 		return srv.Serve(server.ServeOptions{
 			Listen:            gopherpitOptions.Listen,
 			ListenTLS:         gopherpitOptions.ListenTLS,
@@ -512,30 +512,30 @@ COPYRIGHT
 	})
 	if service, ok := sessionService.(*boltSession.Service); ok {
 		// Start session cleanup.
-		s.Functions = append(s.Functions, func() error {
+		app.Functions = append(app.Functions, func() error {
 			return service.PeriodicCleanup()
 		})
 	}
 	if service, ok := userService.(*boltUser.Service); ok {
 		// Start user cleanup of email validations and password resets.
-		s.Functions = append(s.Functions, func() error {
+		app.Functions = append(app.Functions, func() error {
 			return service.PeriodicCleanup()
 		})
 	}
 	if service, ok := notificationService.(*boltNotification.Service); ok {
 		// Start celanup of expired email message IDs.
-		s.Functions = append(s.Functions, func() error {
+		app.Functions = append(app.Functions, func() error {
 			return service.PeriodicCleanup()
 		})
 	}
 	if service, ok := certificateService.(*boltCertificate.Service); ok {
 		if gopherpitOptions.ListenTLS != "" || gopherpitOptions.ListenInternalTLS != "" {
 			// Start renewal of certificates.
-			s.Functions = append(s.Functions, service.PeriodicRenew)
+			app.Functions = append(app.Functions, service.PeriodicRenew)
 		}
 	}
 
-	s.ShutdownFunc = func() error {
+	app.ShutdownFunc = func() error {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		srv.Shutdown(ctx)
 		cancel()
@@ -545,12 +545,12 @@ COPYRIGHT
 	// Put the process in the background only if the Pid is not 1
 	// (for example in docker) and the command is `daemon`.
 	if syscall.Getpid() != 1 && arg0 == "daemon" {
-		s.Daemonize()
+		app.Daemonize()
 	}
 
 	// Finally start the server.
 	// This is blocking function.
-	if err := s.Start(); err != nil {
+	if err := app.Start(); err != nil {
 		fmt.Fprintln(os.Stderr, "Error:", err)
 		os.Exit(2)
 	}

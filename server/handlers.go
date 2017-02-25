@@ -16,7 +16,7 @@ import (
 	"resenje.org/httputils"
 	"resenje.org/jsonresponse"
 
-	"gopherpit.com/gopherpit/pkg/service"
+	"gopherpit.com/gopherpit/pkg/info"
 	"gopherpit.com/gopherpit/services/user"
 )
 
@@ -58,15 +58,15 @@ type statusResponse struct {
 	Name    string `json:"name"`
 	Version string `json:"version"`
 	Uptime  string `json:"uptime"`
-	service.Info
+	info.Information
 }
 
 func (s Server) statusAPIHandler(w http.ResponseWriter, r *http.Request) {
 	jsonresponse.OK(w, statusResponse{
-		Name:    s.Name,
-		Version: s.Version(),
-		Uptime:  time.Since(s.startTime).String(),
-		Info:    *service.NewInfo(),
+		Name:        s.Name,
+		Version:     s.Version(),
+		Uptime:      time.Since(s.startTime).String(),
+		Information: *info.NewInformation(),
 	})
 }
 
