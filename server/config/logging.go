@@ -106,7 +106,7 @@ func (o *LoggingOptions) Prepare() error {
 		o.LogDir,
 	} {
 		if dir != "" {
-			if err := os.MkdirAll(dir, 0777); err != nil {
+			if err := os.MkdirAll(dir, o.LogDirectoryMode.FileMode()); err != nil {
 				return err
 			}
 		}
