@@ -20,8 +20,12 @@ import (
 	"gopherpit.com/gopherpit/services/user"
 )
 
-// A shorter variable for function that chains handlers.
-var chainHandlers = httputils.ChainHandlers
+var (
+	// Shorter variables for functions that chain handlers.
+	chainHandlers    = httputils.ChainHandlers
+	finalHandler     = httputils.FinalHandler
+	finalHandlerFunc = httputils.FinalHandlerFunc
+)
 
 // Helper function for raising unexpected errors in JSON API handlers.
 func jsonServerError(w http.ResponseWriter, err error) {

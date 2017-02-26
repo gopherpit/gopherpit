@@ -54,6 +54,10 @@ type AuthHandler struct {
 	// without credentials check. Only address from request's RemoteAddr will be
 	// checked.
 	AuthorizedNetworks []net.IPNet
+	// TrustedProxyNetworks are network ranges that are trusted to provide a valid
+	// X-Forwarded-For and X-Real-Ip headers that will be validated against
+	// the AuthorizedNetworks list.
+	TrustedProxyNetworks []net.IPNet
 }
 
 // ServeHTTP serves an HTTP response for a request.
@@ -83,6 +87,32 @@ func (h AuthHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func getRequestIPs(r *http.Request) (ips []net.IP) {
+	idx := strings.LastIndex(r.RemoteAddr, ":")
+	if idx == -1 {
+		if i := net.ParseIP(r.RemoteAddr); i != nil {
+			ips = []net.IP{i}
+		}
+	} else {
+		if i := net.ParseIP(r.RemoteAddr[:idx]); i != nil {
+			ips = []net.IP{i}
+		}
+	}
+	if h := r.Header.Get("X-Real-Ip"); h != "" {
+		if i := net.ParseIP(h); i != nil {
+			ips = append(ips, i)
+		}
+	}
+	if h := r.Header.Get("X-Forwarded-For"); h != "" {
+		for _, x := range strings.Split(h, ",") {
+			if i := net.ParseIP(strings.TrimSpace(x)); i != nil {
+				ips = append(ips, i)
+			}
+		}
+	}
+	return
+}
+
 func (h AuthHandler) authenticate(r *http.Request) (valid bool, entity interface{}, err error) {
 	if h.AuthorizeAll {
 		valid = true
@@ -95,11 +125,23 @@ func (h AuthHandler) authenticate(r *http.Request) (valid bool, entity interface
 		if err != nil {
 			return
 		}
+		var ips []net.IP
 		ip := net.ParseIP(host)
-		for _, network := range h.AuthorizedNetworks {
+		for _, network := range h.TrustedProxyNetworks {
 			if network.Contains(ip) {
-				valid = true
-				return
+				ips = getRequestIPs(r)
+				break
+			}
+		}
+		if ips == nil {
+			ips = []net.IP{ip}
+		}
+		for _, network := range h.AuthorizedNetworks {
+			for _, ip := range ips {
+				if network.Contains(ip) {
+					valid = true
+					return
+				}
 			}
 		}
 	}

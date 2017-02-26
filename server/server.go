@@ -212,24 +212,8 @@ func NewServer(o Options) (s *Server, err error) {
 		accessLogHandler,
 		s.htmlMaxBodyBytesHandler,
 		httputils.NoExpireHeadersHandler,
-		func(h http.Handler) http.Handler {
-			return s.assetsServer
-		},
+		finalHandler(s.assetsServer),
 	))
-
-	staticHandler := chainHandlers(
-		func(h http.Handler) http.Handler {
-			return httputils.NewSetHeadersHandler(h, map[string]string{
-				"Cache-Control": "no-cache",
-			})
-		},
-		func(h http.Handler) http.Handler {
-			return httputils.NewStaticFilesHandler(h, "/", http.Dir(o.StaticDir))
-		},
-		func(h http.Handler) http.Handler {
-			return http.HandlerFunc(s.htmlNotFoundHandler)
-		},
-	)
 
 	//
 	// Frontend router
@@ -242,198 +226,156 @@ func NewServer(o Options) (s *Server, err error) {
 		s.htmlMaintenanceHandler,
 		s.htmlMaxBodyBytesHandler,
 		s.acmeUserHandler,
-		func(h http.Handler) http.Handler {
-			return frontendRouter
-		},
+		finalHandler(frontendRouter),
 	))
 	// Frontend routes start
-	frontendRouter.NotFoundHandler = staticHandler
+	frontendRouter.NotFoundHandler = chainHandlers(
+		func(h http.Handler) http.Handler {
+			return httputils.NewSetHeadersHandler(h, map[string]string{
+				"Cache-Control": "no-cache",
+			})
+		},
+		func(h http.Handler) http.Handler {
+			return httputils.NewStaticFilesHandler(h, "/", http.Dir(o.StaticDir))
+		},
+		finalHandlerFunc(s.htmlNotFoundHandler),
+	)
 	frontendRouter.Handle("/", s.htmlLoginAltHandler(
 		chainHandlers(
 			s.htmlValidatedEmailRequiredHandler,
-			func(h http.Handler) http.Handler {
-				return http.HandlerFunc(s.dashboardHandler)
-			},
+			finalHandlerFunc(s.dashboardHandler),
 		),
 		chainHandlers(
 			s.generateAntiXSRFCookieHandler,
-			func(h http.Handler) http.Handler {
-				return http.HandlerFunc(s.landingPageHandler)
-			},
+			finalHandlerFunc(s.landingPageHandler),
 		),
 	))
 	frontendRouter.Handle("/about", http.HandlerFunc(s.aboutHandler))
 	frontendRouter.Handle("/license", http.HandlerFunc(s.licenseHandler))
 	frontendRouter.Handle("/contact", chainHandlers(
 		s.generateAntiXSRFCookieHandler,
-		func(h http.Handler) http.Handler {
-			return http.HandlerFunc(s.contactHandler)
-		},
+		finalHandlerFunc(s.contactHandler),
 	))
 	frontendRouter.Handle("/login", chainHandlers(
 		s.htmlLoginRequiredHandler,
-		func(h http.Handler) http.Handler {
-			return http.RedirectHandler("/", http.StatusSeeOther)
-		},
+		finalHandler(http.RedirectHandler("/", http.StatusSeeOther)),
 	))
 	frontendRouter.Handle("/logout", http.HandlerFunc(s.logoutHandler))
 	frontendRouter.Handle("/registration", s.htmlLoginAltHandler(
 		http.RedirectHandler("/", http.StatusSeeOther),
 		chainHandlers(
 			s.generateAntiXSRFCookieHandler,
-			func(h http.Handler) http.Handler {
-				return http.HandlerFunc(s.registrationHandler)
-			},
+			finalHandlerFunc(s.registrationHandler),
 		),
 	))
 	frontendRouter.Handle("/password-reset", s.htmlLoginAltHandler(
 		http.RedirectHandler("/", http.StatusSeeOther),
 		chainHandlers(
 			s.generateAntiXSRFCookieHandler,
-			func(h http.Handler) http.Handler {
-				return http.HandlerFunc(s.passwordResetTokenHandler)
-			},
+			finalHandlerFunc(s.passwordResetTokenHandler),
 		),
 	))
 	frontendRouter.Handle(`/password-reset/{token}`, chainHandlers(
 		s.generateAntiXSRFCookieHandler,
-		func(h http.Handler) http.Handler {
-			return http.HandlerFunc(s.passwordResetHandler)
-		},
+		finalHandlerFunc(s.passwordResetHandler),
 	))
 	frontendRouter.Handle(`/email/{token}`, chainHandlers(
 		s.generateAntiXSRFCookieHandler,
-		func(h http.Handler) http.Handler {
-			return http.HandlerFunc(s.publicEmailSettingsHandler)
-		},
+		finalHandlerFunc(s.publicEmailSettingsHandler),
 	))
 	frontendRouter.Handle(`/email-validation/{token}`, chainHandlers(
 		s.htmlLoginRequiredHandler,
 		s.generateAntiXSRFCookieHandler,
-		func(h http.Handler) http.Handler {
-			return http.HandlerFunc(s.emailValidationHandler)
-		},
+		finalHandlerFunc(s.emailValidationHandler),
 	))
 	frontendRouter.Handle("/settings", chainHandlers(
 		s.htmlLoginRequiredHandler,
 		s.generateAntiXSRFCookieHandler,
-		func(h http.Handler) http.Handler {
-			return http.HandlerFunc(s.settingsHandler)
-		},
+		finalHandlerFunc(s.settingsHandler),
 	))
 	frontendRouter.Handle("/settings/email", chainHandlers(
 		s.htmlLoginRequiredHandler,
 		s.generateAntiXSRFCookieHandler,
-		func(h http.Handler) http.Handler {
-			return http.HandlerFunc(s.settingsEmailHandler)
-		},
+		finalHandlerFunc(s.settingsEmailHandler),
 	))
 	frontendRouter.Handle("/settings/notifications", chainHandlers(
 		s.htmlLoginRequiredHandler,
 		s.generateAntiXSRFCookieHandler,
-		func(h http.Handler) http.Handler {
-			return http.HandlerFunc(s.settingsNotificationsHandler)
-		},
+		finalHandlerFunc(s.settingsNotificationsHandler),
 	))
 	frontendRouter.Handle("/settings/password", chainHandlers(
 		s.htmlLoginRequiredHandler,
 		s.generateAntiXSRFCookieHandler,
-		func(h http.Handler) http.Handler {
-			return http.HandlerFunc(s.settingsPasswordHandler)
-		},
+		finalHandlerFunc(s.settingsPasswordHandler),
 	))
 	frontendRouter.Handle("/settings/delete-account", chainHandlers(
 		s.htmlLoginRequiredHandler,
 		s.generateAntiXSRFCookieHandler,
-		func(h http.Handler) http.Handler {
-			return http.HandlerFunc(s.settingsDeleteAccountHandler)
-		},
+		finalHandlerFunc(s.settingsDeleteAccountHandler),
 	))
 
 	frontendRouter.Handle("/domain", chainHandlers(
 		s.htmlLoginRequiredHandler,
 		s.htmlValidatedEmailRequiredHandler,
 		s.generateAntiXSRFCookieHandler,
-		func(h http.Handler) http.Handler {
-			return http.HandlerFunc(s.domainAddHandler)
-		},
+		finalHandlerFunc(s.domainAddHandler),
 	))
 	frontendRouter.Handle("/domain/{id}", chainHandlers(
 		s.htmlLoginRequiredHandler,
 		s.htmlValidatedEmailRequiredHandler,
-		func(h http.Handler) http.Handler {
-			return http.HandlerFunc(s.domainPackagesHandler)
-		},
+		finalHandlerFunc(s.domainPackagesHandler),
 	))
 	frontendRouter.Handle("/domain/{id}/settings", chainHandlers(
 		s.htmlLoginRequiredHandler,
 		s.htmlValidatedEmailRequiredHandler,
 		s.generateAntiXSRFCookieHandler,
-		func(h http.Handler) http.Handler {
-			return http.HandlerFunc(s.domainSettingsHandler)
-		},
+		finalHandlerFunc(s.domainSettingsHandler),
 	))
 	frontendRouter.Handle("/domain/{id}/team", chainHandlers(
 		s.htmlLoginRequiredHandler,
 		s.htmlValidatedEmailRequiredHandler,
 		s.generateAntiXSRFCookieHandler,
-		func(h http.Handler) http.Handler {
-			return http.HandlerFunc(s.domainTeamHandler)
-		},
+		finalHandlerFunc(s.domainTeamHandler),
 	))
 	frontendRouter.Handle("/domain/{id}/changelog", chainHandlers(
 		s.htmlLoginRequiredHandler,
 		s.htmlValidatedEmailRequiredHandler,
 		s.generateAntiXSRFCookieHandler,
-		func(h http.Handler) http.Handler {
-			return http.HandlerFunc(s.domainChangelogHandler)
-		},
+		finalHandlerFunc(s.domainChangelogHandler),
 	))
 	frontendRouter.Handle("/domain/{id}/user", chainHandlers(
 		s.htmlLoginRequiredHandler,
 		s.htmlValidatedEmailRequiredHandler,
 		s.generateAntiXSRFCookieHandler,
-		func(h http.Handler) http.Handler {
-			return http.HandlerFunc(s.domainDomainUserGrantHandler)
-		},
+		finalHandlerFunc(s.domainDomainUserGrantHandler),
 	))
 	frontendRouter.Handle("/domain/{id}/user/{user-id}/revoke", chainHandlers(
 		s.htmlLoginRequiredHandler,
 		s.htmlValidatedEmailRequiredHandler,
 		s.generateAntiXSRFCookieHandler,
-		func(h http.Handler) http.Handler {
-			return http.HandlerFunc(s.domainDomainUserRevokeHandler)
-		},
+		finalHandlerFunc(s.domainDomainUserRevokeHandler),
 	))
 	frontendRouter.Handle("/domain/{id}/owner", chainHandlers(
 		s.htmlLoginRequiredHandler,
 		s.htmlValidatedEmailRequiredHandler,
 		s.generateAntiXSRFCookieHandler,
-		func(h http.Handler) http.Handler {
-			return http.HandlerFunc(s.domainDomainOwnerChangeHandler)
-		},
+		finalHandlerFunc(s.domainDomainOwnerChangeHandler),
 	))
 	frontendRouter.Handle("/domain/{domain-id}/package", chainHandlers(
 		s.htmlLoginRequiredHandler,
 		s.htmlValidatedEmailRequiredHandler,
 		s.generateAntiXSRFCookieHandler,
-		func(h http.Handler) http.Handler {
-			return http.HandlerFunc(s.domainPackageEditHandler)
-		},
+		finalHandlerFunc(s.domainPackageEditHandler),
 	))
 	frontendRouter.Handle("/package/{package-id}", chainHandlers(
 		s.htmlLoginRequiredHandler,
 		s.htmlValidatedEmailRequiredHandler,
 		s.generateAntiXSRFCookieHandler,
-		func(h http.Handler) http.Handler {
-			return http.HandlerFunc(s.domainPackageEditHandler)
-		},
+		finalHandlerFunc(s.domainPackageEditHandler),
 	))
 	frontendRouter.Handle("/user/{id}", chainHandlers(
 		s.htmlLoginRequiredHandler,
-		func(h http.Handler) http.Handler {
-			return http.HandlerFunc(s.userPageHandler)
-		},
+		finalHandlerFunc(s.userPageHandler),
 	))
 	// Frontend routes end
 
@@ -448,9 +390,7 @@ func NewServer(o Options) (s *Server, err error) {
 		s.jsonMaintenanceHandler,
 		s.jsonAntiXSRFHandler,
 		jsonMaxBodyBytesHandler,
-		func(h http.Handler) http.Handler {
-			return frontendAPIRouter
-		},
+		finalHandler(frontendAPIRouter),
 	))
 	// Frontend API routes start
 	frontendAPIRouter.Handle("/i/auth", jsonMethodHandler{
@@ -482,41 +422,31 @@ func NewServer(o Options) (s *Server, err error) {
 	frontendAPIRouter.Handle("/i/user/email", jsonMethodHandler{
 		"POST": chainHandlers(
 			s.jsonLoginRequiredHandler,
-			func(h http.Handler) http.Handler {
-				return http.HandlerFunc(s.userEmailFEAPIHandler)
-			},
+			finalHandlerFunc(s.userEmailFEAPIHandler),
 		),
 	})
 	frontendAPIRouter.Handle("/i/user/notifications", jsonMethodHandler{
 		"POST": chainHandlers(
 			s.jsonLoginRequiredHandler,
-			func(h http.Handler) http.Handler {
-				return http.HandlerFunc(s.userNotificationsSettingsFEAPIHandler)
-			},
+			finalHandlerFunc(s.userNotificationsSettingsFEAPIHandler),
 		),
 	})
 	frontendAPIRouter.Handle("/i/user/email/validation-email", jsonMethodHandler{
 		"POST": chainHandlers(
 			s.jsonLoginRequiredHandler,
-			func(h http.Handler) http.Handler {
-				return http.HandlerFunc(s.userSendEmailValidationEmailFEAPIHandler)
-			},
+			finalHandlerFunc(s.userSendEmailValidationEmailFEAPIHandler),
 		),
 	})
 	frontendAPIRouter.Handle("/i/user/password", jsonMethodHandler{
 		"POST": chainHandlers(
 			s.jsonLoginRequiredHandler,
-			func(h http.Handler) http.Handler {
-				return http.HandlerFunc(s.userPasswordFEAPIHandler)
-			},
+			finalHandlerFunc(s.userPasswordFEAPIHandler),
 		),
 	})
 	frontendAPIRouter.Handle("/i/user/delete", jsonMethodHandler{
 		"POST": chainHandlers(
 			s.jsonLoginRequiredHandler,
-			func(h http.Handler) http.Handler {
-				return http.HandlerFunc(s.userDeleteFEAPIHandler)
-			},
+			finalHandlerFunc(s.userDeleteFEAPIHandler),
 		),
 	})
 	frontendAPIRouter.Handle("/i/register-acme-user", jsonMethodHandler{
@@ -527,9 +457,7 @@ func NewServer(o Options) (s *Server, err error) {
 		"POST": chainHandlers(
 			s.jsonLoginRequiredHandler,
 			s.jsonValidatedEmailRequiredHandler,
-			func(h http.Handler) http.Handler {
-				return http.HandlerFunc(s.certificateFEAPIHandler)
-			},
+			finalHandlerFunc(s.certificateFEAPIHandler),
 		),
 	})
 
@@ -537,75 +465,57 @@ func NewServer(o Options) (s *Server, err error) {
 		"POST": chainHandlers(
 			s.jsonLoginRequiredHandler,
 			s.jsonValidatedEmailRequiredHandler,
-			func(h http.Handler) http.Handler {
-				return http.HandlerFunc(s.domainFEAPIHandler)
-			},
+			finalHandlerFunc(s.domainFEAPIHandler),
 		),
 	})
 	frontendAPIRouter.Handle(`/i/domain/{id}`, jsonMethodHandler{
 		"POST": chainHandlers(
 			s.jsonLoginRequiredHandler,
 			s.jsonValidatedEmailRequiredHandler,
-			func(h http.Handler) http.Handler {
-				return http.HandlerFunc(s.domainFEAPIHandler)
-			},
+			finalHandlerFunc(s.domainFEAPIHandler),
 		),
 		"DELETE": chainHandlers(
 			s.jsonLoginRequiredHandler,
 			s.jsonValidatedEmailRequiredHandler,
-			func(h http.Handler) http.Handler {
-				return http.HandlerFunc(s.domainDeleteFEAPIHandler)
-			},
+			finalHandlerFunc(s.domainDeleteFEAPIHandler),
 		),
 	})
 	frontendAPIRouter.Handle(`/i/domain/{id}/user`, jsonMethodHandler{
 		"POST": chainHandlers(
 			s.jsonLoginRequiredHandler,
 			s.jsonValidatedEmailRequiredHandler,
-			func(h http.Handler) http.Handler {
-				return http.HandlerFunc(s.domainUserGrantFEAPIHandler)
-			},
+			finalHandlerFunc(s.domainUserGrantFEAPIHandler),
 		),
 		"DELETE": chainHandlers(
 			s.jsonLoginRequiredHandler,
 			s.jsonValidatedEmailRequiredHandler,
-			func(h http.Handler) http.Handler {
-				return http.HandlerFunc(s.domainUserRevokeFEAPIHandler)
-			},
+			finalHandlerFunc(s.domainUserRevokeFEAPIHandler),
 		),
 	})
 	frontendAPIRouter.Handle(`/i/domain/{id}/owner`, jsonMethodHandler{
 		"POST": chainHandlers(
 			s.jsonLoginRequiredHandler,
 			s.jsonValidatedEmailRequiredHandler,
-			func(h http.Handler) http.Handler {
-				return http.HandlerFunc(s.domainOwnerChangeFEAPIHandler)
-			},
+			finalHandlerFunc(s.domainOwnerChangeFEAPIHandler),
 		),
 	})
 	frontendAPIRouter.Handle(`/i/package`, jsonMethodHandler{
 		"POST": chainHandlers(
 			s.jsonLoginRequiredHandler,
 			s.jsonValidatedEmailRequiredHandler,
-			func(h http.Handler) http.Handler {
-				return http.HandlerFunc(s.packageFEAPIHandler)
-			},
+			finalHandlerFunc(s.packageFEAPIHandler),
 		),
 	})
 	frontendAPIRouter.Handle(`/i/package/{id}`, jsonMethodHandler{
 		"POST": chainHandlers(
 			s.jsonLoginRequiredHandler,
 			s.jsonValidatedEmailRequiredHandler,
-			func(h http.Handler) http.Handler {
-				return http.HandlerFunc(s.packageFEAPIHandler)
-			},
+			finalHandlerFunc(s.packageFEAPIHandler),
 		),
 		"DELETE": chainHandlers(
 			s.jsonLoginRequiredHandler,
 			s.jsonValidatedEmailRequiredHandler,
-			func(h http.Handler) http.Handler {
-				return http.HandlerFunc(s.packageDeleteFEAPIHandler)
-			},
+			finalHandlerFunc(s.packageDeleteFEAPIHandler),
 		),
 	})
 	// Frontend API routes end
@@ -618,9 +528,7 @@ func NewServer(o Options) (s *Server, err error) {
 		func(h http.Handler) http.Handler {
 			return httputils.NewSetHeadersHandler(h, o.Headers)
 		},
-		func(h http.Handler) http.Handler {
-			return baseRouter
-		},
+		finalHandler(baseRouter),
 	)
 
 	//
@@ -635,9 +543,7 @@ func NewServer(o Options) (s *Server, err error) {
 	internalBaseRouter.Handle("/", chainHandlers(
 		handlers.CompressHandler,
 		httputils.NoCacheHeadersHandler,
-		func(h http.Handler) http.Handler {
-			return internalRouter
-		},
+		finalHandler(internalRouter),
 	))
 	internalRouter.Handle("/", http.HandlerFunc(textNotFoundHandler))
 	internalRouter.Handle("/status", http.HandlerFunc(s.statusHandler))
@@ -657,9 +563,7 @@ func NewServer(o Options) (s *Server, err error) {
 		handlers.CompressHandler,
 		s.jsonRecoveryHandler,
 		httputils.NoCacheHeadersHandler,
-		func(h http.Handler) http.Handler {
-			return internalAPIRouter
-		},
+		finalHandler(internalAPIRouter),
 	))
 	internalAPIRouter.Handle("/api/", http.HandlerFunc(jsonNotFoundHandler))
 	internalAPIRouter.Handle("/api/status", http.HandlerFunc(s.statusAPIHandler))
@@ -676,9 +580,7 @@ func NewServer(o Options) (s *Server, err error) {
 		func(h http.Handler) http.Handler {
 			return httputils.NewSetHeadersHandler(h, o.Headers)
 		},
-		func(h http.Handler) http.Handler {
-			return internalBaseRouter
-		},
+		finalHandler(internalBaseRouter),
 	)
 	return
 }
