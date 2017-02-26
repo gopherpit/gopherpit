@@ -85,6 +85,9 @@ COMMANDS
   debug-dump
     Send to a running process USR1 signal to log debug information in the log.
 
+  version
+    Print version to Stdout.
+
 OPTIONS
 
 `, os.Args[0])
@@ -105,12 +108,18 @@ func main() {
 		fmt.Fprintln(os.Stderr, `
 COPYRIGHT
 
-  Copyright (C) 2016 Janoš Guljaš <janos@resenje.org>
+  Copyright (C) 2016,2017 Janoš Guljaš <janos@resenje.org>
 
   All rights reserved.
   Use of this source code is governed by a BSD-style
   license that can be found in the LICENSE file.
 `)
+		return
+	}
+
+	switch arg0 {
+	case "version":
+		fmt.Println(config.Version)
 		return
 	}
 
