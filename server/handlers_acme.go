@@ -100,14 +100,14 @@ func (s Server) acmeUserHandler(h http.Handler) http.Handler {
 						antixsrf.Generate(w, r, "/")
 					}
 					if u != nil {
-						s.respond(w, tidRegisterACMEUserPrivate, map[string]interface{}{
+						s.respond(w, "RegisterACMEUserPrivate", map[string]interface{}{
 							"User":                u,
 							"ProductionDirectory": s.ACMEDirectoryURL,
 							"StagingDirectory":    s.ACMEDirectoryURLStaging,
 						})
 						return
 					}
-					s.respond(w, tidRegisterACMEUser, map[string]interface{}{
+					s.respond(w, "RegisterACMEUser", map[string]interface{}{
 						"ProductionDirectory": s.ACMEDirectoryURL,
 						"StagingDirectory":    s.ACMEDirectoryURLStaging,
 					})

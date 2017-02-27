@@ -29,7 +29,7 @@ func (s Server) maintenanceHandler(h http.Handler, body string, contentType stri
 }
 
 func (s Server) htmlMaintenanceHandler(h http.Handler) http.Handler {
-	m, err := renderToString(s.template(tidMaintenance), "", nil)
+	m, err := renderToString(s.template("Maintenance"), "", nil)
 	if err != nil {
 		s.logger.Errorf("htmlMaintenanceHandler TemplateMaintenance error: %s", err)
 		m = "Maintenance"

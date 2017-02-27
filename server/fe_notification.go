@@ -29,7 +29,7 @@ func (s Server) publicEmailSettingsHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	s.respond(w, tidPublicEmailSettings, map[string]interface{}{
+	s.respond(w, "PublicEmailSettings", map[string]interface{}{
 		"Email":    email,
 		"OptedOut": optedOut,
 		"Token":    token,

@@ -80,18 +80,18 @@ func respondText(w http.ResponseWriter, tmpl *template.Template, data interface{
 	}
 }
 
-func (s Server) respond(w http.ResponseWriter, t tid, data interface{}) {
+func (s Server) respond(w http.ResponseWriter, t string, data interface{}) {
 	respond(w, s.template(t), data)
 }
 
-var errorTemplates = map[int][]tid{
-	http.StatusBadRequest:            {tidBadRequest, tidBadRequestPrivate},
-	http.StatusUnauthorized:          {tidUnauthorized, tidUnauthorizedPrivate},
-	http.StatusForbidden:             {tidForbidden, tidForbiddenPrivate},
-	http.StatusNotFound:              {tidNotFound, tidNotFoundPrivate},
-	http.StatusRequestEntityTooLarge: {tidRequestEntityTooLarge, tidRequestEntityTooLargePrivate},
-	http.StatusInternalServerError:   {tidInternalServerError, tidInternalServerErrorPrivate},
-	http.StatusServiceUnavailable:    {tidServiceUnavailable, tidServiceUnavailablePrivate},
+var errorTemplates = map[int][]string{
+	http.StatusBadRequest:            {"BadRequest", "BadRequestPrivate"},
+	http.StatusUnauthorized:          {"Unauthorized", "UnauthorizedPrivate"},
+	http.StatusForbidden:             {"Forbidden", "ForbiddenPrivate"},
+	http.StatusNotFound:              {"NotFound", "NotFoundPrivate"},
+	http.StatusRequestEntityTooLarge: {"RequestEntityTooLarge", "RequestEntityTooLargePrivate"},
+	http.StatusInternalServerError:   {"InternalServerError", "InternalServerErrorPrivate"},
+	http.StatusServiceUnavailable:    {"ServiceUnavailable", "ServiceUnavailablePrivate"},
 }
 
 func (s *Server) respondError(w http.ResponseWriter, r *http.Request, c int) {
@@ -100,12 +100,12 @@ func (s *Server) respondError(w http.ResponseWriter, r *http.Request, c int) {
 	if err != nil {
 		s.logger.Errorf("get user: %s", err)
 		if _, ok := err.(net.Error); ok {
-			if err := renderToResponse(w, s.template(tidServiceUnavailable), "", http.StatusServiceUnavailable, nil, "text/html; charset=utf-8"); err != nil {
+			if err := renderToResponse(w, s.template("ServiceUnavailable"), "", http.StatusServiceUnavailable, nil, "text/html; charset=utf-8"); err != nil {
 				s.logger.Errorf("render service unavailable response: %s", err)
 			}
 			return
 		}
-		if err := renderToResponse(w, s.template(tidInternalServerError), "", http.StatusServiceUnavailable, nil, "text/html; charset=utf-8"); err != nil {
+		if err := renderToResponse(w, s.template("InternalServerError"), "", http.StatusServiceUnavailable, nil, "text/html; charset=utf-8"); err != nil {
 			s.logger.Errorf("render internal server error response: %s", err)
 		}
 		return

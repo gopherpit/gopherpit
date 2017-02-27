@@ -98,7 +98,7 @@ func (s Server) packageResolverHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	s.respond(w, tidPackageResolution, map[string]interface{}{
+	s.respond(w, "PackageResolution", map[string]interface{}{
 		"GoImport":    fmt.Sprintf("%s %s %s", resolution.ImportPrefix, resolution.VCS, repoRoot),
 		"GoSource":    resolution.GoSource,
 		"RedirectURL": resolution.RedirectURL,

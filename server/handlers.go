@@ -177,7 +177,7 @@ func (s *Server) htmlMaxBodyBytesHandler(h http.Handler) http.Handler {
 		Handler: h,
 		Limit:   2 * 1024 * 1024,
 		BodyFunc: func(r *http.Request) (string, error) {
-			return renderToString(s.template(tidRequestEntityTooLarge), "", nil)
+			return renderToString(s.template("RequestEntityTooLarge"), "", nil)
 		},
 		ContentType:  "text/html; charset=utf-8",
 		ErrorHandler: s.htmlServerError,
@@ -270,7 +270,7 @@ func (s *Server) htmlLoginRequiredHandler(h http.Handler) http.Handler {
 			if r.Header.Get(s.SessionCookieName) != "" {
 				s.logout(w, r)
 			}
-			s.respond(w, tidLogin, nil)
+			s.respond(w, "Login", nil)
 			return
 		}
 		h.ServeHTTP(w, r)
@@ -342,7 +342,7 @@ func (s *Server) htmlValidatedEmailRequiredHandler(h http.Handler) http.Handler 
 			return
 		}
 		if u.EmailUnvalidated {
-			s.respond(w, tidEmailUnvalidated, map[string]interface{}{
+			s.respond(w, "EmailUnvalidated", map[string]interface{}{
 				"User": u,
 			})
 			return

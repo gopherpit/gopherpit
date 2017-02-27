@@ -24,17 +24,17 @@ func (s Server) logoutHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s Server) registrationHandler(w http.ResponseWriter, r *http.Request) {
-	s.respond(w, tidRegistration, nil)
+	s.respond(w, "Registration", nil)
 }
 
 func (s Server) passwordResetHandler(w http.ResponseWriter, r *http.Request) {
-	s.respond(w, tidPasswordReset, map[string]interface{}{
+	s.respond(w, "PasswordReset", map[string]interface{}{
 		"Token": mux.Vars(r)["token"],
 	})
 }
 
 func (s Server) passwordResetTokenHandler(w http.ResponseWriter, r *http.Request) {
-	s.respond(w, tidPasswordResetToken, nil)
+	s.respond(w, "PasswordResetToken", nil)
 }
 
 func (s Server) emailValidationHandler(w http.ResponseWriter, r *http.Request) {
@@ -49,7 +49,7 @@ func (s Server) emailValidationHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if terr, ok := err.(*user.Error); ok {
 			s.logger.Warningf("email validation: user %s: change email token %s: %s", u.ID, token, terr)
-			s.respond(w, tidEmailValidation, map[string]interface{}{
+			s.respond(w, "EmailValidation", map[string]interface{}{
 				"Valid": false,
 				"User":  u,
 			})
@@ -59,7 +59,7 @@ func (s Server) emailValidationHandler(w http.ResponseWriter, r *http.Request) {
 		s.htmlServerError(w, r, err)
 		return
 	}
-	s.respond(w, tidEmailValidation, map[string]interface{}{
+	s.respond(w, "EmailValidation", map[string]interface{}{
 		"Valid": !u2.EmailUnvalidated,
 		"User":  u2,
 	})
@@ -70,7 +70,7 @@ func (s Server) settingsHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		panic(err)
 	}
-	s.respond(w, tidSettings, map[string]interface{}{
+	s.respond(w, "Settings", map[string]interface{}{
 		"User": u,
 	})
 }
@@ -86,7 +86,7 @@ func (s Server) settingsEmailHandler(w http.ResponseWriter, r *http.Request) {
 		s.htmlServerError(w, r, err)
 		return
 	}
-	s.respond(w, tidSettingsEmail, map[string]interface{}{
+	s.respond(w, "SettingsEmail", map[string]interface{}{
 		"User":     u,
 		"OptedOut": optedOut,
 	})
@@ -103,7 +103,7 @@ func (s Server) settingsNotificationsHandler(w http.ResponseWriter, r *http.Requ
 		s.htmlServerError(w, r, err)
 		return
 	}
-	s.respond(w, tidSettingsNotifications, map[string]interface{}{
+	s.respond(w, "SettingsNotifications", map[string]interface{}{
 		"User":     u,
 		"OptedOut": optedOut,
 	})
@@ -114,7 +114,7 @@ func (s Server) settingsPasswordHandler(w http.ResponseWriter, r *http.Request) 
 	if err != nil {
 		panic(err)
 	}
-	s.respond(w, tidSettingsPassword, map[string]interface{}{
+	s.respond(w, "SettingsPassword", map[string]interface{}{
 		"User": u,
 	})
 }
@@ -124,7 +124,7 @@ func (s Server) settingsDeleteAccountHandler(w http.ResponseWriter, r *http.Requ
 	if err != nil {
 		panic(err)
 	}
-	s.respond(w, tidSettingsDeleteAccount, map[string]interface{}{
+	s.respond(w, "SettingsDeleteAccount", map[string]interface{}{
 		"User": u,
 	})
 }
