@@ -39,10 +39,10 @@ func jsonServerError(w http.ResponseWriter, err error) {
 // Helper function for raising unexpected errors in HTML frontend handlers.
 func (s *Server) htmlServerError(w http.ResponseWriter, r *http.Request, err error) {
 	if _, ok := err.(net.Error); ok {
-		s.respondServiceUnavailable(w, r)
+		s.htmlServiceUnavailableHandler(w, r)
 		return
 	}
-	s.respondInternalServerError(w, r)
+	s.htmlInternalServerErrorHandler(w, r)
 }
 
 func textServerError(w http.ResponseWriter, err error) {
@@ -177,7 +177,7 @@ func (s *Server) htmlMaxBodyBytesHandler(h http.Handler) http.Handler {
 		Handler: h,
 		Limit:   2 * 1024 * 1024,
 		BodyFunc: func(r *http.Request) (string, error) {
-			return renderToString(s.template("RequestEntityTooLarge"), "", nil)
+			return renderToString(s.templates["RequestEntityTooLarge"], "", nil)
 		},
 		ContentType:  "text/html; charset=utf-8",
 		ErrorHandler: s.htmlServerError,
@@ -208,10 +208,6 @@ func jsonMaxBodyBytesHandler(h http.Handler) http.Handler {
 	}
 }
 
-func (s Server) htmlNotFoundHandler(w http.ResponseWriter, r *http.Request) {
-	s.respondNotFound(w, r)
-}
-
 func textNotFoundHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	w.WriteHeader(http.StatusNotFound)
@@ -220,14 +216,6 @@ func textNotFoundHandler(w http.ResponseWriter, r *http.Request) {
 
 func jsonNotFoundHandler(w http.ResponseWriter, r *http.Request) {
 	jsonresponse.NotFound(w, nil)
-}
-
-func (s Server) htmlForbiddenHandler(w http.ResponseWriter, r *http.Request) {
-	s.respondForbidden(w, r)
-}
-
-func (s Server) htmlInternalServerErrorHandler(w http.ResponseWriter, r *http.Request) {
-	s.respondInternalServerError(w, r)
 }
 
 func (s Server) generateAntiXSRFCookieHandler(h http.Handler) http.Handler {

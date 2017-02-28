@@ -59,9 +59,7 @@ type Server struct {
 
 	servers []*http.Server
 
-	templateFunctions template.FuncMap
-	templateCache     map[string]*template.Template
-	mu                *sync.RWMutex
+	templates map[string]*template.Template
 }
 
 // Options structure contains optional properties for the Server.
@@ -131,11 +129,9 @@ func NewServer(o Options) (s *Server, err error) {
 		logger:              logger,
 		auditLogger:         auditLogger,
 		packageAccessLogger: packageAccessLogger,
-		// internal
-		certificateCache: certificateCache.NewCache(o.CertificateService, 15*time.Minute, time.Minute),
-		startTime:        time.Now(),
-		templateCache:    map[string]*template.Template{},
-		mu:               &sync.RWMutex{},
+		certificateCache:    certificateCache.NewCache(o.CertificateService, 15*time.Minute, time.Minute),
+		startTime:           time.Now(),
+		templates:           map[string]*template.Template{},
 	}
 	// Load or generate a salt value.
 	saltFilename := filepath.Join(s.StorageDir, s.Name+".salt")
@@ -168,7 +164,7 @@ func NewServer(o Options) (s *Server, err error) {
 	})
 
 	// Populate template functions
-	s.templateFunctions = template.FuncMap{
+	templateFunctions := template.FuncMap{
 		"asset":           s.assetFunc,
 		"relative_time":   relativeTimeFunc,
 		"safehtml":        safeHTMLFunc,
@@ -184,6 +180,18 @@ func NewServer(o Options) (s *Server, err error) {
 			"GoogleAnalyticsID": o.GoogleAnalyticsID,
 			"AliasCNAME":        "alias." + o.Domain,
 		}),
+	}
+
+	// Parse template files
+	for name, files := range templates {
+		fs := []string{}
+		for _, f := range files {
+			fs = append(fs, filepath.Join(s.TemplatesDir, f))
+		}
+		s.templates[name], err = template.New("").Funcs(templateFunctions).Delims("[[", "]]").ParseFiles(fs...)
+		if err != nil {
+			return
+		}
 	}
 
 	s.assetsServer.NotFoundHandler = http.HandlerFunc(s.htmlNotFoundHandler)
@@ -734,7 +742,7 @@ func (s *Server) Serve(o ServeOptions) error {
 
 			s.logger.Infof("TLS HTTP Listening on %v", o.ListenTLS)
 
-			if err := server.Serve(ln); err != nil {
+			if err := server.Serve(ln); err != nil && err != http.ErrServerClosed {
 				s.logger.Errorf("Serve TLS '%v': %s", o.ListenTLS, err)
 			}
 		}()
@@ -808,7 +816,7 @@ func (s *Server) Serve(o ServeOptions) error {
 
 			s.logger.Infof("Plain HTTP Listening on %v", o.Listen)
 
-			if err := server.Serve(ln); err != nil {
+			if err := server.Serve(ln); err != nil && err != http.ErrServerClosed {
 				s.logger.Errorf("Serve '%v': %s", o.Listen, err)
 			}
 		}()
@@ -836,7 +844,7 @@ func (s *Server) Serve(o ServeOptions) error {
 
 			s.logger.Infof("Internal TLS HTTP Listening on %v", o.ListenInternalTLS)
 
-			if err := server.Serve(ln); err != nil {
+			if err := server.Serve(ln); err != nil && err != http.ErrServerClosed {
 				s.logger.Errorf("Serve Internal TLS '%v': %s", o.ListenInternalTLS, err)
 			}
 		}()
@@ -859,7 +867,7 @@ func (s *Server) Serve(o ServeOptions) error {
 
 			s.logger.Infof("Internal plain HTTP Listening on %v", o.ListenInternal)
 
-			if err := server.Serve(ln); err != nil {
+			if err := server.Serve(ln); err != nil && err != http.ErrServerClosed {
 				s.logger.Errorf("Serve internal '%v': %s", o.ListenInternal, err)
 			}
 		}()

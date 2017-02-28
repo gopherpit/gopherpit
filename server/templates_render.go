@@ -13,34 +13,6 @@ import (
 	"net/http"
 )
 
-func (s *Server) respondBadRequest(w http.ResponseWriter, r *http.Request) {
-	s.respondError(w, r, http.StatusBadRequest)
-}
-
-func (s *Server) respondUnauthorized(w http.ResponseWriter, r *http.Request) {
-	s.respondError(w, r, http.StatusUnauthorized)
-}
-
-func (s *Server) respondForbidden(w http.ResponseWriter, r *http.Request) {
-	s.respondError(w, r, http.StatusForbidden)
-}
-
-func (s *Server) respondNotFound(w http.ResponseWriter, r *http.Request) {
-	s.respondError(w, r, http.StatusNotFound)
-}
-
-func (s *Server) respondRequestEntityTooLarge(w http.ResponseWriter, r *http.Request) {
-	s.respondError(w, r, http.StatusRequestEntityTooLarge)
-}
-
-func (s *Server) respondInternalServerError(w http.ResponseWriter, r *http.Request) {
-	s.respondError(w, r, http.StatusInternalServerError)
-}
-
-func (s *Server) respondServiceUnavailable(w http.ResponseWriter, r *http.Request) {
-	s.respondError(w, r, http.StatusServiceUnavailable)
-}
-
 func renderToResponse(w http.ResponseWriter, tmpl *template.Template, name string, status int, data interface{}, contentType string) (err error) {
 	if name == "" {
 		name = "base"
@@ -81,7 +53,7 @@ func respondText(w http.ResponseWriter, tmpl *template.Template, data interface{
 }
 
 func (s Server) respond(w http.ResponseWriter, t string, data interface{}) {
-	respond(w, s.template(t), data)
+	respond(w, s.templates[t], data)
 }
 
 var errorTemplates = map[int][]string{
@@ -100,26 +72,54 @@ func (s *Server) respondError(w http.ResponseWriter, r *http.Request, c int) {
 	if err != nil {
 		s.logger.Errorf("get user: %s", err)
 		if _, ok := err.(net.Error); ok {
-			if err := renderToResponse(w, s.template("ServiceUnavailable"), "", http.StatusServiceUnavailable, nil, "text/html; charset=utf-8"); err != nil {
+			if err := renderToResponse(w, s.templates["ServiceUnavailable"], "", http.StatusServiceUnavailable, nil, "text/html; charset=utf-8"); err != nil {
 				s.logger.Errorf("render service unavailable response: %s", err)
 			}
 			return
 		}
-		if err := renderToResponse(w, s.template("InternalServerError"), "", http.StatusServiceUnavailable, nil, "text/html; charset=utf-8"); err != nil {
+		if err := renderToResponse(w, s.templates["InternalServerError"], "", http.StatusServiceUnavailable, nil, "text/html; charset=utf-8"); err != nil {
 			s.logger.Errorf("render internal server error response: %s", err)
 		}
 		return
 	}
 	var tpl *template.Template
 	if u != nil {
-		tpl = s.template(errorTemplates[c][1])
+		tpl = s.templates[errorTemplates[c][1]]
 		ctx = map[string]interface{}{
 			"User": u,
 		}
 	} else {
-		tpl = s.template(errorTemplates[c][0])
+		tpl = s.templates[errorTemplates[c][0]]
 	}
 	if err := renderToResponse(w, tpl, "", c, ctx, "text/html; charset=utf-8"); err != nil {
 		s.logger.Errorf("render http code %v response: %s", s, err)
 	}
+}
+
+func (s *Server) htmlBadRequestHandler(w http.ResponseWriter, r *http.Request) {
+	s.respondError(w, r, http.StatusBadRequest)
+}
+
+func (s *Server) htmlUnauthorizedHandler(w http.ResponseWriter, r *http.Request) {
+	s.respondError(w, r, http.StatusUnauthorized)
+}
+
+func (s *Server) htmlForbiddenHandler(w http.ResponseWriter, r *http.Request) {
+	s.respondError(w, r, http.StatusForbidden)
+}
+
+func (s *Server) htmlNotFoundHandler(w http.ResponseWriter, r *http.Request) {
+	s.respondError(w, r, http.StatusNotFound)
+}
+
+func (s *Server) htmlRequestEntityTooLargeHandler(w http.ResponseWriter, r *http.Request) {
+	s.respondError(w, r, http.StatusRequestEntityTooLarge)
+}
+
+func (s *Server) htmlInternalServerErrorHandler(w http.ResponseWriter, r *http.Request) {
+	s.respondError(w, r, http.StatusInternalServerError)
+}
+
+func (s *Server) htmlServiceUnavailableHandler(w http.ResponseWriter, r *http.Request) {
+	s.respondError(w, r, http.StatusServiceUnavailable)
 }
