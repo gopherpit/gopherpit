@@ -19,10 +19,6 @@ LDFLAGS += -X $(GO_PACKAGE_PATH)/server/config.Dir="$(CONFIG_DIR)"
 endif
 LDFLAGS += -X $(GO_PACKAGE_PATH)/server/config.BuildInfo="$(shell git describe --long --dirty --always || true)"
 
-ifndef CGO_ENABLED
-export CGO_ENABLED=0
-endif
-
 BULMA_VERSION ?= 0.3.2
 FONTAWESOME_VERSION ?= 4.7.0
 VUE_VERSION ?= 2.2.0
@@ -43,6 +39,9 @@ dist:
 
 dist/$(NAME): dist FORCE
 	$(GO) version
+ifndef CGO_ENABLED
+	export CGO_ENABLED=0
+endif
 	$(GO) build -ldflags "$(LDFLAGS)" -o $@ ./cmd/$(NAME)
 
 dist/assets: FORCE
