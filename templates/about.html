@@ -7,22 +7,17 @@
 
 
 [[ define "main" ]]
-<div class="content has-text-left column is-4 is-offset-4">
+<div class="content has-text-left column is-half is-offset-one-quarter">
   <h1 class="title is-1">About GopherPit</h1>
   <p>
     Version: [[ .Version ]]
   </p>
   <p>
-    Please wisit <a href="https://gopherpit.com">https://gopherpit.com</a> for more information about GopherPit services.
+    Please visit <a href="https://gopherpit.com">https://gopherpit.com</a> for more information about GopherPit services.
   </p>
   <p>
-    Copyright (C) 2016 Janoš Guljaš &lt;janos@resenje.org&gt;
+    Copyright (c) [[ year_range 2016 ]] Janoš Guljaš &lt;janos@resenje.org&gt;
   </p>
-  <p>
-    Use of this source code is governed by a BSD-style license that can be found on the <a href="/license">license</a> page.
-  </p>
-  <p>
-    The Gopher character is based on the Go mascot designed by Renee French and copyrighted under the Creative Commons Attribution 3.0 license.
-  </p>
+  [[ fragment "about" ]]
 </div>
 [[ end ]]

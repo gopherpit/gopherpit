@@ -27,10 +27,28 @@
 			"revisionTime": "2017-02-06T22:33:54Z"
 		},
 		{
+			"checksumSHA1": "DWtoL5LzvhxQ6LuchRPoSbsNhp4=",
+			"path": "github.com/microcosm-cc/bluemonday",
+			"revision": "e79763773ab6222ca1d5a7cbd9d62d83c1f77081",
+			"revisionTime": "2016-12-02T14:38:24Z"
+		},
+		{
 			"checksumSHA1": "KpXuLb/p/ELfUXczZU6ZDP2+5bY=",
 			"path": "github.com/miekg/dns",
 			"revision": "75229eecb7af00b2736e93b779a78429dcb19472",
 			"revisionTime": "2017-02-17T12:10:30Z"
+		},
+		{
+			"checksumSHA1": "c7jHQZk5ZEsFR9EXsWJXkszPBZA=",
+			"path": "github.com/russross/blackfriday",
+			"revision": "5f33e7b7878355cd2b7e6b8eefc48a5472c69f70",
+			"revisionTime": "2016-10-03T16:27:22Z"
+		},
+		{
+			"checksumSHA1": "kbgJvKG3NRoqU91rYnXGnyR+8HQ=",
+			"path": "github.com/shurcooL/sanitized_anchor_name",
+			"revision": "1dba4b3954bc059efc3991ec364f9f9a35f597d2",
+			"revisionTime": "2016-09-18T04:11:01Z"
 		},
 		{
 			"checksumSHA1": "fEi3qg7GZUB8DMIiQ5GpQwf4v0A=",
@@ -61,6 +79,18 @@
 			"path": "golang.org/x/crypto/sha3",
 			"revision": "453249f01cfeb54c3d549ddb75ff152ca243f9d8",
 			"revisionTime": "2017-02-08T20:51:15Z"
+		},
+		{
+			"checksumSHA1": "vqc3a+oTUGX8PmD0TS+qQ7gmN8I=",
+			"path": "golang.org/x/net/html",
+			"revision": "906cda9512f77671ab44f8c8563b13a8e707b230",
+			"revisionTime": "2017-02-18T20:36:51Z"
+		},
+		{
+			"checksumSHA1": "00eQaGynDYrv3tL+C7l9xH0IDZg=",
+			"path": "golang.org/x/net/html/atom",
+			"revision": "906cda9512f77671ab44f8c8563b13a8e707b230",
+			"revisionTime": "2017-02-18T20:36:51Z"
 		},
 		{
 			"checksumSHA1": "LC+mzxnIrUS9Kr4s7shpY+A9J2o=",

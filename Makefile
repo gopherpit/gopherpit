@@ -149,7 +149,7 @@ autoreload:
 	ln -s ../static dist/static
 	ln -s ../assets dist/assets
 	ln -s ../templates dist/templates
-	reflex --only-files -s -r '(\.html|dist/$(NAME))$$' -- ./dist/$(NAME) --debug
+	reflex --only-files -s -r '(\.html|\.md|dist/$(NAME))$$' -- ./dist/$(NAME) --debug
 
 .PHONY: autobuild
 autobuild:

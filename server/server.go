@@ -163,6 +163,35 @@ func NewServer(o Options) (s *Server, err error) {
 		IndexPage:             "index.html",
 	})
 
+	// Parse static HTML documents used as loadable fragments in templates
+	fragments := map[string]interface{}{}
+	fragmentsPath := filepath.Join(s.TemplatesDir, "fragments")
+	_, err = os.Stat(fragmentsPath)
+	switch {
+	case os.IsNotExist(err):
+	case err == nil:
+		if err = filepath.Walk(fragmentsPath, func(path string, _ os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+			if !strings.HasSuffix(path, ".md") {
+				return nil
+			}
+			data, err := ioutil.ReadFile(path)
+			if err != nil {
+				return err
+			}
+			name := strings.TrimPrefix(path, fragmentsPath+"/")
+			name = strings.TrimSuffix(name, ".md")
+			fragments[name] = markdown(data)
+			return nil
+		}); err != nil {
+			return
+		}
+	default:
+		return
+	}
+
 	// Populate template functions
 	templateFunctions := template.FuncMap{
 		"asset":           s.assetFunc,
@@ -180,6 +209,7 @@ func NewServer(o Options) (s *Server, err error) {
 			"GoogleAnalyticsID": o.GoogleAnalyticsID,
 			"AliasCNAME":        "alias." + o.Domain,
 		}),
+		"fragment": newContext(fragments),
 	}
 
 	// Parse template files
