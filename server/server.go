@@ -86,6 +86,7 @@ type Options struct {
 	ACMEDirectoryURLStaging string
 	SkipDomainVerification  bool
 	VerificationSubdomain   string
+	TrustedDomains          []string
 	ForbiddenDomains        []string
 	TLSEnabled              bool
 

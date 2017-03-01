@@ -45,6 +45,7 @@ type GopherPitOptions struct {
 	ContactRecipientEmail  string            `json:"contact-recipient-email" yaml:"contact-recipient-email" envconfig:"CONTACT_RECIPIENT_EMAIL"`
 	SkipDomainVerification bool              `json:"skip-domain-verification" yaml:"skip-domain-verification" envconfig:"SKIP_DOMAIN_VERIFICATION"`
 	VerificationSubdomain  string            `json:"verification-subdomain" yaml:"verification-subdomain" envconfig:"VERIFICATION_SUBDOMAIN"`
+	TrustedDomains         []string          `json:"trusted-domains" yaml:"trusted-domains" envconfig:"TRUSTED_DOMAINS"`
 	ForbiddenDomains       []string          `json:"forbidden-domains" yaml:"forbidden-domains" envconfig:"FORBIDDEN_DOMAINS"`
 }
 
@@ -81,6 +82,7 @@ func NewGopherPitOptions() *GopherPitOptions {
 		ContactRecipientEmail:  Name + "@localhost",
 		SkipDomainVerification: true,
 		VerificationSubdomain:  "_gopherpit",
+		TrustedDomains:         []string{},
 		ForbiddenDomains:       []string{},
 	}
 }

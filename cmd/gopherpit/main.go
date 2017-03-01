@@ -489,6 +489,7 @@ COPYRIGHT
 			ACMEDirectoryURLStaging: certificateOptions.DirectoryURLStaging,
 			SkipDomainVerification:  gopherpitOptions.SkipDomainVerification,
 			VerificationSubdomain:   gopherpitOptions.VerificationSubdomain,
+			TrustedDomains:          gopherpitOptions.TrustedDomains,
 			ForbiddenDomains:        gopherpitOptions.ForbiddenDomains,
 			TLSEnabled:              gopherpitOptions.ListenTLS != "",
 

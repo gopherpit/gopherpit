@@ -148,14 +148,32 @@ func (s Server) domainFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if (domain == nil || domain.FQDN != fqdn) && s.Domain != "" {
+	for _, d := range s.ForbiddenDomains {
+		if d == fqdn || strings.HasSuffix(fqdn, "."+d) {
+			jsonresponse.BadRequest(w, httputils.NewFieldError("fqdn", "Domain is not available"))
+			return
+		}
+	}
+
+	skipDomainVerification := s.SkipDomainVerification
+	if !skipDomainVerification {
+		for _, d := range s.TrustedDomains {
+			if fqdn == d || strings.HasSuffix(fqdn, "."+d) {
+				skipDomainVerification = true
+				break
+			}
+		}
+	}
+
+	// New or changed domain fqdn verification.
+	if (domain == nil || domain.FQDN != fqdn) && s.Domain != "" && !skipDomainVerification {
 		switch {
 		case fqdn == s.Domain, strings.HasSuffix(fqdn, "."+s.Domain):
 			if strings.Count(fqdn, ".") > strings.Count(s.Domain, ".")+1 {
 				jsonresponse.BadRequest(w, httputils.NewFieldError("fqdn", fmt.Sprintf("Only one subdomain is allowed for domain %s", s.Domain)))
 				return
 			}
-		case !s.SkipDomainVerification:
+		default:
 			publicSuffix, icann := publicsuffix.PublicSuffix(fqdn)
 			if !icann {
 				jsonresponse.BadRequest(w, httputils.NewFieldError("fqdn", fmt.Sprintf("Top level domain %s is not an ICANN domain.", publicSuffix)))
@@ -222,25 +240,20 @@ func (s Server) domainFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	for _, d := range s.ForbiddenDomains {
-		if d == fqdn {
-			jsonresponse.BadRequest(w, httputils.NewFieldError("fqdn", "Domain is not available"))
-			return
-		}
-	}
+	jsonresponse.BadRequest(w, httputils.NewFieldError("fqdn", "Passed."))
+	return
 
 	disabled := request.Disabled.Bool()
 
-	True := true
-
 	var editedDomain *packages.Domain
 	if id == "" {
+		t := true
 		editedDomain, err = s.PackagesService.AddDomain(&packages.DomainOptions{
 			FQDN:        &request.FQDN,
 			OwnerUserID: &u.ID,
 			Disabled:    &disabled,
 
-			CertificateIgnoreMissing: &True,
+			CertificateIgnoreMissing: &t,
 		}, u.ID)
 	} else {
 		certificateIgnore := request.CertificateIgnore.Bool()
