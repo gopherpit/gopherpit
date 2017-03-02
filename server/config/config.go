@@ -59,7 +59,7 @@ var (
 
 	// Dir is default directory where configuration files are located.
 	// Set the version on build with: go build -ldflags "-X gopherpit.com/gopherpit/server/config.Dir=$(CONFIG_DIR)"
-	Dir = "/etc/" + Name
+	Dir = "/etc/gopherpit"
 )
 
 // Options interface defines functionality to update, verify, prepare
