@@ -20,8 +20,8 @@ var (
 // MessageResponse is the response structure that will be written by
 // Respond function if respond argument is nil.
 type MessageResponse struct {
-	Code    int    `json:"code,omitempty"`
 	Message string `json:"message,omitempty"`
+	Code    int    `json:"code,omitempty"`
 }
 
 // NewMessage returns MessageResponse with a provided textual message.
