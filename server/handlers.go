@@ -161,7 +161,7 @@ func (s Server) htmlRecoveryHandler(h http.Handler) http.Handler {
 
 // Recovery handler for JSON API routers.
 func (s Server) jsonRecoveryHandler(h http.Handler) http.Handler {
-	return s.staticRecoveryHandler(h, `{"code":500,"message":"Server error"}`, "application/json; charset=utf-8")
+	return s.staticRecoveryHandler(h, `{"message":"Internal Server Error","code":500}`, "application/json; charset=utf-8")
 }
 
 // Recovery handler that does not write anything to response.
@@ -201,7 +201,7 @@ func jsonMaxBodyBytesHandler(h http.Handler) http.Handler {
 		Handler: h,
 		Limit:   2 * 1024 * 1024,
 		BodyFunc: func(r *http.Request) (string, error) {
-			return `{"code":413,"message":"Request Entity Too Large error"}`, nil
+			return `{"message":"Request Entity Too Large","code":413}`, nil
 		},
 		ContentType:  "application/json; charset=utf-8",
 		ErrorHandler: nil,
@@ -369,7 +369,7 @@ func (h textMethodHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 type jsonMethodHandler map[string]http.Handler
 
 func (h jsonMethodHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	httputils.HandleMethods(h, `{"code":405,"message":"Method Not Allowed"}`, "application/json; charset=utf-8", w, r)
+	httputils.HandleMethods(h, `{"message":"Method Not Allowed","code":405}`, "application/json; charset=utf-8", w, r)
 }
 
 func noCacheHeaderHandler(h http.Handler) http.Handler {
