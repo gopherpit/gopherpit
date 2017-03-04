@@ -150,8 +150,6 @@ func (s Server) htmlRecoveryHandler(h http.Handler) http.Handler {
 						s.logger.Error("panic handler email sending: ", err)
 					}
 				}()
-				w.Header().Set("Content-Type", "text/html; charset=utf-8")
-				w.WriteHeader(http.StatusInternalServerError)
 				s.htmlInternalServerErrorHandler(w, r)
 			}
 		}()
