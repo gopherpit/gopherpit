@@ -294,9 +294,9 @@ func (s Server) packageGitInfoRefsHandler(w http.ResponseWriter, r *http.Request
 func writeAlteredGitInfoRef(data []byte, w io.Writer, refType, refName string) error {
 	var ref string
 	switch refType {
-	case "branch":
+	case packages.RefTypeBranch:
 		ref = "refs/heads/" + refName
-	case "tag":
+	case packages.RefTypeTag:
 		ref = "refs/tags/" + refName
 	default:
 		return fmt.Errorf("invalid reference type: %s", refType)
@@ -353,14 +353,14 @@ func writeAlteredGitInfoRef(data []byte, w io.Writer, refType, refName string) e
 		if name == ref {
 			refHash = data[hashIndexStart:hashIndexEnd]
 			switch refType {
-			case "branch":
+			case packages.RefTypeBranch:
 				break
-			case "tag":
+			case packages.RefTypeTag:
 				continue
 			}
 		}
 		// Anotated tags
-		if refType == "tag" && name == ref+"^{}" {
+		if refType == packages.RefTypeTag && name == ref+"^{}" {
 			refHash = data[hashIndexStart:hashIndexEnd]
 			break
 		}
@@ -378,7 +378,7 @@ func writeAlteredGitInfoRef(data []byte, w io.Writer, refType, refName string) e
 	}
 
 	var line string
-	if refType == "branch" {
+	if refType == packages.RefTypeBranch {
 		// Always reference master branch in symref to be able to change branch in the future, and
 		// to have go get -u working.
 		if capabilities == "" {

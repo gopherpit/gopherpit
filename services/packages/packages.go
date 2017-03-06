@@ -85,6 +85,11 @@ var (
 	VCSSubversion VCS = "svn"
 )
 
+const (
+	RefTypeBranch = "branch"
+	RefTypeTag    = "tag"
+)
+
 // Package hods data that represents Go package location
 // and metadate for remotr import path.
 // https://golang.org/cmd/go/#hdr-Remote_import_paths
