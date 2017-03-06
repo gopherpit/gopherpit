@@ -131,7 +131,7 @@ func (s Service) Domains(startRef string, limit int) (page packages.DomainsPage,
 	if limit > 0 {
 		query.Set("limit", strconv.Itoa(limit))
 	}
-	err = s.Client.JSON("GET", "/domains/", query, nil, page)
+	err = s.Client.JSON("GET", "/domains", query, nil, page)
 	return
 }
 
