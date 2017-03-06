@@ -641,7 +641,7 @@ func (s Server) packageFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	switch request.RefType {
-	case "", "tag", "branch":
+	case "", packages.RefTypeTag, packages.RefTypeBranch:
 	default:
 		errors.AddFieldError("refType", "Reference type must be branch or tag.")
 	}
