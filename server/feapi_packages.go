@@ -240,9 +240,6 @@ func (s Server) domainFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	jsonresponse.BadRequest(w, httputils.NewFieldError("fqdn", "Passed."))
-	return
-
 	disabled := request.Disabled.Bool()
 
 	var editedDomain *packages.Domain

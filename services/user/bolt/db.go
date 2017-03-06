@@ -283,7 +283,6 @@ func (r *userRecord) save(tx *bolt.Tx, usernameRequired bool) (err error) {
 		// Username can not be the same as existing ID.
 		if bucket := tx.Bucket(bucketNameIndexUsersUsername); bucket != nil {
 			data := bucket.Get([]byte(r.Username))
-			fmt.Println(r.id, string(data))
 			if data != nil && string(data) != r.id {
 				return user.UsernameExists
 			}

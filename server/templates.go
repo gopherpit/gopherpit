@@ -80,7 +80,7 @@ func (s Server) assetFunc(str string) string {
 
 func relativeTimeFunc(t time.Time) string {
 	const day = 24 * time.Hour
-	d := time.Now().Sub(t)
+	d := time.Since(t)
 	switch {
 	case d < time.Second:
 		return "just now"

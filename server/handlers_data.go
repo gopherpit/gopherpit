@@ -109,5 +109,5 @@ func (s Server) dataDumpHandler(w http.ResponseWriter, r *http.Request) {
 		s.logger.Errorf("data dump: closing tar: %s", err)
 	}
 
-	s.logger.Infof("data dump: wrote %d bytes in %s", length, time.Now().Sub(start))
+	s.logger.Infof("data dump: wrote %d bytes in %s", length, time.Since(start))
 }
