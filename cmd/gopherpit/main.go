@@ -473,6 +473,7 @@ COPYRIGHT
 			BuildInfo:               config.BuildInfo,
 			Brand:                   gopherpitOptions.Brand,
 			Domain:                  gopherpitOptions.Domain,
+			RedirectToHTTPS:         gopherpitOptions.ListenTLS != "",
 			Headers:                 gopherpitOptions.Headers,
 			XSRFCookieName:          gopherpitOptions.XSRFCookieName,
 			SessionCookieName:       gopherpitOptions.SessionCookieName,
