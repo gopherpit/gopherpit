@@ -213,7 +213,7 @@ func (t certificateRecord) delete(tx *bolt.Tx) (err error) {
 
 func getCertificates(tx *bolt.Tx, start []byte, limit int) (page *certificate.CertificatesPage, err error) {
 	bucket := tx.Bucket(bucketNameCertificates)
-	if bucket != nil {
+	if bucket == nil {
 		return
 	}
 	c := bucket.Cursor()
@@ -252,7 +252,7 @@ func getCertificates(tx *bolt.Tx, start []byte, limit int) (page *certificate.Ce
 
 func getCertificatesByExpiry(tx *bolt.Tx, since time.Time, start []byte, limit int) (page *certificate.InfosPage, err error) {
 	bucket := tx.Bucket(bucketNameIndexCertificateExpirationTimeFQDN)
-	if bucket != nil {
+	if bucket == nil {
 		return
 	}
 	c := bucket.Cursor()
