@@ -170,7 +170,7 @@ func (s Server) packageGitUploadPackHandler(w http.ResponseWriter, r *http.Reque
 	}
 
 	code = 200
-	w.Header().Set("Location", resolution.RepoRoot+"/git-upload-pack")
+	w.Header().Set("Location", strings.TrimSuffix(resolution.RepoRoot, ".git")+".git/git-upload-pack")
 	w.WriteHeader(http.StatusMovedPermanently)
 	return
 }
