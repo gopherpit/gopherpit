@@ -36,7 +36,7 @@ var (
 	bucketNamePasswords          = []byte("Passwords")
 	bucketNameEmailValidations   = []byte("Email_Validations")
 	bucketNamePasswordResets     = []byte("Password_Resets")
-	emailRegex                   = regexp.MustCompile("^[^@]+@[^@]+\\.[^@]+$")
+	emailRegex                   = regexp.MustCompile(`^[^@]+@[^@]+\\.[^@]+$`)
 )
 
 type userRecord struct {
@@ -687,7 +687,7 @@ func getUsersByID(tx *bolt.Tx, start []byte, limit int) (page *user.UsersPage, e
 
 func getUsersByEmail(tx *bolt.Tx, start []byte, limit int) (page *user.UsersPage, err error) {
 	bucket := tx.Bucket(bucketNameIndexUsersEmail)
-	if bucket != nil {
+	if bucket == nil {
 		return
 	}
 	c := bucket.Cursor()
@@ -725,7 +725,7 @@ func getUsersByEmail(tx *bolt.Tx, start []byte, limit int) (page *user.UsersPage
 
 func getUsersByUsername(tx *bolt.Tx, start []byte, limit int) (page *user.UsersPage, err error) {
 	bucket := tx.Bucket(bucketNameIndexUsersUsername)
-	if bucket != nil {
+	if bucket == nil {
 		return
 	}
 	c := bucket.Cursor()
