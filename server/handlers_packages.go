@@ -169,9 +169,36 @@ func (s Server) packageGitUploadPackHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	req, err := http.NewRequest(r.Method, strings.TrimSuffix(resolution.RepoRoot, ".git")+".git/git-upload-pack", r.Body)
+	if err != nil {
+		s.logger.Errorf("package git upload pack: new request: %s", err)
+		code = 500
+		textServerError(w, err)
+		return
+	}
+	defer r.Body.Close()
+
+	req.Header.Set("User-Agent", r.Header.Get("User-Agent"))
+	req.Header.Set("Accept", r.Header.Get("Accept"))
+	req.Header.Set("Content-Type", r.Header.Get("Content-Type"))
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		s.logger.Errorf("package git upload pack: make request: %s", err)
+		code = 500
+		textServerError(w, err)
+		return
+	}
+	defer resp.Body.Close()
+
+	if _, err = io.Copy(w, resp.Body); err != nil {
+		s.logger.Errorf("package git upload pack: copy request data: %s", err)
+		code = 500
+		textServerError(w, err)
+		return
+	}
+
 	code = 200
-	w.Header().Set("Location", strings.TrimSuffix(resolution.RepoRoot, ".git")+".git/git-upload-pack")
-	w.WriteHeader(http.StatusMovedPermanently)
 	return
 }
 
