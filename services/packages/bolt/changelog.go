@@ -207,14 +207,6 @@ func (s Service) newChangelogRecord(data chagelogRecordData) error {
 	return nil
 }
 
-func isChangelogDomainIDExists(tx *bolt.Tx, id []byte) (exists bool, err error) {
-	bucket := tx.Bucket(bucketNameChangelogDomainID)
-	if bucket != nil {
-		exists = bucket.Get(id) != nil
-	}
-	return
-}
-
 func boolPtrToStringPtr(b *bool) *string {
 	t := "true"
 	f := "false"

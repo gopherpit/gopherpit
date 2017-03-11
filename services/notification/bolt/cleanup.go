@@ -11,10 +11,6 @@ import (
 	"github.com/boltdb/bolt"
 )
 
-type sessionCheck struct {
-	Expires time.Time `json:"expires,omitempty"`
-}
-
 func cleanup(db *bolt.DB, logger Logger) {
 	now := time.Now()
 	if err := db.Update(func(tx *bolt.Tx) error {

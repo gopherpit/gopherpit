@@ -226,18 +226,6 @@ func emailExists(tx *bolt.Tx, email string) (exists bool, err error) {
 	return
 }
 
-func usernameExists(tx *bolt.Tx, username string) (exists bool, err error) {
-	username = strings.TrimSpace(username)
-	bucket := tx.Bucket(bucketNameIndexUsersUsername)
-	if bucket != nil {
-		if bucket.Get([]byte(username)) != nil {
-			exists = true
-			return
-		}
-	}
-	return
-}
-
 func (r *userRecord) update(o *user.Options) {
 	if o == nil {
 		return
