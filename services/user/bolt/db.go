@@ -36,7 +36,7 @@ var (
 	bucketNamePasswords          = []byte("Passwords")
 	bucketNameEmailValidations   = []byte("Email_Validations")
 	bucketNamePasswordResets     = []byte("Password_Resets")
-	emailRegex                   = regexp.MustCompile(`^[^@]+@[^@]+\\.[^@]+$`)
+	emailRegex                   = regexp.MustCompile(`^[^@]+@[^@]+\.[^@]+$`)
 )
 
 type userRecord struct {

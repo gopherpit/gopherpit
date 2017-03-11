@@ -21,7 +21,7 @@ import (
 )
 
 var (
-	emailRegex = regexp.MustCompile("^[^@]+@[^@]+\\.[^@]+$")
+	emailRegex = regexp.MustCompile(`^[^@]+@[^@]+\.[^@]+$`)
 )
 
 type ldapError string
