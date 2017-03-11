@@ -80,7 +80,7 @@ func NewGopherPitOptions() *GopherPitOptions {
 		MaintenanceFilename:    "maintenance",
 		GoogleAnalyticsID:      "",
 		ContactRecipientEmail:  Name + "@localhost",
-		SkipDomainVerification: true,
+		SkipDomainVerification: false,
 		VerificationSubdomain:  "_gopherpit",
 		TrustedDomains:         []string{},
 		ForbiddenDomains:       []string{},
