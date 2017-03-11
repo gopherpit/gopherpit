@@ -13,10 +13,10 @@ import (
 	"github.com/miekg/dns"
 )
 
-func verifyDomain(domain, secret string) (found bool, err error) {
+func verifyDomain(domain, token string) (found bool, err error) {
 	txt, _ := net.LookupTXT(domain)
 	for _, r := range txt {
-		if r == secret {
+		if r == token {
 			found = true
 			return
 		}
@@ -74,7 +74,7 @@ func verifyDomain(domain, secret string) (found bool, err error) {
 					continue
 				}
 				for _, r := range txt.Txt {
-					if r == secret {
+					if r == token {
 						return true, nil
 					}
 				}

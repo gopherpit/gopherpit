@@ -19,12 +19,12 @@
       errors: [],
       fieldErrors: {},
       isLoading: false,
-      secrets: []
+      tokens: []
     },
     methods: {
       submit: _.throttle(function() {
         var app = this;
-        app.secrets = [];
+        app.tokens = [];
         httpPost(app, '/i/domain', function(response) {
           if (response.data != undefined && response.data["fqdn"] != undefined) {
             window.location = encodeURI("/domain/"+response.data["fqdn"])
@@ -36,7 +36,7 @@
           if (response.data === null) {
             return
           };
-          app.secrets = response.data['secrets'] || [];
+          app.tokens = response.data['tokens'] || [];
         })
       }, 500)
     }
@@ -49,7 +49,6 @@
   })
 </script>
 [[ end ]]
-
 [[ define "main" ]]
 <div class="columns content">
   <div class="column">
@@ -58,12 +57,12 @@
 
     <form id="domain-form" method="post" v-on:submit.prevent="submit" v-bind:class="{'is-disabled': isLoading}">
       <div class="notification is-danger" v-for="err in errors" v-cloak v-html="err"></div>
-      <div class="content" v-if="secrets.length > 0" v-cloak>
+      <div class="content" v-if="tokens.length > 0" v-cloak>
         <article class="message is-danger">
-          <div class="message-header" v-if="secrets.length == 1">To verify this domain the following DNS record must be present.</div>
-          <div class="message-header" v-else-if="secrets.length > 1">To verify this domain any of the following DNS records must be present.</div>
+          <div class="message-header" v-if="tokens.length == 1">To verify this domain the following DNS record must be present.</div>
+          <div class="message-header" v-else-if="tokens.length > 1">To verify this domain any of the following DNS records must be present.</div>
           <div class="message-body">
-          <p v-for="secret in secrets"><code v-html="secret.domain +' TXT '+ secret.secret"></code></p>
+          <p v-for="token in tokens"><code v-html="token.domain +' TXT '+ token.token"></code></p>
           <p>After you add DNS record, come back to this form and submit this domain again.</p>
           <p>Keep in mind that DNS propagation requires some time after the record is set, depending on TTL value.</p>
           </div>

@@ -93,14 +93,14 @@ type domainFEAPIRequest struct {
 	Disabled          marshal.Checkbox `json:"disabled"`
 }
 
-type domainSecret struct {
+type domainToken struct {
 	Domain string `json:"domain"`
-	Secret string `json:"secret"`
+	Token  string `json:"token"`
 }
 
 type validationFormErrorResponse struct {
 	httputils.FormErrors
-	Secrets []domainSecret `json:"secrets"`
+	Tokens []domainToken `json:"tokens"`
 }
 
 func (s Server) domainFEAPIHandler(w http.ResponseWriter, r *http.Request) {
@@ -184,7 +184,7 @@ func (s Server) domainFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			secrets := []domainSecret{}
+			tokens := []domainToken{}
 			domainParts := strings.Split(fqdn, ".")
 			startIndex := len(domainParts) - strings.Count(publicSuffix, ".") - 2
 			if startIndex < 0 {
@@ -205,18 +205,18 @@ func (s Server) domainFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 			}
 
 			d := publicSuffix
-			var secret, verificationDomain string
+			var token, verificationDomain string
 			var verified bool
 			var x [20]byte
 			for i := startIndex; i >= 0; i-- {
 				d = fmt.Sprintf("%s.%s", domainParts[i], d)
 
 				x = sha1.Sum(append(s.salt, []byte(u.ID+d)...))
-				secret = base64.URLEncoding.EncodeToString(x[:])
+				token = base64.URLEncoding.EncodeToString(x[:])
 
 				verificationDomain = s.VerificationSubdomain + "." + d
 
-				verified, err = verifyDomain(verificationDomain, secret)
+				verified, err = verifyDomain(verificationDomain, token)
 				if err != nil {
 					s.logger.Errorf("domain fe api: verify domain: %s: %s", verificationDomain, err)
 				}
@@ -224,16 +224,16 @@ func (s Server) domainFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 					break
 				}
 
-				secrets = append(secrets, domainSecret{
+				tokens = append(tokens, domainToken{
 					Domain: verificationDomain,
-					Secret: secret,
+					Token:  token,
 				})
 			}
 
 			if !verified {
 				jsonresponse.BadRequest(w, validationFormErrorResponse{
 					FormErrors: httputils.NewFieldError("fqdn", "Domain is not verified."),
-					Secrets:    secrets,
+					Tokens:     tokens,
 				})
 				return
 			}
