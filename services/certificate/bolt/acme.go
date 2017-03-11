@@ -15,8 +15,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"regexp"
-	"strings"
 
 	"github.com/xenolf/lego/acme"
 	jose "gopkg.in/square/go-jose.v1"
@@ -185,25 +183,6 @@ func (p challengeProvider) Present(fqdn, token, keyAuth string) (err error) {
 func (p challengeProvider) CleanUp(fqdn, token, keyAuth string) (err error) {
 	_, err = p.s.DeleteACMEChallenge(fqdn)
 	return
-}
-
-func parseACMELinks(links []string) map[string]string {
-	aBrkt := regexp.MustCompile("[<>]")
-	slver := regexp.MustCompile("(.+) *= *\"(.+)\"")
-	linkMap := make(map[string]string)
-
-	for _, link := range links {
-
-		link = aBrkt.ReplaceAllString(link, "")
-		parts := strings.Split(link, ";")
-
-		matches := slver.FindStringSubmatch(parts[1])
-		if len(matches) > 0 {
-			linkMap[matches[2]] = parts[0]
-		}
-	}
-
-	return linkMap
 }
 
 func loadPEMCertificates(pemBlock []byte) ([][]byte, error) {

@@ -22,7 +22,7 @@ import (
 
 var (
 	mmapFlags  int
-	emailRegex = regexp.MustCompile("^[^@]+@[^@]+\\.[^@]+$")
+	emailRegex = regexp.MustCompile(`^[^@]+@[^@]+\.[^@]+$`)
 )
 
 // Logger defines interface for logging messages with various severity levels.
