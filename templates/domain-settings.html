@@ -107,7 +107,7 @@
   </div>
   <div class="column is-6" id="domain-form">
     [[ if .Forbidden ]]
-    <div class="notification has-text-centered is-warning">Only owner of the domain can change it's settings.</div>
+    <div class="notification has-text-centered is-warning">Only owner of the domain can change its settings.</div>
     [[ else ]]
     <div class="notification is-success" v-if="form.isDone" v-cloak>
       <div class="delete" v-on:click="reload"></div>
@@ -192,15 +192,17 @@
               <div class="modal-background" v-on:click="domainDelete.isModalActive = false"></div>
               <div class="modal-container">
                 <div class="modal-content box">
-                  <div class="title">Delete domain [[ .Domain.FQDN ]] and all it's packages?</div>
+                  <div class="title">Delete domain [[ .Domain.FQDN ]] and all its packages?</div>
                   <div class="notification is-danger" v-for="err in domainDelete.errors" v-cloak v-html="err"></div>
                   <nav class="level">
                     <div class="level-left">
                     </div>
                     <div class="level-right">
                       <div class="level-item">
-                        <a class="button modal-close-button" v-on:click.prevent="domainDelete.isModalActive = false">No</a>
-                        <a class="button is-danger" v-on:click.prevent="deleteDomain" v-bind:class="{'is-loading': domainDelete.isLoading}">Yes, delete it!</a>
+                        <p class="control">
+                          <a class="button modal-close-button" v-on:click.prevent="domainDelete.isModalActive = false">No</a>
+                          <a class="button is-danger" v-on:click.prevent="deleteDomain" v-bind:class="{'is-loading': domainDelete.isLoading}">Yes, delete it!</a>
+                        </p>
                       </div>
                     </div>
                   </nav>
