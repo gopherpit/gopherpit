@@ -34,6 +34,9 @@ import (
 	"gopherpit.com/gopherpit/services/certificate"
 	"gopherpit.com/gopherpit/services/certificate/bolt"
 	"gopherpit.com/gopherpit/services/certificate/http"
+	"gopherpit.com/gopherpit/services/key"
+	"gopherpit.com/gopherpit/services/key/bolt"
+	"gopherpit.com/gopherpit/services/key/http"
 	"gopherpit.com/gopherpit/services/notification"
 	"gopherpit.com/gopherpit/services/notification/bolt"
 	"gopherpit.com/gopherpit/services/notification/http"
@@ -125,6 +128,7 @@ COPYRIGHT
 
 	// Initialize configurations with default values.
 	gopherpitOptions := config.NewGopherPitOptions()
+	apiOptions := config.NewAPIOptions()
 	loggingOptions := config.NewLoggingOptions()
 	emailOptions := config.NewEmailOptions()
 	ldapOptions := config.NewLDAPOptions()
@@ -136,6 +140,7 @@ COPYRIGHT
 	// config.Prepare.
 	options := []config.Options{
 		gopherpitOptions,
+		apiOptions,
 		loggingOptions,
 		emailOptions,
 		ldapOptions,
@@ -464,6 +469,28 @@ COPYRIGHT
 			Logger:    logger,
 		}
 	}
+	var keyService key.Service
+	if servicesOptions.KeyEndpoint != "" {
+		c := &apiClient.Client{
+			Endpoint:  servicesOptions.KeyEndpoint,
+			Key:       servicesOptions.KeyKey,
+			UserAgent: config.UserAgent,
+		}
+		if servicesOptions.KeyOptions != nil {
+			c.HTTPClient = httpClient.New(servicesOptions.KeyOptions)
+		}
+		keyService = httpKey.NewService(c)
+	} else {
+		db, err := boltKey.NewDB(filepath.Join(gopherpitOptions.StorageDir, "key.db"), gopherpitOptions.StorageFileMode.FileMode(), nil)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "key service bolt database:", err)
+			os.Exit(2)
+		}
+		keyService = &boltKey.Service{
+			DB:     db,
+			Logger: logger,
+		}
+	}
 
 	// Initialize server.
 	srv, err := server.NewServer(
@@ -493,6 +520,9 @@ COPYRIGHT
 			TrustedDomains:          gopherpitOptions.TrustedDomains,
 			ForbiddenDomains:        gopherpitOptions.ForbiddenDomains,
 			TLSEnabled:              gopherpitOptions.ListenTLS != "",
+			APITrustedProxyCIDRs:    apiOptions.TrustedProxyCIDRs,
+			APIProxyRealIPHeader:    apiOptions.ProxyRealIPHeader,
+			APIEnabled:              !apiOptions.Disable,
 
 			EmailService:        *emailService,
 			RecoveryService:     *recoveryService,
@@ -501,6 +531,7 @@ COPYRIGHT
 			NotificationService: notificationService,
 			CertificateService:  certificateService,
 			PackagesService:     packagesService,
+			KeyService:          keyService,
 		},
 	)
 	if err != nil {

@@ -38,6 +38,7 @@
 <div class="column is-8 is-offset-2 has-text-centered">
   <h1 class="title is-1">[[ .Email ]]</h1>
   <div id="opt-out-settings">
+    <div class="notification is-danger" v-for="err in errors" v-cloak v-html="err"></div>
     [[ if .OptedOut ]]
     <div class="notification is-warning">
       <p>Sending e-mail messages to this address is <strong>blocked</strong>!</p>

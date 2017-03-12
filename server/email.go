@@ -19,7 +19,7 @@ import (
 	"gopherpit.com/gopherpit/services/notification"
 )
 
-var emailRegex = regexp.MustCompile(`^[^@]+@[^@]+\\.[^@]+$`)
+var emailRegex = regexp.MustCompile(`^[^@]+@[^@]+\.[^@]+$`)
 
 func (s Server) sendEmailValidationEmail(r *http.Request, to, token string) error {
 	var textBody, htmlBody bytes.Buffer

@@ -220,6 +220,6 @@ var (
 	PackageDomainRequired     = NewError(2010, "package domain required")
 	PackagePathRequired       = NewError(2011, "package path required")
 	PackageVCSRequired        = NewError(2012, "package vcs required")
-	PackageRepoRootRequired   = NewError(2013, "package repo rut required")
+	PackageRepoRootRequired   = NewError(2013, "package repo root required")
 	ChangelogRecordNotFound   = NewError(3000, "changelog record not found")
 )

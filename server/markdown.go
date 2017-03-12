@@ -13,7 +13,7 @@ import (
 	"github.com/russross/blackfriday"
 )
 
-var htmlSanitizer = bluemonday.UGCPolicy().AllowAttrs("class").Matching(regexp.MustCompile("^language-[a-zA-Z0-9]+$")).OnElements("code")
+var htmlSanitizer = bluemonday.UGCPolicy().AllowAttrs("class").Matching(regexp.MustCompile(`^language-[a-zA-Z0-9]+$`)).OnElements("code")
 
 func markdown(md []byte) template.HTML {
 	return template.HTML(htmlSanitizer.SanitizeBytes(blackfriday.MarkdownCommon(md)))

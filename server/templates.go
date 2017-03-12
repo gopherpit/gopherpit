@@ -34,6 +34,7 @@ var templates = map[string][]string{
 	"SettingsEmail":         {"base.html", "app.html", "settings/email.html"},
 	"SettingsNotifications": {"base.html", "app.html", "settings/notifications.html"},
 	"SettingsPassword":      {"base.html", "app.html", "settings/password.html"},
+	"SettingsAPIAccess":     {"base.html", "app.html", "settings/api-access.html"},
 	"SettingsDeleteAccount": {"base.html", "app.html", "settings/delete-account.html"},
 	// Certificates
 	"RegisterACMEUser":        {"base.html", "cover.html", "register-acme-user.html"},

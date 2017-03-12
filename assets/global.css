@@ -49,3 +49,7 @@ span.button {
     50% {transform: scale(1.1);}
     100% {transform: scale(1);}
 }
+
+.is-middle {
+  vertical-align: middle!important;
+}

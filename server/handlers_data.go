@@ -52,6 +52,10 @@ func (s Server) dataDumpHandler(w http.ResponseWriter, r *http.Request) {
 			Service: s.CertificateService,
 		},
 		{
+			Name:    "key",
+			Service: s.KeyService,
+		},
+		{
 			Name:    "notification",
 			Service: s.NotificationService,
 		},

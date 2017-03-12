@@ -42,7 +42,7 @@ func (s Server) textMaintenanceHandler(h http.Handler) http.Handler {
 }
 
 func (s Server) jsonMaintenanceHandler(h http.Handler) http.Handler {
-	return s.maintenanceHandler(h, `{"message":"maintenance","code":503}`, "application/json; charset=utf-8")
+	return s.maintenanceHandler(h, `{"message":"Maintenance","code":503}`, "application/json; charset=utf-8")
 }
 
 type maintenanceStatus struct {

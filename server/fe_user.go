@@ -10,6 +10,7 @@ import (
 
 	"github.com/gorilla/mux"
 
+	"gopherpit.com/gopherpit/services/key"
 	"gopherpit.com/gopherpit/services/user"
 )
 
@@ -71,7 +72,8 @@ func (s Server) settingsHandler(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 	s.respond(w, "Settings", map[string]interface{}{
-		"User": u,
+		"User":       u,
+		"APIEnabled": s.APIEnabled,
 	})
 }
 
@@ -87,8 +89,9 @@ func (s Server) settingsEmailHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.respond(w, "SettingsEmail", map[string]interface{}{
-		"User":     u,
-		"OptedOut": optedOut,
+		"User":       u,
+		"OptedOut":   optedOut,
+		"APIEnabled": s.APIEnabled,
 	})
 }
 
@@ -104,8 +107,9 @@ func (s Server) settingsNotificationsHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 	s.respond(w, "SettingsNotifications", map[string]interface{}{
-		"User":     u,
-		"OptedOut": optedOut,
+		"User":       u,
+		"OptedOut":   optedOut,
+		"APIEnabled": s.APIEnabled,
 	})
 }
 
@@ -115,7 +119,34 @@ func (s Server) settingsPasswordHandler(w http.ResponseWriter, r *http.Request) 
 		panic(err)
 	}
 	s.respond(w, "SettingsPassword", map[string]interface{}{
-		"User": u,
+		"User":       u,
+		"APIEnabled": s.APIEnabled,
+	})
+}
+
+func (s Server) apiAccessSettingsHandler(w http.ResponseWriter, r *http.Request) {
+	if !s.APIEnabled {
+		s.htmlNotFoundHandler(w, r)
+		return
+	}
+	u, r, err := s.user(r)
+	if err != nil {
+		panic(err)
+	}
+	k, err := s.KeyService.KeyByRef(u.ID)
+	switch err {
+	case nil:
+	case key.KeyNotFound:
+		k = &key.Key{}
+	default:
+		s.logger.Errorf("settings api access: %s: get key by ref: %s", u.ID, err)
+		s.htmlServerError(w, r, err)
+		return
+	}
+	s.respond(w, "SettingsAPIAccess", map[string]interface{}{
+		"User":       u,
+		"Key":        k,
+		"APIEnabled": s.APIEnabled,
 	})
 }
 
@@ -125,6 +156,7 @@ func (s Server) settingsDeleteAccountHandler(w http.ResponseWriter, r *http.Requ
 		panic(err)
 	}
 	s.respond(w, "SettingsDeleteAccount", map[string]interface{}{
-		"User": u,
+		"User":       u,
+		"APIEnabled": s.APIEnabled,
 	})
 }

@@ -6,6 +6,7 @@
 package boltPackages
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -204,6 +205,9 @@ func (s Service) AddUserToDomain(ref, userID, byUserID string) (err error) {
 		if !d.isOwner(byUserID) {
 			err = packages.Forbidden
 			return
+		} else if byUserID == userID {
+			err = packages.UserExists
+			return
 		}
 		err = d.addUser(tx, []byte(userID), true)
 		return
@@ -284,6 +288,9 @@ func (s Service) Domains(startRef string, limit int) (page packages.DomainsPage,
 			k, v = c.First()
 		} else {
 			k, v = c.Seek(start)
+			if !bytes.Equal(start, k) {
+				return packages.DomainNotFound
+			}
 			var prev, p []byte
 			for i := 0; i < limit; i++ {
 				p, _ = c.Prev()
@@ -349,6 +356,9 @@ func (s Service) domainsByUser(userID, startRef string, limit int, bucket []byte
 			k, v = c.First()
 		} else {
 			k, v = c.Seek(start)
+			if !bytes.Equal(start, k) {
+				return packages.DomainNotFound
+			}
 			var prev, p []byte
 			for i := 0; i < limit; i++ {
 				p, _ = c.Prev()
@@ -550,6 +560,9 @@ func (s Service) PackagesByDomain(domainRef, startName string, limit int) (page 
 			k, v = c.First()
 		} else {
 			k, v = c.Seek(start)
+			if !bytes.Equal(start, k) {
+				return packages.PackageNotFound
+			}
 			var prev, p []byte
 			for i := 0; i < limit; i++ {
 				p, _ = c.Prev()
@@ -843,6 +856,9 @@ func (s Service) ChangelogForDomain(domainRef, start string, limit int) (page pa
 		} else {
 			// go to the start record
 			k, v = c.Seek([]byte(start))
+			if !bytes.Equal([]byte(start), k) {
+				return packages.ChangelogRecordNotFound
+			}
 			if k == nil {
 				// if the record at the exact time does not exist
 				// find the previous

@@ -6,10 +6,12 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"net/http"
 	"runtime/debug"
+	"strings"
 	"time"
 
 	"resenje.org/antixsrf"
@@ -17,6 +19,7 @@ import (
 	"resenje.org/jsonresponse"
 
 	"gopherpit.com/gopherpit/pkg/info"
+	"gopherpit.com/gopherpit/services/key"
 	"gopherpit.com/gopherpit/services/user"
 )
 
@@ -375,4 +378,118 @@ func noCacheHeaderHandler(h http.Handler) http.Handler {
 		w.Header().Set("Cache-Control", "no-cache")
 		h.ServeHTTP(w, r)
 	})
+}
+
+func (s Server) apiDisabledHandler(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !s.APIEnabled {
+			jsonresponse.NotFound(w, nil)
+			return
+		}
+		h.ServeHTTP(w, r)
+	})
+}
+
+func (s Server) apiKeyAuthHandler(h http.Handler, body, contentType string) http.Handler {
+	trustedProxyNetworks := []net.IPNet{}
+	for _, cidr := range s.APITrustedProxyCIDRs {
+		if cidr == "" {
+			continue
+		}
+		_, cidrnet, err := net.ParseCIDR(cidr)
+		if err != nil {
+			panic(err)
+		}
+		trustedProxyNetworks = append(trustedProxyNetworks, *cidrnet)
+	}
+	return httputils.AuthHandler{
+		Handler: h,
+		UnauthorizedHandler: http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			jsonresponse.Unauthorized(w, nil)
+		}),
+		AuthFunc: func(r *http.Request, field1, field2 string) (valid bool, entity interface{}, err error) {
+			if field1 == "" {
+				field1 = field2
+			}
+			if field1 == "" {
+				return
+			}
+			k, err := s.KeyService.KeyBySecret(field1)
+			switch err {
+			case nil:
+			case key.KeyNotFound:
+				err = nil
+				return
+			default:
+				err = nil
+				s.logger.Errorf("api key auth: get key: %s", err)
+				return
+			}
+
+			var host string
+			host, _, err = net.SplitHostPort(r.RemoteAddr)
+			if err != nil {
+				host = r.RemoteAddr
+			}
+			ip := net.ParseIP(host)
+			if ip == nil {
+				s.logger.Warningf("api key auth: key ref %s: unable to parse ip: %s", k.Ref, host)
+				return
+			}
+
+			if len(trustedProxyNetworks) > 0 && s.APIProxyRealIPHeader != "" {
+				proxied := false
+				for _, network := range trustedProxyNetworks {
+					if network.Contains(ip) {
+						proxied = true
+						break
+					}
+				}
+				if proxied {
+					header := r.Header.Get(s.APIProxyRealIPHeader)
+					if header != "" {
+						header = strings.TrimSpace(strings.SplitN(header, ",", 2)[0])
+						ip = net.ParseIP(header)
+						if ip == nil {
+							s.logger.Warningf("api key auth: key ref %s: unable to parse %s header as ip: %s", k.Ref, s.APIProxyRealIPHeader, header)
+							return
+						}
+					}
+				}
+			}
+
+			found := false
+			for _, net := range k.AuthorizedNetworks {
+				if net.Contains(ip) {
+					found = true
+					break
+				}
+			}
+			if !found {
+				s.logger.Warningf("api key auth: key ref %s: unauthorized network: %s", k.Ref, ip)
+				return
+			}
+
+			entity, err = s.UserService.UserByID(k.Ref)
+			if err != nil {
+				err = nil
+				s.logger.Errorf("api key auth: get user by id %s: %s", k.Ref, err)
+				return
+			}
+			valid = true
+			return
+		},
+		PostAuthFunc: func(_ http.ResponseWriter, r *http.Request, valid bool, entity interface{}) (rr *http.Request, err error) {
+			if valid && entity != nil {
+				rr = r.WithContext(context.WithValue(r.Context(), contextKeyUser, entity))
+			}
+			return
+		},
+		KeyHeaderName:  "X-Key",
+		BasicAuthRealm: "Key",
+	}
+}
+
+func (s Server) jsonAPIKeyAuthHandler(h http.Handler) http.Handler {
+	return s.apiKeyAuthHandler(h, `{"message":"Unauthorized","code":401}`, "application/json; charset=utf-8")
 }

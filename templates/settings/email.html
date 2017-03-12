@@ -78,6 +78,9 @@
         </p>
         <ul class="menu-list">
           <li><a href="/settings">Basic information</a></li>
+          [[ if .APIEnabled ]]
+          <li><a href="/settings/api">API access</a></li>
+          [[ end ]]
           <li><a class="is-active" href="/settings/email">E-mail address</a></li>
           <li><a href="/settings/notifications">Notifications</a></li>
           <li><a href="/settings/password">Password</a></li>
@@ -90,9 +93,9 @@
       <div class="notification [[ if .User.EmailUnvalidated ]]is-warning[[ else ]]is-info[[ end ]]">
         <p>[[ .User.Email ]]</p>
         [[ if .User.EmailUnvalidated ]]
-        <p>E-mail adress is not validated!</p>
+        <p>E-mail address is not validated!</p>
         [[ else ]]
-        <p>E-mail adress is validated.</p>
+        <p>E-mail address is validated.</p>
         [[ end ]]
       </div>
 
