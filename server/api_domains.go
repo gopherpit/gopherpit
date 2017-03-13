@@ -39,7 +39,7 @@ func (s Server) domainAPIHandler(w http.ResponseWriter, r *http.Request) {
 		switch err {
 		case packages.DomainNotFound:
 			s.logger.Warningf("domain api: domain %s: %s", id, err)
-			jsonresponse.NotFound(w, api.DomainNotFound)
+			jsonresponse.NotFound(w, api.ErrDomainNotFound)
 			return
 		case nil:
 		default:
@@ -55,7 +55,7 @@ func (s Server) domainAPIHandler(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			if err == packages.DomainNotFound {
 				s.logger.Warningf("domain api: domain users %s: %s", id, err)
-				jsonresponse.NotFound(w, api.DomainNotFound)
+				jsonresponse.NotFound(w, api.ErrDomainNotFound)
 				return
 			}
 			s.logger.Errorf("domain api: domain users %s: %s", id, err)
@@ -91,12 +91,12 @@ func (s Server) domainTokensAPIHandler(w http.ResponseWriter, r *http.Request) {
 	publicSuffix, icann := publicsuffix.PublicSuffix(fqdn)
 	if !icann {
 		s.logger.Warningf("domain token api: %q: user %s: domain not icann", fqdn, u.ID)
-		jsonresponse.BadRequest(w, api.DomainFQDNInvalid)
+		jsonresponse.BadRequest(w, api.ErrDomainFQDNInvalid)
 		return
 	}
 	if fqdn == publicSuffix {
 		s.logger.Warningf("domain token api: %q: user %s: domain is public suffix", fqdn, u.ID)
-		jsonresponse.BadRequest(w, api.DomainFQDNInvalid)
+		jsonresponse.BadRequest(w, api.ErrDomainFQDNInvalid)
 		return
 	}
 
@@ -105,7 +105,7 @@ func (s Server) domainTokensAPIHandler(w http.ResponseWriter, r *http.Request) {
 	startIndex := len(domainParts) - strings.Count(publicSuffix, ".") - 2
 	if startIndex < 0 {
 		s.logger.Warningf("domain token api: %q: user %s: domain is invalid", fqdn, u.ID)
-		jsonresponse.BadRequest(w, api.DomainFQDNInvalid)
+		jsonresponse.BadRequest(w, api.ErrDomainFQDNInvalid)
 		return
 	}
 
@@ -156,20 +156,20 @@ func (s Server) updateDomainAPIHandler(w http.ResponseWriter, r *http.Request) {
 
 	if request.FQDN == nil {
 		warningf("request: fqdn absent")
-		jsonresponse.BadRequest(w, api.DomainFQDNRequired)
+		jsonresponse.BadRequest(w, api.ErrDomainFQDNRequired)
 		return
 	}
 
 	fqdn := strings.TrimSpace(*request.FQDN)
 	if fqdn == "" {
 		warningf("request: fqdn empty")
-		jsonresponse.BadRequest(w, api.DomainFQDNRequired)
+		jsonresponse.BadRequest(w, api.ErrDomainFQDNRequired)
 		return
 	}
 
 	if !fqdnRegex.MatchString(fqdn) && fqdn != s.Domain {
 		warningf("request: fqdn invalid")
-		jsonresponse.BadRequest(w, api.DomainFQDNInvalid)
+		jsonresponse.BadRequest(w, api.ErrDomainFQDNInvalid)
 		return
 	}
 
@@ -180,7 +180,7 @@ func (s Server) updateDomainAPIHandler(w http.ResponseWriter, r *http.Request) {
 			switch err {
 			case packages.DomainNotFound:
 				warningf("get domain: %s", err)
-				jsonresponse.BadRequest(w, api.DomainNotFound)
+				jsonresponse.BadRequest(w, api.ErrDomainNotFound)
 				return
 			case nil:
 			default:
@@ -204,7 +204,7 @@ func (s Server) updateDomainAPIHandler(w http.ResponseWriter, r *http.Request) {
 	for _, d := range s.ForbiddenDomains {
 		if d == fqdn || strings.HasSuffix(fqdn, "."+d) {
 			warningf("domain not available: %s", fqdn)
-			jsonresponse.BadRequest(w, api.DomainNotAvailable)
+			jsonresponse.BadRequest(w, api.ErrDomainNotAvailable)
 			return
 		}
 	}
@@ -215,19 +215,19 @@ func (s Server) updateDomainAPIHandler(w http.ResponseWriter, r *http.Request) {
 		case fqdn == s.Domain, strings.HasSuffix(fqdn, "."+s.Domain):
 			if strings.Count(fqdn, ".") > strings.Count(s.Domain, ".")+1 {
 				warningf("domain with too many subdomains: %s", fqdn)
-				jsonresponse.BadRequest(w, api.DomainWithTooManySubdomains)
+				jsonresponse.BadRequest(w, api.ErrDomainWithTooManySubdomains)
 				return
 			}
 		default:
 			publicSuffix, icann := publicsuffix.PublicSuffix(fqdn)
 			if !icann {
 				warningf("domain not icann: %s", fqdn)
-				jsonresponse.BadRequest(w, api.DomainFQDNInvalid)
+				jsonresponse.BadRequest(w, api.ErrDomainFQDNInvalid)
 				return
 			}
 			if fqdn == publicSuffix {
 				warningf("domain is public suffix: %s", fqdn)
-				jsonresponse.BadRequest(w, api.DomainFQDNInvalid)
+				jsonresponse.BadRequest(w, api.ErrDomainFQDNInvalid)
 				return
 			}
 
@@ -235,7 +235,7 @@ func (s Server) updateDomainAPIHandler(w http.ResponseWriter, r *http.Request) {
 			startIndex := len(domainParts) - strings.Count(publicSuffix, ".") - 2
 			if startIndex < 0 {
 				warningf("domain is invalid: %s", fqdn)
-				jsonresponse.BadRequest(w, api.DomainFQDNInvalid)
+				jsonresponse.BadRequest(w, api.ErrDomainFQDNInvalid)
 				return
 			}
 
@@ -248,7 +248,7 @@ func (s Server) updateDomainAPIHandler(w http.ResponseWriter, r *http.Request) {
 				}
 			} else {
 				warningf("get domain: %s: %s", fqdn, err)
-				jsonresponse.BadRequest(w, api.DomainAlreadyExists)
+				jsonresponse.BadRequest(w, api.ErrDomainAlreadyExists)
 				return
 			}
 
@@ -275,7 +275,7 @@ func (s Server) updateDomainAPIHandler(w http.ResponseWriter, r *http.Request) {
 
 			if !verified {
 				warningf("domain needs verification: %s", fqdn)
-				jsonresponse.BadRequest(w, api.DomainNeedsVerification)
+				jsonresponse.BadRequest(w, api.ErrDomainNeedsVerification)
 				return
 			}
 		}
@@ -290,7 +290,7 @@ func (s Server) updateDomainAPIHandler(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				if err == user.UserNotFound {
 					warningf("get owner user: %s: %s", *request.OwnerUserID, err)
-					jsonresponse.BadRequest(w, api.UserDoesNotExist)
+					jsonresponse.BadRequest(w, api.ErrUserDoesNotExist)
 					return
 				}
 				errorf("get owner user: %s: %s", *request.OwnerUserID, err)
@@ -318,15 +318,15 @@ func (s Server) updateDomainAPIHandler(w http.ResponseWriter, r *http.Request) {
 		switch err {
 		case packages.DomainFQDNRequired:
 			warningf("add/update domain: %s: %s", fqdn, err)
-			jsonresponse.BadRequest(w, api.DomainFQDNRequired)
+			jsonresponse.BadRequest(w, api.ErrDomainFQDNRequired)
 			return
 		case packages.DomainNotFound:
 			warningf("add/update domain: %s: %s", fqdn, err)
-			jsonresponse.BadRequest(w, api.DomainNotFound)
+			jsonresponse.BadRequest(w, api.ErrDomainNotFound)
 			return
 		case packages.DomainAlreadyExists:
 			warningf("add/update domain: %s: %s", fqdn, err)
-			jsonresponse.BadRequest(w, api.DomainAlreadyExists)
+			jsonresponse.BadRequest(w, api.ErrDomainAlreadyExists)
 			return
 		case nil:
 		default:
@@ -388,7 +388,7 @@ func (s Server) deleteDomainAPIHandler(w http.ResponseWriter, r *http.Request) {
 		switch err {
 		case packages.DomainNotFound:
 			s.logger.Warningf("delete domain api: delete domain %s: %s", id, err)
-			jsonresponse.NotFound(w, api.DomainNotFound)
+			jsonresponse.NotFound(w, api.ErrDomainNotFound)
 			return
 		case nil:
 		default:
@@ -424,11 +424,11 @@ func (s Server) domainsAPIHandler(w http.ResponseWriter, r *http.Request) {
 		switch err {
 		case packages.DomainNotFound:
 			s.logger.Warningf("domains api: domains by user %s: start ref %q: %s", u.ID, startRef, err)
-			jsonresponse.NotFound(w, api.DomainNotFound)
+			jsonresponse.NotFound(w, api.ErrDomainNotFound)
 			return
 		case packages.UserDoesNotExist:
 			s.logger.Warningf("domains api: domains by user %s: %s", u.ID, err)
-			jsonresponse.NotFound(w, api.UserDoesNotExist)
+			jsonresponse.NotFound(w, api.ErrUserDoesNotExist)
 			return
 		case nil:
 		default:
@@ -465,7 +465,7 @@ func (s Server) domainUsersAPIHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if err == packages.DomainNotFound {
 			s.logger.Warningf("domain users api: domain %s: %s", id, err)
-			jsonresponse.NotFound(w, api.DomainNotFound)
+			jsonresponse.NotFound(w, api.ErrDomainNotFound)
 			return
 		}
 		s.logger.Errorf("domain users api: domain %s: %s", id, err)
@@ -484,7 +484,7 @@ func (s Server) domainUsersAPIHandler(w http.ResponseWriter, r *http.Request) {
 		switch err {
 		case packages.DomainNotFound:
 			s.logger.Warningf("domain users api: domain users %s: %s", id, err)
-			jsonresponse.NotFound(w, api.DomainNotFound)
+			jsonresponse.NotFound(w, api.ErrDomainNotFound)
 			return
 		case nil:
 		default:
@@ -514,7 +514,7 @@ func (s Server) grantDomainUserAPIHandler(w http.ResponseWriter, r *http.Request
 	if err != nil {
 		if err == user.UserNotFound {
 			s.logger.Warningf("domain user grant api: user %s: domain %s: get user %s: %s", u.ID, domainID, userID, err)
-			jsonresponse.BadRequest(w, api.UserDoesNotExist)
+			jsonresponse.BadRequest(w, api.ErrUserDoesNotExist)
 			return
 		}
 		s.logger.Errorf("domain user grant api: user %s: domain %s: get user %s: %s", u.ID, domainID, userID, err)
@@ -525,10 +525,10 @@ func (s Server) grantDomainUserAPIHandler(w http.ResponseWriter, r *http.Request
 	switch err {
 	case packages.DomainNotFound:
 		s.logger.Warningf("domain user grant api: user %s: add user %s to domain %s: %s", u.ID, userID, domainID, err)
-		jsonresponse.BadRequest(w, api.DomainNotFound)
+		jsonresponse.BadRequest(w, api.ErrDomainNotFound)
 	case packages.UserExists:
 		s.logger.Warningf("domain user grant api: user %s: add user %s to domain %s: %s", u.ID, userID, domainID, err)
-		jsonresponse.BadRequest(w, api.UserAlreadyGranted)
+		jsonresponse.BadRequest(w, api.ErrUserAlreadyGranted)
 	case packages.Forbidden:
 		s.logger.Warningf("domain user grant api: user %s: add user %s to domain %s: %s", u.ID, userID, domainID, err)
 		jsonresponse.Forbidden(w, nil)
@@ -554,7 +554,7 @@ func (s Server) revokeDomainUserAPIHandler(w http.ResponseWriter, r *http.Reques
 	if err != nil {
 		if err == user.UserNotFound {
 			s.logger.Warningf("domain user revoke api: user %s: domain %s: get user %s: %s", u.ID, domainID, userID, err)
-			jsonresponse.BadRequest(w, api.UserDoesNotExist)
+			jsonresponse.BadRequest(w, api.ErrUserDoesNotExist)
 			return
 		}
 		s.logger.Errorf("domain user revoke api: user %s: domain %s: get user %s: %s", u.ID, domainID, userID, err)
@@ -565,10 +565,10 @@ func (s Server) revokeDomainUserAPIHandler(w http.ResponseWriter, r *http.Reques
 	switch err {
 	case packages.DomainNotFound:
 		s.logger.Warningf("domain user revoke api: user %s: add user %s to domain %s: %s", u.ID, userID, domainID, err)
-		jsonresponse.BadRequest(w, api.DomainNotFound)
+		jsonresponse.BadRequest(w, api.ErrDomainNotFound)
 	case packages.UserDoesNotExist:
 		s.logger.Warningf("domain user revoke api: user %s: add user %s to domain %s: %s", u.ID, userID, domainID, err)
-		jsonresponse.BadRequest(w, api.UserNotGranted)
+		jsonresponse.BadRequest(w, api.ErrUserNotGranted)
 	case packages.Forbidden:
 		s.logger.Warningf("domain user revoke api: user %s: add user %s to domain %s: %s", u.ID, userID, domainID, err)
 		jsonresponse.Forbidden(w, nil)

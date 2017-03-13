@@ -33,7 +33,7 @@ func (s Server) packageAPIHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if err == packages.PackageNotFound {
 			s.logger.Warningf("package api: package %s: %s", id, err)
-			jsonresponse.NotFound(w, api.PackageNotFound)
+			jsonresponse.NotFound(w, api.ErrPackageNotFound)
 			return
 		}
 		s.logger.Errorf("package api: package %s: %s", id, err)
@@ -103,26 +103,26 @@ func (s Server) updatePackageAPIHandler(w http.ResponseWriter, r *http.Request) 
 
 	if request.Domain == nil || *request.Domain == "" {
 		warningf("request: domain absent")
-		jsonresponse.BadRequest(w, api.PackageDomainRequired)
+		jsonresponse.BadRequest(w, api.ErrPackageDomainRequired)
 		return
 	}
 
 	if request.Path == nil || *request.Path == "" {
 		warningf("request: path absent")
-		jsonresponse.BadRequest(w, api.PackagePathRequired)
+		jsonresponse.BadRequest(w, api.ErrPackagePathRequired)
 		return
 	}
 
 	if request.VCS == nil || *request.VCS == "" {
 		warningf("request: vcs absent")
-		jsonresponse.BadRequest(w, api.PackageVCSRequired)
+		jsonresponse.BadRequest(w, api.ErrPackageVCSRequired)
 		return
 	}
 
 	var repoRoot *url.URL
 	if request.RepoRoot == nil || *request.RepoRoot == "" {
 		warningf("request: repo root absent")
-		jsonresponse.BadRequest(w, api.PackageRepoRootRequired)
+		jsonresponse.BadRequest(w, api.ErrPackageRepoRootRequired)
 		return
 	}
 
@@ -130,12 +130,12 @@ func (s Server) updatePackageAPIHandler(w http.ResponseWriter, r *http.Request) 
 	switch {
 	case err != nil:
 		warningf("request: parse repo root: %s", err)
-		jsonresponse.BadRequest(w, api.PackageRepoRootInvalid)
+		jsonresponse.BadRequest(w, api.ErrPackageRepoRootInvalid)
 		return
 	case request.VCS != nil && *request.VCS != "":
 		if repoRoot.Scheme == "" {
 			warningf("repo root: missing url scheme")
-			jsonresponse.BadRequest(w, api.PackageRepoRootSchemeRequired)
+			jsonresponse.BadRequest(w, api.ErrPackageRepoRootSchemeRequired)
 			return
 		}
 		ok := false
@@ -147,12 +147,12 @@ func (s Server) updatePackageAPIHandler(w http.ResponseWriter, r *http.Request) 
 		}
 		if !ok {
 			warningf("repo root: invalid url scheme %q", repoRoot.Scheme)
-			jsonresponse.BadRequest(w, api.PackageRepoRootSchemeInvalid)
+			jsonresponse.BadRequest(w, api.ErrPackageRepoRootSchemeInvalid)
 			return
 		}
 		if !hostAndPortRegex.MatchString(repoRoot.Host) {
 			warningf("repo root: invalid url host %q", repoRoot.Host)
-			jsonresponse.BadRequest(w, api.PackageRepoRootHostInvalid)
+			jsonresponse.BadRequest(w, api.ErrPackageRepoRootHostInvalid)
 			return
 		}
 	}
@@ -171,25 +171,25 @@ func (s Server) updatePackageAPIHandler(w http.ResponseWriter, r *http.Request) 
 	case "", packages.RefTypeTag, packages.RefTypeBranch:
 	default:
 		warningf("invalid reference type %q", refType)
-		jsonresponse.BadRequest(w, api.PackageRefTypeInvalid)
+		jsonresponse.BadRequest(w, api.ErrPackageRefTypeInvalid)
 		return
 	}
 
 	if refType != "" && refName == "" {
 		warningf("missing reference name")
-		jsonresponse.BadRequest(w, api.PackageRefNameRequired)
+		jsonresponse.BadRequest(w, api.ErrPackageRefNameRequired)
 		return
 	}
 
 	if refName != "" && (packages.VCS(*request.VCS) != packages.VCSGit || (packages.VCS(*request.VCS) == packages.VCSGit && repoRoot != nil && !(repoRoot.Scheme == "http" || repoRoot.Scheme == "https"))) {
 		warningf("reference change rejected")
-		jsonresponse.BadRequest(w, api.PackageRefChangeRejected)
+		jsonresponse.BadRequest(w, api.ErrPackageRefChangeRejected)
 		return
 	}
 
 	if request.RedirectURL != nil && !urlRegex.MatchString(*request.RedirectURL) {
 		warningf("invalid redirect url: %s", request.RedirectURL)
-		jsonresponse.BadRequest(w, api.PackageRedirectURLInvalid)
+		jsonresponse.BadRequest(w, api.ErrPackageRedirectURLInvalid)
 		return
 	}
 
@@ -223,31 +223,31 @@ func (s Server) updatePackageAPIHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	case packages.DomainNotFound:
 		warningf("add/update package: %s", err)
-		jsonresponse.BadRequest(w, api.DomainNotFound)
+		jsonresponse.BadRequest(w, api.ErrDomainNotFound)
 		return
 	case packages.PackageNotFound:
 		warningf("add/update package: %s", err)
-		jsonresponse.BadRequest(w, api.PackageNotFound)
+		jsonresponse.BadRequest(w, api.ErrPackageNotFound)
 		return
 	case packages.PackageDomainRequired:
 		warningf("add/update package: %s", err)
-		jsonresponse.BadRequest(w, api.PackageDomainRequired)
+		jsonresponse.BadRequest(w, api.ErrPackageDomainRequired)
 		return
 	case packages.PackagePathRequired:
 		warningf("add/update package: %s", err)
-		jsonresponse.BadRequest(w, api.PackagePathRequired)
+		jsonresponse.BadRequest(w, api.ErrPackagePathRequired)
 		return
 	case packages.PackageVCSRequired:
 		warningf("add/update package: %s", err)
-		jsonresponse.BadRequest(w, api.PackageVCSRequired)
+		jsonresponse.BadRequest(w, api.ErrPackageVCSRequired)
 		return
 	case packages.PackageRepoRootRequired:
 		warningf("add/update package: %s", err)
-		jsonresponse.BadRequest(w, api.PackageRepoRootRequired)
+		jsonresponse.BadRequest(w, api.ErrPackageRepoRootRequired)
 		return
 	case packages.PackageAlreadyExists:
 		warningf("add/update package: %s", err)
-		jsonresponse.BadRequest(w, api.PackageAlreadyExists)
+		jsonresponse.BadRequest(w, api.ErrPackageAlreadyExists)
 		return
 	case nil:
 	default:
@@ -282,11 +282,11 @@ func (s Server) deletePackageAPIHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	case packages.DomainNotFound:
 		s.logger.Warningf("package delete api: user %s: delete package %s: %s", u.ID, id, err)
-		jsonresponse.BadRequest(w, api.DomainNotFound)
+		jsonresponse.BadRequest(w, api.ErrDomainNotFound)
 		return
 	case packages.PackageNotFound:
 		s.logger.Warningf("package delete api: user %s: delete package %s: %s", u.ID, id, err)
-		jsonresponse.BadRequest(w, api.PackageNotFound)
+		jsonresponse.BadRequest(w, api.ErrPackageNotFound)
 		return
 	case nil:
 	default:
@@ -326,7 +326,7 @@ func (s Server) domainPackagesAPIHandler(w http.ResponseWriter, r *http.Request)
 	if err != nil {
 		if err == packages.DomainNotFound {
 			s.logger.Warningf("domain packages api: packages by domain %s: %s", id, err)
-			jsonresponse.BadRequest(w, api.DomainNotFound)
+			jsonresponse.BadRequest(w, api.ErrDomainNotFound)
 			return
 		}
 		s.logger.Errorf("domain packages api: packages by domain %s: %s", id, err)
