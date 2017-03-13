@@ -6,6 +6,11 @@
 package server
 
 import (
+	"fmt"
+	"net/http"
+
+	"resenje.org/jsonresponse"
+
 	"gopherpit.com/gopherpit/api"
 	"gopherpit.com/gopherpit/services/packages"
 )
@@ -37,4 +42,25 @@ func packagesPackageToAPIPackage(p packages.Package, d *packages.Domain) api.Pac
 		RedirectURL: p.RedirectURL,
 		Disabled:    p.Disabled,
 	}
+}
+
+func (s Server) jsonAPIRateLimiterHandler(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		u, r, err := s.user(r)
+		if err != nil {
+			panic(err)
+		}
+		limited, result, err := s.apiRateLimiter.RateLimit(fmt.Sprintf("userID:%s", u.ID), 1)
+		if err != nil {
+			s.logger.Errorf("api rate limiter: rate limit: %s", err)
+			jsonresponse.InternalServerError(w, nil)
+			return
+		}
+		if limited {
+			s.logger.Warningf("api rate limiter: blocked %s: retry after %s", u.ID, result.RetryAfter)
+			jsonresponse.BadRequest(w, api.ErrTooManyRequests)
+			return
+		}
+		h.ServeHTTP(w, r)
+	})
 }

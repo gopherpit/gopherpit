@@ -21,6 +21,9 @@ import (
 	"sync"
 	"time"
 
+	throttled "gopkg.in/throttled/throttled.v2"
+	"gopkg.in/throttled/throttled.v2/store/memstore"
+
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"resenje.org/email"
@@ -61,6 +64,8 @@ type Server struct {
 	servers []*http.Server
 
 	templates map[string]*template.Template
+
+	apiRateLimiter *throttled.GCRARateLimiter
 }
 
 // Options structure contains optional properties for the Server.
@@ -92,6 +97,7 @@ type Options struct {
 	TLSEnabled              bool
 	APITrustedProxyCIDRs    []string
 	APIProxyRealIPHeader    string
+	APIHourlyRateLimit      int
 	APIEnabled              bool
 
 	EmailService    email.Service
@@ -240,6 +246,22 @@ func NewServer(o Options) (s *Server, err error) {
 			panic(fmt.Sprintf("get access logger: %s", err))
 		}
 		return accessLog.NewHandler(h, logger)
+	}
+
+	// API rate limiter
+	if s.APIHourlyRateLimit > 0 {
+		apiRateLimiterStore, err := memstore.New(65536)
+		if err != nil {
+			return nil, fmt.Errorf("api rate limiter memstore: %s", err)
+		}
+
+		s.apiRateLimiter, err = throttled.NewGCRARateLimiter(
+			apiRateLimiterStore,
+			throttled.RateQuota{throttled.PerHour(1), s.APIHourlyRateLimit},
+		)
+		if err != nil {
+			return nil, fmt.Errorf("api rate limiter: %s", err)
+		}
 	}
 
 	//
@@ -607,12 +629,18 @@ func NewServer(o Options) (s *Server, err error) {
 	apiRouter.NotFoundHandler = http.HandlerFunc(jsonNotFoundHandler)
 	// API routes start
 	apiRouter.Handle("/api/v1/domains", jsonMethodHandler{
-		"GET":  http.HandlerFunc(s.domainsAPIHandler),
-		"POST": http.HandlerFunc(s.updateDomainAPIHandler),
+		"GET": http.HandlerFunc(s.domainsAPIHandler),
+		"POST": chainHandlers(
+			s.jsonAPIRateLimiterHandler,
+			finalHandlerFunc(s.updateDomainAPIHandler),
+		),
 	})
 	apiRouter.Handle("/api/v1/domains/{id}", jsonMethodHandler{
-		"GET":    http.HandlerFunc(s.domainAPIHandler),
-		"POST":   http.HandlerFunc(s.updateDomainAPIHandler),
+		"GET": http.HandlerFunc(s.domainAPIHandler),
+		"POST": chainHandlers(
+			s.jsonAPIRateLimiterHandler,
+			finalHandlerFunc(s.updateDomainAPIHandler),
+		),
 		"DELETE": http.HandlerFunc(s.deleteDomainAPIHandler),
 	})
 	apiRouter.Handle("/api/v1/domains/{id}/tokens", jsonMethodHandler{

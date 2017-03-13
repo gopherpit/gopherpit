@@ -522,6 +522,7 @@ COPYRIGHT
 			TLSEnabled:              gopherpitOptions.ListenTLS != "",
 			APITrustedProxyCIDRs:    apiOptions.TrustedProxyCIDRs,
 			APIProxyRealIPHeader:    apiOptions.ProxyRealIPHeader,
+			APIHourlyRateLimit:      apiOptions.HourlyRateLimit,
 			APIEnabled:              !apiOptions.Disable,
 
 			EmailService:        *emailService,
