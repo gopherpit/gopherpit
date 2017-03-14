@@ -13,7 +13,7 @@ import (
 )
 
 // getUser retrieves a user.User from configured user service or from context.
-func (s Server) user(r *http.Request) (u *user.User, rr *http.Request, err error) {
+func getRequestUser(r *http.Request) (u *user.User, rr *http.Request, err error) {
 	rr = r
 	if uv := r.Context().Value(contextKeyUser); uv != nil {
 		var ok bool
@@ -27,7 +27,7 @@ func (s Server) user(r *http.Request) (u *user.User, rr *http.Request, err error
 		}
 	}()
 
-	ses, rr, err := s.session(r)
+	ses, rr, err := getSession(r)
 	if err != nil || ses == nil {
 		return
 	}
@@ -36,16 +36,16 @@ func (s Server) user(r *http.Request) (u *user.User, rr *http.Request, err error
 		return
 	}
 
-	u, err = s.UserService.UserByID(id)
+	u, err = srv.UserService.UserByID(id)
 	return
 }
 
 // logoutUser deletes session cookie and session data from session service.
-func (s Server) logout(w http.ResponseWriter, r *http.Request) (*http.Request, error) {
-	ses, _, err := s.session(r)
+func logout(w http.ResponseWriter, r *http.Request) (*http.Request, error) {
+	ses, _, err := getSession(r)
 	if err != nil || ses == nil {
 		return r, err
 	}
 	delete(ses.Values, "user-id")
-	return s.deleteSession(w, r, ses)
+	return deleteSession(w, r, ses)
 }

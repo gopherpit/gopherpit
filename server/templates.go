@@ -70,10 +70,10 @@ var templates = map[string][]string{
 	"ServiceUnavailablePrivate":    {"base.html", "app.html", "error-private.html", "error/service-unavailable.html"},
 }
 
-func (s Server) assetFunc(str string) string {
-	p, err := s.assetsServer.HashedPath(str)
+func assetFunc(str string) string {
+	p, err := srv.assetsServer.HashedPath(str)
 	if err != nil {
-		s.logger.Errorf("html response: asset func: hashed path: %s", err)
+		srv.logger.Errorf("html response: asset func: hashed path: %s", err)
 		return str
 	}
 	return p

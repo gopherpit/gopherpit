@@ -21,16 +21,16 @@ import (
 
 var emailRegex = regexp.MustCompile(`^[^@]+@[^@]+\.[^@]+$`)
 
-func (s Server) sendEmailValidationEmail(r *http.Request, to, token string) error {
+func sendEmailValidationEmail(r *http.Request, to, token string) error {
 	var textBody, htmlBody bytes.Buffer
 
-	emailSettingsToken, err := s.tokenFromEmail(to)
+	emailSettingsToken, err := tokenFromEmail(to)
 	if err != nil {
 		return fmt.Errorf("email settings token from email: %s", err)
 	}
 
 	if err := emailTemplateEmailValidateText.Execute(&textBody, map[string]interface{}{
-		"Brand":              s.Brand,
+		"Brand":              srv.Brand,
 		"Host":               httputils.GetRequestEndpoint(r),
 		"Token":              token,
 		"EmailSettingsToken": string(emailSettingsToken),
@@ -39,17 +39,17 @@ func (s Server) sendEmailValidationEmail(r *http.Request, to, token string) erro
 	}
 
 	if err := emailTemplateEmailValidateHTML.Execute(&htmlBody, map[string]interface{}{
-		"Brand":              s.Brand,
+		"Brand":              srv.Brand,
 		"Host":               httputils.GetRequestEndpoint(r),
 		"Token":              token,
 		"EmailSettingsToken": string(emailSettingsToken),
 	}); err != nil {
 		return fmt.Errorf("emailTemplateEmailValidateHTML.Execute: %s", err)
 	}
-	id, err := s.NotificationService.SendEmail(notification.Email{
+	id, err := srv.NotificationService.SendEmail(notification.Email{
 		To:      []string{to},
-		From:    s.DefaultFrom,
-		Subject: s.Brand + " - E-mail address validation",
+		From:    srv.DefaultFrom,
+		Subject: srv.Brand + " - E-mail address validation",
 		Body:    textBody.String(),
 		HTML:    htmlBody.String(),
 	})
@@ -60,16 +60,16 @@ func (s Server) sendEmailValidationEmail(r *http.Request, to, token string) erro
 	return nil
 }
 
-func (s Server) sendEmailPasswordResetEmail(r *http.Request, to, token string) error {
+func sendEmailPasswordResetEmail(r *http.Request, to, token string) error {
 	var textBody, htmlBody bytes.Buffer
 
-	emailSettingsToken, err := s.tokenFromEmail(to)
+	emailSettingsToken, err := tokenFromEmail(to)
 	if err != nil {
 		return fmt.Errorf("email settings token from email: %s", err)
 	}
 
 	if err := emailTemplatePasswordResetText.Execute(&textBody, map[string]interface{}{
-		"Brand":              s.Brand,
+		"Brand":              srv.Brand,
 		"Host":               httputils.GetRequestEndpoint(r),
 		"Token":              token,
 		"EmailSettingsToken": string(emailSettingsToken),
@@ -78,7 +78,7 @@ func (s Server) sendEmailPasswordResetEmail(r *http.Request, to, token string) e
 	}
 
 	if err := emailTemplatePasswordResetHTML.Execute(&htmlBody, map[string]interface{}{
-		"Brand":              s.Brand,
+		"Brand":              srv.Brand,
 		"Host":               httputils.GetRequestEndpoint(r),
 		"Token":              token,
 		"EmailSettingsToken": string(emailSettingsToken),
@@ -86,10 +86,10 @@ func (s Server) sendEmailPasswordResetEmail(r *http.Request, to, token string) e
 		return fmt.Errorf("emailTemplatePasswordResetHTML.Execute: %s", err)
 	}
 
-	id, err := s.NotificationService.SendEmail(notification.Email{
+	id, err := srv.NotificationService.SendEmail(notification.Email{
 		To:      []string{to},
-		From:    s.DefaultFrom,
-		Subject: s.Brand + " - Password reset",
+		From:    srv.DefaultFrom,
+		Subject: srv.Brand + " - Password reset",
 		Body:    textBody.String(),
 		HTML:    htmlBody.String(),
 	})
@@ -100,10 +100,10 @@ func (s Server) sendEmailPasswordResetEmail(r *http.Request, to, token string) e
 	return nil
 }
 
-func (s Server) sendEmailContactEmail(replyTo, subject, message string) error {
-	id, err := s.NotificationService.SendEmail(notification.Email{
-		To:      []string{s.ContactRecipientEmail},
-		From:    s.DefaultFrom,
+func sendEmailContactEmail(replyTo, subject, message string) error {
+	id, err := srv.NotificationService.SendEmail(notification.Email{
+		To:      []string{srv.ContactRecipientEmail},
+		From:    srv.DefaultFrom,
 		ReplyTo: replyTo,
 		Subject: subject,
 		Body:    message,
@@ -111,23 +111,23 @@ func (s Server) sendEmailContactEmail(replyTo, subject, message string) error {
 	if err != nil {
 		return fmt.Errorf("notifier api send email: %s", err)
 	}
-	logging.Infof("contact email sent to %s notifier id %s", s.ContactRecipientEmail, id)
+	logging.Infof("contact email sent to %s notifier id %s", srv.ContactRecipientEmail, id)
 	return nil
 }
 
-func (s Server) tokenFromEmail(email string) ([]byte, error) {
-	sum := md5.Sum(append(s.salt, []byte(email)...))
-	return encrypt(s.salt[:16], append([]byte(email), sum[:]...))
+func tokenFromEmail(email string) ([]byte, error) {
+	sum := md5.Sum(append(srv.salt, []byte(email)...))
+	return encrypt(srv.salt[:16], append([]byte(email), sum[:]...))
 }
 
-func (s Server) emailFromToken(token string) (string, error) {
-	data, err := decrypt(s.salt[:16], []byte(token))
+func emailFromToken(token string) (string, error) {
+	data, err := decrypt(srv.salt[:16], []byte(token))
 	if err != nil {
 		return "", err
 	}
 	signature := data[len(data)-md5.Size:]
 	email := data[:len(data)-md5.Size]
-	sum := md5.Sum(append(s.salt, []byte(email)...))
+	sum := md5.Sum(append(srv.salt, []byte(email)...))
 	if !bytes.Equal(sum[:], signature) {
 		return "", errors.New("invalid signature")
 	}

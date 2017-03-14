@@ -13,8 +13,8 @@ import (
 	"gopherpit.com/gopherpit/services/user"
 )
 
-func (s Server) dashboardHandler(w http.ResponseWriter, r *http.Request) {
-	u, r, err := s.user(r)
+func dashboardHandler(w http.ResponseWriter, r *http.Request) {
+	u, r, err := getRequestUser(r)
 	if err != nil {
 		panic(err)
 	}
@@ -22,14 +22,14 @@ func (s Server) dashboardHandler(w http.ResponseWriter, r *http.Request) {
 	token := ""
 	domains := packages.Domains{}
 	for {
-		response, err := s.PackagesService.DomainsByUser(u.ID, token, 0)
+		response, err := srv.PackagesService.DomainsByUser(u.ID, token, 0)
 		if err != nil {
 			if err == packages.UserDoesNotExist || err == packages.DomainNotFound {
-				s.logger.Warningf("dashboard: user domains %s: %s", u.ID, err)
+				srv.logger.Warningf("dashboard: user domains %s: %s", u.ID, err)
 				break
 			}
-			s.logger.Errorf("dashboard: user domains %s: %s", u.ID, err)
-			s.htmlInternalServerErrorHandler(w, r)
+			srv.logger.Errorf("dashboard: user domains %s: %s", u.ID, err)
+			htmlInternalServerErrorHandler(w, r)
 			return
 		}
 		domains = append(domains, response.Domains...)
@@ -57,21 +57,21 @@ func (s Server) dashboardHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	cls := changelogs{}
 	for _, domain := range domains {
-		cl, err := s.PackagesService.ChangelogForDomain(domain.ID, "", changelogLimit)
+		cl, err := srv.PackagesService.ChangelogForDomain(domain.ID, "", changelogLimit)
 		if err != nil {
 			if err == packages.DomainNotFound {
-				s.logger.Warningf("dashboard: domain changelog %s: %s", domain.ID, err)
+				srv.logger.Warningf("dashboard: domain changelog %s: %s", domain.ID, err)
 				continue
 			}
-			s.logger.Errorf("dashboard: domain changelog %s: %s", domain.ID, err)
-			s.htmlInternalServerErrorHandler(w, r)
+			srv.logger.Errorf("dashboard: domain changelog %s: %s", domain.ID, err)
+			htmlInternalServerErrorHandler(w, r)
 			return
 		}
 		records := make([]changelogRecord, 0, len(cl.Records))
 		for _, record := range cl.Records {
-			if err = s.updateChangelogRecords(*u, record, &records, &users); err != nil {
-				s.logger.Errorf("domain: update users map: %s", err)
-				s.htmlInternalServerErrorHandler(w, r)
+			if err = updateChangelogRecords(*u, record, &records, &users); err != nil {
+				srv.logger.Errorf("domain: update users map: %s", err)
+				htmlInternalServerErrorHandler(w, r)
 				return
 			}
 		}
@@ -83,7 +83,7 @@ func (s Server) dashboardHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sort.Sort(cls)
-	s.respond(w, "Dashboard", map[string]interface{}{
+	respond(w, "Dashboard", map[string]interface{}{
 		"User":       u,
 		"Domains":    domains,
 		"Users":      users,
@@ -91,53 +91,53 @@ func (s Server) dashboardHandler(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func (s Server) landingPageHandler(w http.ResponseWriter, r *http.Request) {
-	s.respond(w, "LandingPage", nil)
+func landingPageHandler(w http.ResponseWriter, r *http.Request) {
+	respond(w, "LandingPage", nil)
 }
 
-func (s Server) aboutHandler(w http.ResponseWriter, r *http.Request) {
-	u, r, err := s.user(r)
+func aboutHandler(w http.ResponseWriter, r *http.Request) {
+	u, r, err := getRequestUser(r)
 	if err != nil {
 		panic(err)
 	}
 
 	if u != nil {
-		s.respond(w, "AboutPrivate", map[string]interface{}{
+		respond(w, "AboutPrivate", map[string]interface{}{
 			"User":    u,
-			"Version": s.Version(),
+			"Version": version(),
 		})
 		return
 	}
-	s.respond(w, "About", map[string]interface{}{
-		"Version": s.Version(),
+	respond(w, "About", map[string]interface{}{
+		"Version": version(),
 	})
 }
 
-func (s Server) contactHandler(w http.ResponseWriter, r *http.Request) {
-	u, r, err := s.user(r)
+func contactHandler(w http.ResponseWriter, r *http.Request) {
+	u, r, err := getRequestUser(r)
 	if err != nil {
 		u = nil
 	}
 	if u != nil {
-		s.respond(w, "ContactPrivate", map[string]interface{}{
+		respond(w, "ContactPrivate", map[string]interface{}{
 			"User": u,
 		})
 		return
 	}
-	s.respond(w, "Contact", nil)
+	respond(w, "Contact", nil)
 }
 
-func (s Server) licenseHandler(w http.ResponseWriter, r *http.Request) {
-	u, r, err := s.user(r)
+func licenseHandler(w http.ResponseWriter, r *http.Request) {
+	u, r, err := getRequestUser(r)
 	if err != nil {
 		panic(err)
 	}
 
 	if u != nil {
-		s.respond(w, "LicensePrivate", map[string]interface{}{
+		respond(w, "LicensePrivate", map[string]interface{}{
 			"User": u,
 		})
 		return
 	}
-	s.respond(w, "License", nil)
+	respond(w, "License", nil)
 }

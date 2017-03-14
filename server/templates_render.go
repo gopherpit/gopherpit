@@ -40,20 +40,16 @@ func renderToString(tmpl *template.Template, name string, data interface{}) (str
 	return buf.String(), nil
 }
 
-func respond(w http.ResponseWriter, tmpl *template.Template, data interface{}) {
-	if err := renderToResponse(w, tmpl, "", http.StatusOK, data, "text/html; charset=utf-8"); err != nil {
-		panic(fmt.Sprintf("respond: %s", err))
-	}
-}
-
 func respondText(w http.ResponseWriter, tmpl *template.Template, data interface{}) {
 	if err := renderToResponse(w, tmpl, "", http.StatusOK, data, "text/plain; charset=utf-8"); err != nil {
 		panic(fmt.Sprintf("respond text: %s", err))
 	}
 }
 
-func (s Server) respond(w http.ResponseWriter, t string, data interface{}) {
-	respond(w, s.templates[t], data)
+func respond(w http.ResponseWriter, templateName string, data interface{}) {
+	if err := renderToResponse(w, srv.templates[templateName], "", http.StatusOK, data, "text/html; charset=utf-8"); err != nil {
+		panic(fmt.Sprintf("respond: %s", err))
+	}
 }
 
 var errorTemplates = map[int][]string{
@@ -66,60 +62,60 @@ var errorTemplates = map[int][]string{
 	http.StatusServiceUnavailable:    {"ServiceUnavailable", "ServiceUnavailablePrivate"},
 }
 
-func (s *Server) respondError(w http.ResponseWriter, r *http.Request, c int) {
+func respondError(w http.ResponseWriter, r *http.Request, c int) {
 	var ctx map[string]interface{}
-	u, r, err := s.user(r)
+	u, r, err := getRequestUser(r)
 	if err != nil {
-		s.logger.Errorf("get user: %s", err)
+		srv.logger.Errorf("get user: %s", err)
 		if _, ok := err.(net.Error); ok {
-			if err := renderToResponse(w, s.templates["ServiceUnavailable"], "", http.StatusServiceUnavailable, nil, "text/html; charset=utf-8"); err != nil {
-				s.logger.Errorf("render service unavailable response: %s", err)
+			if err := renderToResponse(w, srv.templates["ServiceUnavailable"], "", http.StatusServiceUnavailable, nil, "text/html; charset=utf-8"); err != nil {
+				srv.logger.Errorf("render service unavailable response: %s", err)
 			}
 			return
 		}
-		if err := renderToResponse(w, s.templates["InternalServerError"], "", http.StatusServiceUnavailable, nil, "text/html; charset=utf-8"); err != nil {
-			s.logger.Errorf("render internal server error response: %s", err)
+		if err := renderToResponse(w, srv.templates["InternalServerError"], "", http.StatusServiceUnavailable, nil, "text/html; charset=utf-8"); err != nil {
+			srv.logger.Errorf("render internal server error response: %s", err)
 		}
 		return
 	}
 	var tpl *template.Template
 	if u != nil {
-		tpl = s.templates[errorTemplates[c][1]]
+		tpl = srv.templates[errorTemplates[c][1]]
 		ctx = map[string]interface{}{
 			"User": u,
 		}
 	} else {
-		tpl = s.templates[errorTemplates[c][0]]
+		tpl = srv.templates[errorTemplates[c][0]]
 	}
 	if err := renderToResponse(w, tpl, "", c, ctx, "text/html; charset=utf-8"); err != nil {
-		s.logger.Errorf("render http code %v response: %s", s, err)
+		srv.logger.Errorf("render http code %v response: %s", c, err)
 	}
 }
 
-func (s *Server) htmlBadRequestHandler(w http.ResponseWriter, r *http.Request) {
-	s.respondError(w, r, http.StatusBadRequest)
+func htmlBadRequestHandler(w http.ResponseWriter, r *http.Request) {
+	respondError(w, r, http.StatusBadRequest)
 }
 
-func (s *Server) htmlUnauthorizedHandler(w http.ResponseWriter, r *http.Request) {
-	s.respondError(w, r, http.StatusUnauthorized)
+func htmlUnauthorizedHandler(w http.ResponseWriter, r *http.Request) {
+	respondError(w, r, http.StatusUnauthorized)
 }
 
-func (s *Server) htmlForbiddenHandler(w http.ResponseWriter, r *http.Request) {
-	s.respondError(w, r, http.StatusForbidden)
+func htmlForbiddenHandler(w http.ResponseWriter, r *http.Request) {
+	respondError(w, r, http.StatusForbidden)
 }
 
-func (s *Server) htmlNotFoundHandler(w http.ResponseWriter, r *http.Request) {
-	s.respondError(w, r, http.StatusNotFound)
+func htmlNotFoundHandler(w http.ResponseWriter, r *http.Request) {
+	respondError(w, r, http.StatusNotFound)
 }
 
-func (s *Server) htmlRequestEntityTooLargeHandler(w http.ResponseWriter, r *http.Request) {
-	s.respondError(w, r, http.StatusRequestEntityTooLarge)
+func htmlRequestEntityTooLargeHandler(w http.ResponseWriter, r *http.Request) {
+	respondError(w, r, http.StatusRequestEntityTooLarge)
 }
 
-func (s *Server) htmlInternalServerErrorHandler(w http.ResponseWriter, r *http.Request) {
-	s.respondError(w, r, http.StatusInternalServerError)
+func htmlInternalServerErrorHandler(w http.ResponseWriter, r *http.Request) {
+	respondError(w, r, http.StatusInternalServerError)
 }
 
-func (s *Server) htmlServiceUnavailableHandler(w http.ResponseWriter, r *http.Request) {
-	s.respondError(w, r, http.StatusServiceUnavailable)
+func htmlServiceUnavailableHandler(w http.ResponseWriter, r *http.Request) {
+	respondError(w, r, http.StatusServiceUnavailable)
 }

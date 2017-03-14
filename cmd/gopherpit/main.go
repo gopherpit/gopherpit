@@ -493,14 +493,19 @@ COPYRIGHT
 	}
 
 	// Initialize server.
-	srv, err := server.NewServer(
+	if err = server.Configure(
 		server.Options{
 			Name:                    config.Name,
 			Version:                 config.Version,
 			BuildInfo:               config.BuildInfo,
 			Brand:                   gopherpitOptions.Brand,
 			Domain:                  gopherpitOptions.Domain,
-			RedirectToHTTPS:         gopherpitOptions.ListenTLS != "",
+			Listen:                  gopherpitOptions.Listen,
+			ListenTLS:               gopherpitOptions.ListenTLS,
+			ListenInternal:          gopherpitOptions.ListenInternal,
+			ListenInternalTLS:       gopherpitOptions.ListenInternalTLS,
+			TLSKey:                  gopherpitOptions.TLSKey,
+			TLSCert:                 gopherpitOptions.TLSCert,
 			Headers:                 gopherpitOptions.Headers,
 			XSRFCookieName:          gopherpitOptions.XSRFCookieName,
 			SessionCookieName:       gopherpitOptions.SessionCookieName,
@@ -519,7 +524,6 @@ COPYRIGHT
 			VerificationSubdomain:   gopherpitOptions.VerificationSubdomain,
 			TrustedDomains:          gopherpitOptions.TrustedDomains,
 			ForbiddenDomains:        gopherpitOptions.ForbiddenDomains,
-			TLSEnabled:              gopherpitOptions.ListenTLS != "",
 			APITrustedProxyCIDRs:    apiOptions.TrustedProxyCIDRs,
 			APIProxyRealIPHeader:    apiOptions.ProxyRealIPHeader,
 			APIHourlyRateLimit:      apiOptions.HourlyRateLimit,
@@ -534,8 +538,7 @@ COPYRIGHT
 			PackagesService:     packagesService,
 			KeyService:          keyService,
 		},
-	)
-	if err != nil {
+	); err != nil {
 		fmt.Fprintln(os.Stderr, "Error:", err)
 		os.Exit(2)
 	}
@@ -544,14 +547,7 @@ COPYRIGHT
 	// All functions must be non-blocking or short-lived.
 	// They will be executed in the same goroutine in the same order.
 	app.Functions = append(app.Functions, func() error {
-		return srv.Serve(server.ServeOptions{
-			Listen:            gopherpitOptions.Listen,
-			ListenTLS:         gopherpitOptions.ListenTLS,
-			ListenInternal:    gopherpitOptions.ListenInternal,
-			ListenInternalTLS: gopherpitOptions.ListenInternalTLS,
-			TLSKey:            gopherpitOptions.TLSKey,
-			TLSCert:           gopherpitOptions.TLSCert,
-		})
+		return server.Serve()
 	})
 	if service, ok := sessionService.(*boltSession.Service); ok {
 		// Start session cleanup.
@@ -580,7 +576,7 @@ COPYRIGHT
 
 	app.ShutdownFunc = func() error {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		srv.Shutdown(ctx)
+		server.Shutdown(ctx)
 		cancel()
 		return nil
 	}

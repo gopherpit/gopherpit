@@ -18,7 +18,7 @@ import (
 	"gopherpit.com/gopherpit/services/packages"
 )
 
-func (s Server) packageResolverHandler(w http.ResponseWriter, r *http.Request) {
+func packageResolverHandler(w http.ResponseWriter, r *http.Request) {
 	var code int
 	defer func(startTime time.Time) {
 		referrer := r.Referer()
@@ -55,7 +55,7 @@ func (s Server) packageResolverHandler(w http.ResponseWriter, r *http.Request) {
 		default:
 			level = logging.DEBUG
 		}
-		s.packageAccessLogger.Logf(level, "%s \"%s\" %s %s %s %d %f \"%s\" \"%s\"", r.RemoteAddr, xips, r.Method, httputils.GetRequestEndpoint(r)+r.URL.String(), r.Proto, code, time.Since(startTime).Seconds(), referrer, userAgent)
+		srv.packageAccessLogger.Logf(level, "%s \"%s\" %s %s %s %d %f \"%s\" \"%s\"", r.RemoteAddr, xips, r.Method, httputils.GetRequestEndpoint(r)+r.URL.String(), r.Proto, code, time.Since(startTime).Seconds(), referrer, userAgent)
 	}(time.Now())
 
 	domain, _, err := net.SplitHostPort(r.Host)
@@ -63,7 +63,7 @@ func (s Server) packageResolverHandler(w http.ResponseWriter, r *http.Request) {
 		domain = r.Host
 	}
 	path := domain + r.URL.Path
-	resolution, err := s.PackagesService.ResolvePackage(path)
+	resolution, err := srv.PackagesService.ResolvePackage(path)
 	if err != nil {
 		if err == packages.DomainNotFound || err == packages.PackageNotFound {
 			code = http.StatusNotFound
@@ -72,7 +72,7 @@ func (s Server) packageResolverHandler(w http.ResponseWriter, r *http.Request) {
 			fmt.Fprintln(w, fmt.Sprintf("%s: package %s", http.StatusText(code), path))
 			return
 		}
-		s.logger.Errorf("package resolver: resolve package: %s", err)
+		srv.logger.Errorf("package resolver: resolve package: %s", err)
 		code = http.StatusInternalServerError
 		textServerError(w, err)
 		return
@@ -93,19 +93,19 @@ func (s Server) packageResolverHandler(w http.ResponseWriter, r *http.Request) {
 		// If Reference is changed, repo root does not have scheme,
 		// so it is set here.
 		repoRoot = "http://" + resolution.ImportPrefix
-		if s.RedirectToHTTPS {
+		if srv.tlsEnabled {
 			repoRoot = "https://" + resolution.ImportPrefix
 		}
 	}
 
-	s.respond(w, "PackageResolution", map[string]interface{}{
+	respond(w, "PackageResolution", map[string]interface{}{
 		"GoImport":    fmt.Sprintf("%s %s %s", resolution.ImportPrefix, resolution.VCS, repoRoot),
 		"GoSource":    resolution.GoSource,
 		"RedirectURL": resolution.RedirectURL,
 	})
 }
 
-func (s Server) packageGitUploadPackHandler(w http.ResponseWriter, r *http.Request) (notFound bool) {
+func packageGitUploadPackHandler(w http.ResponseWriter, r *http.Request) (notFound bool) {
 	var code int
 	defer func(startTime time.Time) {
 		if !notFound {
@@ -143,7 +143,7 @@ func (s Server) packageGitUploadPackHandler(w http.ResponseWriter, r *http.Reque
 			default:
 				level = logging.DEBUG
 			}
-			s.packageAccessLogger.Logf(level, "%s \"%s\" %s %s %s %d %f \"%s\" \"%s\"", r.RemoteAddr, xips, r.Method, httputils.GetRequestEndpoint(r)+r.URL.String(), r.Proto, code, time.Since(startTime).Seconds(), referrer, userAgent)
+			srv.packageAccessLogger.Logf(level, "%s \"%s\" %s %s %s %d %f \"%s\" \"%s\"", r.RemoteAddr, xips, r.Method, httputils.GetRequestEndpoint(r)+r.URL.String(), r.Proto, code, time.Since(startTime).Seconds(), referrer, userAgent)
 		}
 	}(time.Now())
 
@@ -152,13 +152,13 @@ func (s Server) packageGitUploadPackHandler(w http.ResponseWriter, r *http.Reque
 		domain = r.Host
 	}
 	path := domain + strings.TrimSuffix(r.URL.Path, "/git-upload-pack")
-	resolution, err := s.PackagesService.ResolvePackage(path)
+	resolution, err := srv.PackagesService.ResolvePackage(path)
 	if err != nil {
 		if err == packages.DomainNotFound || err == packages.PackageNotFound {
 			notFound = true
 			return
 		}
-		s.logger.Errorf("package git upload pack: resolve package: %s", err)
+		srv.logger.Errorf("package git upload pack: resolve package: %s", err)
 		code = 500
 		textServerError(w, err)
 		return
@@ -171,7 +171,7 @@ func (s Server) packageGitUploadPackHandler(w http.ResponseWriter, r *http.Reque
 
 	req, err := http.NewRequest(r.Method, strings.TrimSuffix(resolution.RepoRoot, ".git")+".git/git-upload-pack", r.Body)
 	if err != nil {
-		s.logger.Errorf("package git upload pack: new request: %s", err)
+		srv.logger.Errorf("package git upload pack: new request: %s", err)
 		code = 500
 		textServerError(w, err)
 		return
@@ -184,7 +184,7 @@ func (s Server) packageGitUploadPackHandler(w http.ResponseWriter, r *http.Reque
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		s.logger.Errorf("package git upload pack: make request: %s", err)
+		srv.logger.Errorf("package git upload pack: make request: %s", err)
 		code = 500
 		textServerError(w, err)
 		return
@@ -192,7 +192,7 @@ func (s Server) packageGitUploadPackHandler(w http.ResponseWriter, r *http.Reque
 	defer resp.Body.Close()
 
 	if _, err = io.Copy(w, resp.Body); err != nil {
-		s.logger.Errorf("package git upload pack: copy request data: %s", err)
+		srv.logger.Errorf("package git upload pack: copy request data: %s", err)
 		code = 500
 		textServerError(w, err)
 		return
@@ -209,7 +209,7 @@ var (
 	}
 )
 
-func (s Server) packageGitInfoRefsHandler(w http.ResponseWriter, r *http.Request) (notFound bool) {
+func packageGitInfoRefsHandler(w http.ResponseWriter, r *http.Request) (notFound bool) {
 	var code int
 	defer func(startTime time.Time) {
 		if !notFound {
@@ -247,7 +247,7 @@ func (s Server) packageGitInfoRefsHandler(w http.ResponseWriter, r *http.Request
 			default:
 				level = logging.DEBUG
 			}
-			s.packageAccessLogger.Logf(level, "%s \"%s\" %s %s %s %d %f \"%s\" \"%s\"", r.RemoteAddr, xips, r.Method, httputils.GetRequestEndpoint(r)+r.URL.String(), r.Proto, code, time.Since(startTime).Seconds(), referrer, userAgent)
+			srv.packageAccessLogger.Logf(level, "%s \"%s\" %s %s %s %d %f \"%s\" \"%s\"", r.RemoteAddr, xips, r.Method, httputils.GetRequestEndpoint(r)+r.URL.String(), r.Proto, code, time.Since(startTime).Seconds(), referrer, userAgent)
 		}
 	}(time.Now())
 
@@ -256,13 +256,13 @@ func (s Server) packageGitInfoRefsHandler(w http.ResponseWriter, r *http.Request
 		domain = r.Host
 	}
 	path := domain + strings.TrimSuffix(r.URL.Path, "/info/refs")
-	resolution, err := s.PackagesService.ResolvePackage(path)
+	resolution, err := srv.PackagesService.ResolvePackage(path)
 	if err != nil {
 		if err == packages.DomainNotFound || err == packages.PackageNotFound {
 			notFound = true
 			return
 		}
-		s.logger.Errorf("package git info refs: resolve package: %s", err)
+		srv.logger.Errorf("package git info refs: resolve package: %s", err)
 		code = 500
 		textServerError(w, err)
 		return
@@ -274,7 +274,7 @@ func (s Server) packageGitInfoRefsHandler(w http.ResponseWriter, r *http.Request
 
 	resp, err := httpClient.Get(refsURL)
 	if err != nil {
-		s.logger.Errorf("package git info refs: http get: %s", err)
+		srv.logger.Errorf("package git info refs: http get: %s", err)
 		code = 500
 		textServerError(w, err)
 		return
@@ -282,7 +282,7 @@ func (s Server) packageGitInfoRefsHandler(w http.ResponseWriter, r *http.Request
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		s.logger.Warningf("package git info refs: http get: %s: status code %v", refsURL, resp.StatusCode)
+		srv.logger.Warningf("package git info refs: http get: %s: status code %v", refsURL, resp.StatusCode)
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		w.WriteHeader(resp.StatusCode)
 		fmt.Fprintln(w, resp.Status)
@@ -292,7 +292,7 @@ func (s Server) packageGitInfoRefsHandler(w http.ResponseWriter, r *http.Request
 
 	data, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		s.logger.Errorf("package git info refs: http read body: %s", err)
+		srv.logger.Errorf("package git info refs: http read body: %s", err)
 		code = 500
 		textServerError(w, err)
 		return
@@ -302,14 +302,14 @@ func (s Server) packageGitInfoRefsHandler(w http.ResponseWriter, r *http.Request
 
 	if err = writeAlteredGitInfoRef(data, w, resolution.RefType, resolution.RefName); err != nil {
 		if err == errRefNotFound {
-			s.logger.Warningf("package git info refs: alter refs: %s", err)
+			srv.logger.Warningf("package git info refs: alter refs: %s", err)
 			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 			w.WriteHeader(http.StatusNotFound)
 			fmt.Fprintln(w, fmt.Sprintf("%s: %s %s", http.StatusText(http.StatusNotFound), resolution.RefType, resolution.RefName))
 			code = 404
 			return
 		}
-		s.logger.Errorf("package git info refs: alter refs: %s", err)
+		srv.logger.Errorf("package git info refs: alter refs: %s", err)
 		code = 500
 		textServerError(w, err)
 		return

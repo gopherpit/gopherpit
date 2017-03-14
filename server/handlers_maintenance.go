@@ -14,9 +14,9 @@ import (
 	"resenje.org/jsonresponse"
 )
 
-func (s Server) maintenanceHandler(h http.Handler, body string, contentType string) http.Handler {
+func maintenanceHandler(h http.Handler, body string, contentType string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if _, err := os.Stat(filepath.Join(s.StorageDir, s.MaintenanceFilename)); err == nil {
+		if _, err := os.Stat(filepath.Join(srv.StorageDir, srv.MaintenanceFilename)); err == nil {
 			if contentType != "" {
 				w.Header().Set("Content-Type", contentType)
 			}
@@ -28,30 +28,30 @@ func (s Server) maintenanceHandler(h http.Handler, body string, contentType stri
 	})
 }
 
-func (s Server) htmlMaintenanceHandler(h http.Handler) http.Handler {
-	m, err := renderToString(s.templates["Maintenance"], "", nil)
+func htmlMaintenanceHandler(h http.Handler) http.Handler {
+	m, err := renderToString(srv.templates["Maintenance"], "", nil)
 	if err != nil {
-		s.logger.Errorf("htmlMaintenanceHandler TemplateMaintenance error: %s", err)
+		srv.logger.Errorf("htmlMaintenanceHandler TemplateMaintenance error: %s", err)
 		m = "Maintenance"
 	}
-	return s.maintenanceHandler(h, m, "text/html; charset=utf-8")
+	return maintenanceHandler(h, m, "text/html; charset=utf-8")
 }
 
-func (s Server) textMaintenanceHandler(h http.Handler) http.Handler {
-	return s.maintenanceHandler(h, `Maintenance`, "text/plain; charset=utf-8")
+func textMaintenanceHandler(h http.Handler) http.Handler {
+	return maintenanceHandler(h, `Maintenance`, "text/plain; charset=utf-8")
 }
 
-func (s Server) jsonMaintenanceHandler(h http.Handler) http.Handler {
-	return s.maintenanceHandler(h, `{"message":"Maintenance","code":503}`, "application/json; charset=utf-8")
+func jsonMaintenanceHandler(h http.Handler) http.Handler {
+	return maintenanceHandler(h, `{"message":"Maintenance","code":503}`, "application/json; charset=utf-8")
 }
 
 type maintenanceStatus struct {
 	Status string `json:"status"`
 }
 
-func (s Server) maintenanceStatusAPIHandler(w http.ResponseWriter, r *http.Request) {
+func maintenanceStatusAPIHandler(w http.ResponseWriter, r *http.Request) {
 	status := "on"
-	if _, err := os.Stat(filepath.Join(s.StorageDir, s.MaintenanceFilename)); os.IsNotExist(err) {
+	if _, err := os.Stat(filepath.Join(srv.StorageDir, srv.MaintenanceFilename)); os.IsNotExist(err) {
 		status = "off"
 	}
 	jsonresponse.OK(w, maintenanceStatus{
@@ -59,32 +59,32 @@ func (s Server) maintenanceStatusAPIHandler(w http.ResponseWriter, r *http.Reque
 	})
 }
 
-func (s Server) maintenanceOnAPIHandler(w http.ResponseWriter, r *http.Request) {
-	if _, err := os.Stat(filepath.Join(s.StorageDir, s.MaintenanceFilename)); err == nil {
+func maintenanceOnAPIHandler(w http.ResponseWriter, r *http.Request) {
+	if _, err := os.Stat(filepath.Join(srv.StorageDir, srv.MaintenanceFilename)); err == nil {
 		jsonresponse.OK(w, nil)
 		return
 	}
-	f, err := os.Create(filepath.Join(s.StorageDir, s.MaintenanceFilename))
+	f, err := os.Create(filepath.Join(srv.StorageDir, srv.MaintenanceFilename))
 	if err != nil {
-		s.logger.Errorf("maintenance on: %s", err)
+		srv.logger.Errorf("maintenance on: %s", err)
 		jsonServerError(w, err)
 		return
 	}
 	f.Close()
-	s.logger.Info("maintenance on")
+	srv.logger.Info("maintenance on")
 	jsonresponse.Created(w, nil)
 }
 
-func (s Server) maintenanceOffAPIHandler(w http.ResponseWriter, r *http.Request) {
-	if _, err := os.Stat(filepath.Join(s.StorageDir, s.MaintenanceFilename)); os.IsNotExist(err) {
+func maintenanceOffAPIHandler(w http.ResponseWriter, r *http.Request) {
+	if _, err := os.Stat(filepath.Join(srv.StorageDir, srv.MaintenanceFilename)); os.IsNotExist(err) {
 		jsonresponse.OK(w, nil)
 		return
 	}
-	if err := os.Remove(filepath.Join(s.StorageDir, s.MaintenanceFilename)); err != nil {
-		s.logger.Errorf("maintenance off: %s", err)
+	if err := os.Remove(filepath.Join(srv.StorageDir, srv.MaintenanceFilename)); err != nil {
+		srv.logger.Errorf("maintenance off: %s", err)
 		jsonServerError(w, err)
 		return
 	}
-	s.logger.Info("maintenance off")
+	srv.logger.Info("maintenance off")
 	jsonresponse.OK(w, nil)
 }

@@ -16,7 +16,7 @@ import (
 // saveSession saves session data using specified session service and
 // sets a session cookie using http.ResponseWriter.
 // The session is also cached in http.Request context.
-func (s Server) saveSession(w http.ResponseWriter, r *http.Request, ses *session.Session, domain, path string) (rr *http.Request, err error) {
+func saveSession(w http.ResponseWriter, r *http.Request, ses *session.Session, domain, path string) (rr *http.Request, err error) {
 	defer func() {
 		rr = r.WithContext(context.WithValue(r.Context(), contextKeySession, ses))
 	}()
@@ -26,14 +26,14 @@ func (s Server) saveSession(w http.ResponseWriter, r *http.Request, ses *session
 	}
 
 	if ses.ID == "" {
-		if ses, err = s.SessionService.CreateSession(&session.Options{
+		if ses, err = srv.SessionService.CreateSession(&session.Options{
 			Values: &ses.Values,
 			MaxAge: &ses.MaxAge,
 		}); err != nil {
 			return
 		}
 	} else {
-		if ses, err = s.SessionService.UpdateSession(ses.ID, &session.Options{
+		if ses, err = srv.SessionService.UpdateSession(ses.ID, &session.Options{
 			Values: &ses.Values,
 			MaxAge: &ses.MaxAge,
 		}); err != nil {
@@ -45,7 +45,7 @@ func (s Server) saveSession(w http.ResponseWriter, r *http.Request, ses *session
 		path = "/"
 	}
 	cookie := &http.Cookie{
-		Name:     s.SessionCookieName,
+		Name:     srv.SessionCookieName,
 		Value:    ses.ID,
 		Path:     path,
 		Domain:   domain,
@@ -62,7 +62,7 @@ func (s Server) saveSession(w http.ResponseWriter, r *http.Request, ses *session
 	return
 }
 
-func (s Server) session(r *http.Request) (ses *session.Session, rr *http.Request, err error) {
+func getSession(r *http.Request) (ses *session.Session, rr *http.Request, err error) {
 	rr = r
 	if sv := r.Context().Value(contextKeySession); sv != nil {
 		var ok bool
@@ -76,19 +76,19 @@ func (s Server) session(r *http.Request) (ses *session.Session, rr *http.Request
 		}
 	}()
 
-	cookie, _ := r.Cookie(s.SessionCookieName)
+	cookie, _ := r.Cookie(srv.SessionCookieName)
 	if cookie == nil {
 		return
 	}
 
-	ses, err = s.SessionService.Session(cookie.Value)
+	ses, err = srv.SessionService.Session(cookie.Value)
 	if err == session.SessionNotFound {
 		ses, err = nil, nil
 	}
 	return
 }
 
-func (s Server) deleteSession(w http.ResponseWriter, r *http.Request, ses *session.Session) (*http.Request, error) {
+func deleteSession(w http.ResponseWriter, r *http.Request, ses *session.Session) (*http.Request, error) {
 	ses.MaxAge = -1
-	return s.saveSession(w, r, ses, "", "")
+	return saveSession(w, r, ses, "", "")
 }

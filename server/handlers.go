@@ -16,6 +16,7 @@ import (
 
 	"resenje.org/antixsrf"
 	"resenje.org/httputils"
+	"resenje.org/httputils/log/access"
 	"resenje.org/jsonresponse"
 
 	"gopherpit.com/gopherpit/pkg/info"
@@ -40,12 +41,12 @@ func jsonServerError(w http.ResponseWriter, err error) {
 }
 
 // Helper function for raising unexpected errors in HTML frontend handlers.
-func (s *Server) htmlServerError(w http.ResponseWriter, r *http.Request, err error) {
+func htmlServerError(w http.ResponseWriter, r *http.Request, err error) {
 	if _, ok := err.(net.Error); ok {
-		s.htmlServiceUnavailableHandler(w, r)
+		htmlServiceUnavailableHandler(w, r)
 		return
 	}
-	s.htmlInternalServerErrorHandler(w, r)
+	htmlInternalServerErrorHandler(w, r)
 }
 
 func textServerError(w http.ResponseWriter, err error) {
@@ -68,37 +69,41 @@ type statusResponse struct {
 	info.Information
 }
 
-func (s Server) statusAPIHandler(w http.ResponseWriter, r *http.Request) {
+func statusAPIHandler(w http.ResponseWriter, r *http.Request) {
 	jsonresponse.OK(w, statusResponse{
-		Name:        s.Name,
-		Version:     s.Version(),
-		Uptime:      time.Since(s.startTime).String(),
+		Name:        srv.Name,
+		Version:     version(),
+		Uptime:      time.Since(srv.startTime).String(),
 		Information: *info.NewInformation(),
 	})
 }
 
-func (s Server) statusHandler(w http.ResponseWriter, r *http.Request) {
+func statusHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	fmt.Fprintf(w, "%s version %s, uptime %s", s.Name, s.Version(), time.Since(s.startTime))
+	fmt.Fprintf(w, "%s version %s, uptime %s", srv.Name, version(), time.Since(srv.startTime))
+}
+
+func accessLogHandler(h http.Handler) http.Handler {
+	return accessLog.NewHandler(h, srv.accessLogger)
 }
 
 // staticRecoveryHandler is a base hander for other recovery handlers.
-func (s Server) staticRecoveryHandler(h http.Handler, body string, contentType string) http.Handler {
+func staticRecoveryHandler(h http.Handler, body string, contentType string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if err := recover(); err != nil {
 				debugInfo := fmt.Sprintf(
 					"version: %s, build info: %s\r\n\r\n%s\r\n\r\n%#v\r\n\r\n%#v",
-					s.Options.Version,
-					s.BuildInfo,
+					srv.Version,
+					srv.BuildInfo,
 					debug.Stack(),
 					r.URL,
 					r,
 				)
-				s.logger.Errorf("%v %v: %v\n%s", r.Method, r.URL.Path, err, debugInfo)
+				srv.logger.Errorf("%v %v: %v\n%s", r.Method, r.URL.Path, err, debugInfo)
 				go func() {
-					defer s.RecoveryService.Recover()
-					if err := s.EmailService.Notify(
+					defer srv.RecoveryService.Recover()
+					if err := srv.EmailService.Notify(
 						fmt.Sprint(
 							"Panic ",
 							r.Method,
@@ -108,7 +113,7 @@ func (s Server) staticRecoveryHandler(h http.Handler, body string, contentType s
 						),
 						debugInfo,
 					); err != nil {
-						s.logger.Error("panic handler email sending: ", err)
+						srv.logger.Error("panic handler email sending: ", err)
 					}
 				}()
 				if contentType != "" {
@@ -125,22 +130,22 @@ func (s Server) staticRecoveryHandler(h http.Handler, body string, contentType s
 }
 
 // Recovery handler for HTML frontend routers.
-func (s Server) htmlRecoveryHandler(h http.Handler) http.Handler {
+func htmlRecoveryHandler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if err := recover(); err != nil {
 				debugInfo := fmt.Sprintf(
 					"version: %s, build info: %s\r\n\r\n%s\r\n\r\n%#v\r\n\r\n%#v",
-					s.Options.Version,
-					s.BuildInfo,
+					srv.Version,
+					srv.BuildInfo,
 					debug.Stack(),
 					r.URL,
 					r,
 				)
-				s.logger.Errorf("%v %v: %v\n%s", r.Method, r.URL.Path, err, debugInfo)
+				srv.logger.Errorf("%v %v: %v\n%s", r.Method, r.URL.Path, err, debugInfo)
 				go func() {
-					defer s.RecoveryService.Recover()
-					if err := s.EmailService.Notify(
+					defer srv.RecoveryService.Recover()
+					if err := srv.EmailService.Notify(
 						fmt.Sprint(
 							"Panic ",
 							r.Method,
@@ -150,10 +155,10 @@ func (s Server) htmlRecoveryHandler(h http.Handler) http.Handler {
 						),
 						debugInfo,
 					); err != nil {
-						s.logger.Error("panic handler email sending: ", err)
+						srv.logger.Error("panic handler email sending: ", err)
 					}
 				}()
-				s.htmlInternalServerErrorHandler(w, r)
+				htmlInternalServerErrorHandler(w, r)
 			}
 		}()
 		h.ServeHTTP(w, r)
@@ -161,27 +166,27 @@ func (s Server) htmlRecoveryHandler(h http.Handler) http.Handler {
 }
 
 // Recovery handler for JSON API routers.
-func (s Server) jsonRecoveryHandler(h http.Handler) http.Handler {
-	return s.staticRecoveryHandler(h, `{"message":"Internal Server Error","code":500}`, "application/json; charset=utf-8")
+func jsonRecoveryHandler(h http.Handler) http.Handler {
+	return staticRecoveryHandler(h, `{"message":"Internal Server Error","code":500}`, "application/json; charset=utf-8")
 }
 
 // Recovery handler that does not write anything to response.
 // It is useful as the firs handler in chain if a handler that
 // transforms response needs to be before other recovery handler,
 // like compress handler.
-func (s Server) nilRecoveryHandler(h http.Handler) http.Handler {
-	return s.staticRecoveryHandler(h, "", "")
+func nilRecoveryHandler(h http.Handler) http.Handler {
+	return staticRecoveryHandler(h, "", "")
 }
 
-func (s *Server) htmlMaxBodyBytesHandler(h http.Handler) http.Handler {
+func htmlMaxBodyBytesHandler(h http.Handler) http.Handler {
 	return httputils.MaxBodyBytesHandler{
 		Handler: h,
 		Limit:   2 * 1024 * 1024,
 		BodyFunc: func(r *http.Request) (string, error) {
-			return renderToString(s.templates["RequestEntityTooLarge"], "", nil)
+			return renderToString(srv.templates["RequestEntityTooLarge"], "", nil)
 		},
 		ContentType:  "text/html; charset=utf-8",
-		ErrorHandler: s.htmlServerError,
+		ErrorHandler: htmlServerError,
 	}
 }
 
@@ -219,19 +224,19 @@ func jsonNotFoundHandler(w http.ResponseWriter, r *http.Request) {
 	jsonresponse.NotFound(w, nil)
 }
 
-func (s Server) generateAntiXSRFCookieHandler(h http.Handler) http.Handler {
+func generateAntiXSRFCookieHandler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Header.Get(s.XSRFCookieName) == "" {
+		if r.Header.Get(srv.XSRFCookieName) == "" {
 			antixsrf.Generate(w, r, "/")
 		}
 		h.ServeHTTP(w, r)
 	})
 }
 
-func (s Server) jsonAntiXSRFHandler(h http.Handler) http.Handler {
+func jsonAntiXSRFHandler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := antixsrf.Verify(r); err != nil {
-			s.logger.Warningf("xsrf %s: %s", r.RequestURI, err)
+			srv.logger.Warningf("xsrf %s: %s", r.RequestURI, err)
 			jsonresponse.Forbidden(w, nil)
 			return
 		}
@@ -239,49 +244,49 @@ func (s Server) jsonAntiXSRFHandler(h http.Handler) http.Handler {
 	})
 }
 
-func (s *Server) htmlLoginRequiredHandler(h http.Handler) http.Handler {
+func htmlLoginRequiredHandler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		u, r, err := s.user(r)
+		u, r, err := getRequestUser(r)
 		if err != nil && err != user.UserNotFound {
 			go func() {
-				defer s.RecoveryService.Recover()
-				if err := s.EmailService.Notify("Get user error", fmt.Sprint(err)); err != nil {
-					s.logger.Errorf("email notify: %s", err)
+				defer srv.RecoveryService.Recover()
+				if err := srv.EmailService.Notify("Get user error", fmt.Sprint(err)); err != nil {
+					srv.logger.Errorf("email notify: %s", err)
 				}
 			}()
-			s.htmlServerError(w, r, err)
+			htmlServerError(w, r, err)
 			return
 		}
-		if r.Header.Get(s.XSRFCookieName) == "" {
+		if r.Header.Get(srv.XSRFCookieName) == "" {
 			antixsrf.Generate(w, r, "/")
 		}
 		if u == nil || u.Disabled {
-			if r.Header.Get(s.SessionCookieName) != "" {
-				s.logout(w, r)
+			if r.Header.Get(srv.SessionCookieName) != "" {
+				logout(w, r)
 			}
-			s.respond(w, "Login", nil)
+			respond(w, "Login", nil)
 			return
 		}
 		h.ServeHTTP(w, r)
 	})
 }
 
-func (s *Server) jsonLoginRequiredHandler(h http.Handler) http.Handler {
+func jsonLoginRequiredHandler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		u, r, err := s.user(r)
+		u, r, err := getRequestUser(r)
 		if err != nil && err != user.UserNotFound {
 			go func() {
-				defer s.RecoveryService.Recover()
-				if err := s.EmailService.Notify("Get user error", fmt.Sprint(err)); err != nil {
-					s.logger.Errorf("email notify: %s", err)
+				defer srv.RecoveryService.Recover()
+				if err := srv.EmailService.Notify("Get user error", fmt.Sprint(err)); err != nil {
+					srv.logger.Errorf("email notify: %s", err)
 				}
 			}()
 			jsonServerError(w, err)
 			return
 		}
 		if u == nil || u.Disabled {
-			if r.Header.Get(s.SessionCookieName) != "" {
-				s.logout(w, r)
+			if r.Header.Get(srv.SessionCookieName) != "" {
+				logout(w, r)
 			}
 			jsonresponse.Unauthorized(w, nil)
 			return
@@ -293,22 +298,22 @@ func (s *Server) jsonLoginRequiredHandler(h http.Handler) http.Handler {
 // Handlers that acts as a splitter in a handler chain.
 // If user is logged in, first argument handler will be executed,
 // otherwise the second one will.
-func (s *Server) htmlLoginAltHandler(h, alt http.Handler) http.Handler {
+func htmlLoginAltHandler(h, alt http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		u, r, err := s.user(r)
+		u, r, err := getRequestUser(r)
 		if err != nil && err != user.UserNotFound {
 			go func() {
-				defer s.RecoveryService.Recover()
-				if err := s.EmailService.Notify("Get user error", fmt.Sprint(err)); err != nil {
-					s.logger.Errorf("email notify: %s", err)
+				defer srv.RecoveryService.Recover()
+				if err := srv.EmailService.Notify("Get user error", fmt.Sprint(err)); err != nil {
+					srv.logger.Errorf("email notify: %s", err)
 				}
 			}()
-			s.htmlServerError(w, r, err)
+			htmlServerError(w, r, err)
 			return
 		}
 		if u == nil || u.Disabled {
-			if r.Header.Get(s.SessionCookieName) != "" {
-				s.logout(w, r)
+			if r.Header.Get(srv.SessionCookieName) != "" {
+				logout(w, r)
 			}
 			alt.ServeHTTP(w, r)
 			return
@@ -317,21 +322,21 @@ func (s *Server) htmlLoginAltHandler(h, alt http.Handler) http.Handler {
 	})
 }
 
-func (s *Server) htmlValidatedEmailRequiredHandler(h http.Handler) http.Handler {
+func htmlValidatedEmailRequiredHandler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		u, r, err := s.user(r)
+		u, r, err := getRequestUser(r)
 		if err != nil {
 			go func() {
-				defer s.RecoveryService.Recover()
-				if err := s.EmailService.Notify("Get user error", fmt.Sprint(err)); err != nil {
-					s.logger.Errorf("email notify: %s", err)
+				defer srv.RecoveryService.Recover()
+				if err := srv.EmailService.Notify("Get user error", fmt.Sprint(err)); err != nil {
+					srv.logger.Errorf("email notify: %s", err)
 				}
 			}()
-			s.htmlServerError(w, r, err)
+			htmlServerError(w, r, err)
 			return
 		}
 		if u.EmailUnvalidated {
-			s.respond(w, "EmailUnvalidated", map[string]interface{}{
+			respond(w, "EmailUnvalidated", map[string]interface{}{
 				"User": u,
 			})
 			return
@@ -340,14 +345,14 @@ func (s *Server) htmlValidatedEmailRequiredHandler(h http.Handler) http.Handler 
 	})
 }
 
-func (s *Server) jsonValidatedEmailRequiredHandler(h http.Handler) http.Handler {
+func jsonValidatedEmailRequiredHandler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		u, r, err := s.user(r)
+		u, r, err := getRequestUser(r)
 		if err != nil && err != user.UserNotFound {
 			go func() {
-				defer s.RecoveryService.Recover()
-				if err := s.EmailService.Notify("Get user error", fmt.Sprint(err)); err != nil {
-					s.logger.Errorf("email notify: %s", err)
+				defer srv.RecoveryService.Recover()
+				if err := srv.EmailService.Notify("Get user error", fmt.Sprint(err)); err != nil {
+					srv.logger.Errorf("email notify: %s", err)
 				}
 			}()
 			jsonServerError(w, err)
@@ -380,9 +385,9 @@ func noCacheHeaderHandler(h http.Handler) http.Handler {
 	})
 }
 
-func (s Server) apiDisabledHandler(h http.Handler) http.Handler {
+func apiDisabledHandler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if !s.APIEnabled {
+		if !srv.APIEnabled {
 			jsonresponse.NotFound(w, nil)
 			return
 		}
@@ -390,9 +395,9 @@ func (s Server) apiDisabledHandler(h http.Handler) http.Handler {
 	})
 }
 
-func (s Server) apiKeyAuthHandler(h http.Handler, body, contentType string) http.Handler {
+func apiKeyAuthHandler(h http.Handler, body, contentType string) http.Handler {
 	trustedProxyNetworks := []net.IPNet{}
-	for _, cidr := range s.APITrustedProxyCIDRs {
+	for _, cidr := range srv.APITrustedProxyCIDRs {
 		if cidr == "" {
 			continue
 		}
@@ -414,7 +419,7 @@ func (s Server) apiKeyAuthHandler(h http.Handler, body, contentType string) http
 			if field1 == "" {
 				return
 			}
-			k, err := s.KeyService.KeyBySecret(field1)
+			k, err := srv.KeyService.KeyBySecret(field1)
 			switch err {
 			case nil:
 			case key.KeyNotFound:
@@ -422,7 +427,7 @@ func (s Server) apiKeyAuthHandler(h http.Handler, body, contentType string) http
 				return
 			default:
 				err = nil
-				s.logger.Errorf("api key auth: get key: %s", err)
+				srv.logger.Errorf("api key auth: get key: %s", err)
 				return
 			}
 
@@ -433,11 +438,11 @@ func (s Server) apiKeyAuthHandler(h http.Handler, body, contentType string) http
 			}
 			ip := net.ParseIP(host)
 			if ip == nil {
-				s.logger.Warningf("api key auth: key ref %s: unable to parse ip: %s", k.Ref, host)
+				srv.logger.Warningf("api key auth: key ref %s: unable to parse ip: %s", k.Ref, host)
 				return
 			}
 
-			if len(trustedProxyNetworks) > 0 && s.APIProxyRealIPHeader != "" {
+			if len(trustedProxyNetworks) > 0 && srv.APIProxyRealIPHeader != "" {
 				proxied := false
 				for _, network := range trustedProxyNetworks {
 					if network.Contains(ip) {
@@ -446,12 +451,12 @@ func (s Server) apiKeyAuthHandler(h http.Handler, body, contentType string) http
 					}
 				}
 				if proxied {
-					header := r.Header.Get(s.APIProxyRealIPHeader)
+					header := r.Header.Get(srv.APIProxyRealIPHeader)
 					if header != "" {
 						header = strings.TrimSpace(strings.SplitN(header, ",", 2)[0])
 						ip = net.ParseIP(header)
 						if ip == nil {
-							s.logger.Warningf("api key auth: key ref %s: unable to parse %s header as ip: %s", k.Ref, s.APIProxyRealIPHeader, header)
+							srv.logger.Warningf("api key auth: key ref %s: unable to parse %s header as ip: %s", k.Ref, srv.APIProxyRealIPHeader, header)
 							return
 						}
 					}
@@ -466,14 +471,14 @@ func (s Server) apiKeyAuthHandler(h http.Handler, body, contentType string) http
 				}
 			}
 			if !found {
-				s.logger.Warningf("api key auth: key ref %s: unauthorized network: %s", k.Ref, ip)
+				srv.logger.Warningf("api key auth: key ref %s: unauthorized network: %s", k.Ref, ip)
 				return
 			}
 
-			entity, err = s.UserService.UserByID(k.Ref)
+			entity, err = srv.UserService.UserByID(k.Ref)
 			if err != nil {
 				err = nil
-				s.logger.Errorf("api key auth: get user by id %s: %s", k.Ref, err)
+				srv.logger.Errorf("api key auth: get user by id %s: %s", k.Ref, err)
 				return
 			}
 			valid = true
@@ -490,6 +495,6 @@ func (s Server) apiKeyAuthHandler(h http.Handler, body, contentType string) http
 	}
 }
 
-func (s Server) jsonAPIKeyAuthHandler(h http.Handler) http.Handler {
-	return s.apiKeyAuthHandler(h, `{"message":"Unauthorized","code":401}`, "application/json; charset=utf-8")
+func jsonAPIKeyAuthHandler(h http.Handler) http.Handler {
+	return apiKeyAuthHandler(h, `{"message":"Unauthorized","code":401}`, "application/json; charset=utf-8")
 }

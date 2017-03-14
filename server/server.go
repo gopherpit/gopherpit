@@ -9,12 +9,12 @@ import (
 	"context"
 	"crypto/rand"
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"html/template"
 	"io/ioutil"
 	"net"
 	"net/http"
-	"net/http/pprof"
 	"os"
 	"path/filepath"
 	"strings"
@@ -23,13 +23,9 @@ import (
 
 	throttled "gopkg.in/throttled/throttled.v2"
 	"gopkg.in/throttled/throttled.v2/store/memstore"
-
-	"github.com/gorilla/handlers"
-	"github.com/gorilla/mux"
 	"resenje.org/email"
 	"resenje.org/httputils"
 	"resenje.org/httputils/file-server"
-	"resenje.org/httputils/log/access"
 	"resenje.org/logging"
 	"resenje.org/recovery"
 
@@ -42,12 +38,16 @@ import (
 	"gopherpit.com/gopherpit/services/user"
 )
 
+// Only one server is needed, so it is global to this package.
+var srv *server
+
 // Server contains all required properties, services and functions
 // to provide core functionality.
-type Server struct {
+type server struct {
 	Options
 
 	logger              *logging.Logger
+	accessLogger        *logging.Logger
 	auditLogger         *logging.Logger
 	packageAccessLogger *logging.Logger
 
@@ -61,6 +61,10 @@ type Server struct {
 
 	salt []byte
 
+	tlsConfig        *tls.Config
+	tlsEnabled       bool
+	registerACMEUser bool
+
 	servers []*http.Server
 
 	templates map[string]*template.Template
@@ -68,14 +72,19 @@ type Server struct {
 	apiRateLimiter *throttled.GCRARateLimiter
 }
 
-// Options structure contains optional properties for the Server.
+// Options structure contains server's configurable properties.
 type Options struct {
 	Name                    string
 	Version                 string
 	BuildInfo               string
 	Brand                   string
+	Listen                  string
+	ListenTLS               string
+	ListenInternal          string
+	ListenInternalTLS       string
+	TLSKey                  string
+	TLSCert                 string
 	Domain                  string
-	RedirectToHTTPS         bool
 	Headers                 map[string]string
 	XSRFCookieName          string
 	SessionCookieName       string
@@ -94,7 +103,6 @@ type Options struct {
 	VerificationSubdomain   string
 	TrustedDomains          []string
 	ForbiddenDomains        []string
-	TLSEnabled              bool
 	APITrustedProxyCIDRs    []string
 	APIProxyRealIPHeader    string
 	APIHourlyRateLimit      int
@@ -111,9 +119,8 @@ type Options struct {
 	KeyService          key.Service
 }
 
-// NewServer creates a new instance of Server with HTTP handlers.
-func NewServer(o Options) (s *Server, err error) {
-	// Initialize server
+// Configure initializes http server with provided options.
+func Configure(o Options) (err error) {
 	if o.Name == "" {
 		o.Name = "server"
 	}
@@ -121,29 +128,39 @@ func NewServer(o Options) (s *Server, err error) {
 		o.Version = "0"
 	}
 	if o.VerificationSubdomain == "" {
-		o.VerificationSubdomain = "_" + s.Name
+		o.VerificationSubdomain = "_" + srv.Name
 	}
 	logger, err := logging.GetLogger("default")
 	if err != nil {
 		err = fmt.Errorf("get default logger: %s", err)
 		return
 	}
+	accessLogger, err := logging.GetLogger("access")
+	if err != nil {
+		err = fmt.Errorf("get access logger: %s", err)
+		return
+	}
 	auditLogger, err := logging.GetLogger("audit")
 	if err != nil {
-		logger.Warningf("get audit logger: %s", err)
+		err = fmt.Errorf("get audit logger: %s", err)
+		return
 	}
 	packageAccessLogger, err := logging.GetLogger("package-access")
 	if err != nil {
-		logger.Warningf("get package access logger: %s", err)
+		err = fmt.Errorf("get package access logger: %s", err)
+		return
 	}
-	s = &Server{
+	s := &server{
 		Options:             o,
 		logger:              logger,
+		accessLogger:        accessLogger,
 		auditLogger:         auditLogger,
 		packageAccessLogger: packageAccessLogger,
 		certificateCache:    certificateCache.NewCache(o.CertificateService, 15*time.Minute, time.Minute),
 		startTime:           time.Now(),
 		templates:           map[string]*template.Template{},
+		tlsEnabled:          o.ListenTLS != "",
+		registerACMEUser:    o.ListenTLS != "",
 	}
 	// Load or generate a salt value.
 	saltFilename := filepath.Join(s.StorageDir, s.Name+".salt")
@@ -206,7 +223,7 @@ func NewServer(o Options) (s *Server, err error) {
 
 	// Populate template functions
 	templateFunctions := template.FuncMap{
-		"asset":           s.assetFunc,
+		"asset":           assetFunc,
 		"relative_time":   relativeTimeFunc,
 		"safehtml":        safeHTMLFunc,
 		"year_range":      yearRangeFunc,
@@ -236,23 +253,15 @@ func NewServer(o Options) (s *Server, err error) {
 		}
 	}
 
-	s.assetsServer.NotFoundHandler = http.HandlerFunc(s.htmlNotFoundHandler)
-	s.assetsServer.ForbiddenHandler = http.HandlerFunc(s.htmlForbiddenHandler)
-	s.assetsServer.InternalServerErrorHandler = http.HandlerFunc(s.htmlInternalServerErrorHandler)
-
-	accessLogHandler := func(h http.Handler) http.Handler {
-		logger, err := logging.GetLogger("access")
-		if err != nil {
-			panic(fmt.Sprintf("get access logger: %s", err))
-		}
-		return accessLog.NewHandler(h, logger)
-	}
+	s.assetsServer.NotFoundHandler = http.HandlerFunc(htmlNotFoundHandler)
+	s.assetsServer.ForbiddenHandler = http.HandlerFunc(htmlForbiddenHandler)
+	s.assetsServer.InternalServerErrorHandler = http.HandlerFunc(htmlInternalServerErrorHandler)
 
 	// API rate limiter
 	if s.APIHourlyRateLimit > 0 {
 		apiRateLimiterStore, err := memstore.New(65536)
 		if err != nil {
-			return nil, fmt.Errorf("api rate limiter memstore: %s", err)
+			return fmt.Errorf("api rate limiter memstore: %s", err)
 		}
 
 		s.apiRateLimiter, err = throttled.NewGCRARateLimiter(
@@ -260,512 +269,33 @@ func NewServer(o Options) (s *Server, err error) {
 			throttled.RateQuota{throttled.PerHour(1), s.APIHourlyRateLimit},
 		)
 		if err != nil {
-			return nil, fmt.Errorf("api rate limiter: %s", err)
+			return fmt.Errorf("api rate limiter: %s", err)
 		}
 	}
 
-	//
-	// Top level router
-	//
-	baseRouter := http.NewServeMux()
-
-	//
-	// Assets handler
-	//
-	baseRouter.Handle("/assets/", chainHandlers(
-		handlers.CompressHandler,
-		s.htmlRecoveryHandler,
-		accessLogHandler,
-		s.htmlMaxBodyBytesHandler,
-		httputils.NoExpireHeadersHandler,
-		finalHandler(s.assetsServer),
-	))
-
-	//
-	// Frontend router
-	//
-	frontendRouter := mux.NewRouter().StrictSlash(true)
-	baseRouter.Handle("/", chainHandlers(
-		handlers.CompressHandler,
-		s.htmlRecoveryHandler,
-		accessLogHandler,
-		s.htmlMaintenanceHandler,
-		s.htmlMaxBodyBytesHandler,
-		s.acmeUserHandler,
-		finalHandler(frontendRouter),
-	))
-	// Frontend routes start
-	frontendRouter.NotFoundHandler = chainHandlers(
-		func(h http.Handler) http.Handler {
-			return httputils.NewSetHeadersHandler(h, map[string]string{
-				"Cache-Control": "no-cache",
-			})
-		},
-		func(h http.Handler) http.Handler {
-			return httputils.NewStaticFilesHandler(h, "/", http.Dir(o.StaticDir))
-		},
-		finalHandlerFunc(s.htmlNotFoundHandler),
-	)
-	frontendRouter.Handle("/", s.htmlLoginAltHandler(
-		chainHandlers(
-			s.htmlValidatedEmailRequiredHandler,
-			finalHandlerFunc(s.dashboardHandler),
-		),
-		chainHandlers(
-			s.generateAntiXSRFCookieHandler,
-			finalHandlerFunc(s.landingPageHandler),
-		),
-	))
-	frontendRouter.Handle("/about", http.HandlerFunc(s.aboutHandler))
-	frontendRouter.Handle("/license", http.HandlerFunc(s.licenseHandler))
-	frontendRouter.Handle("/contact", chainHandlers(
-		s.generateAntiXSRFCookieHandler,
-		finalHandlerFunc(s.contactHandler),
-	))
-	frontendRouter.Handle("/login", chainHandlers(
-		s.htmlLoginRequiredHandler,
-		finalHandler(http.RedirectHandler("/", http.StatusSeeOther)),
-	))
-	frontendRouter.Handle("/logout", http.HandlerFunc(s.logoutHandler))
-	frontendRouter.Handle("/registration", s.htmlLoginAltHandler(
-		http.RedirectHandler("/", http.StatusSeeOther),
-		chainHandlers(
-			s.generateAntiXSRFCookieHandler,
-			finalHandlerFunc(s.registrationHandler),
-		),
-	))
-	frontendRouter.Handle("/password-reset", s.htmlLoginAltHandler(
-		http.RedirectHandler("/", http.StatusSeeOther),
-		chainHandlers(
-			s.generateAntiXSRFCookieHandler,
-			finalHandlerFunc(s.passwordResetTokenHandler),
-		),
-	))
-	frontendRouter.Handle(`/password-reset/{token}`, chainHandlers(
-		s.generateAntiXSRFCookieHandler,
-		finalHandlerFunc(s.passwordResetHandler),
-	))
-	frontendRouter.Handle(`/email/{token}`, chainHandlers(
-		s.generateAntiXSRFCookieHandler,
-		finalHandlerFunc(s.publicEmailSettingsHandler),
-	))
-	frontendRouter.Handle(`/email-validation/{token}`, chainHandlers(
-		s.htmlLoginRequiredHandler,
-		s.generateAntiXSRFCookieHandler,
-		finalHandlerFunc(s.emailValidationHandler),
-	))
-	frontendRouter.Handle("/settings", chainHandlers(
-		s.htmlLoginRequiredHandler,
-		s.generateAntiXSRFCookieHandler,
-		finalHandlerFunc(s.settingsHandler),
-	))
-	frontendRouter.Handle("/settings/email", chainHandlers(
-		s.htmlLoginRequiredHandler,
-		s.generateAntiXSRFCookieHandler,
-		finalHandlerFunc(s.settingsEmailHandler),
-	))
-	frontendRouter.Handle("/settings/notifications", chainHandlers(
-		s.htmlLoginRequiredHandler,
-		s.generateAntiXSRFCookieHandler,
-		finalHandlerFunc(s.settingsNotificationsHandler),
-	))
-	frontendRouter.Handle("/settings/password", chainHandlers(
-		s.htmlLoginRequiredHandler,
-		s.generateAntiXSRFCookieHandler,
-		finalHandlerFunc(s.settingsPasswordHandler),
-	))
-	frontendRouter.Handle("/settings/api", chainHandlers(
-		s.htmlLoginRequiredHandler,
-		s.generateAntiXSRFCookieHandler,
-		finalHandlerFunc(s.apiAccessSettingsHandler),
-	))
-	frontendRouter.Handle("/settings/delete-account", chainHandlers(
-		s.htmlLoginRequiredHandler,
-		s.generateAntiXSRFCookieHandler,
-		finalHandlerFunc(s.settingsDeleteAccountHandler),
-	))
-
-	frontendRouter.Handle("/domain", chainHandlers(
-		s.htmlLoginRequiredHandler,
-		s.htmlValidatedEmailRequiredHandler,
-		s.generateAntiXSRFCookieHandler,
-		finalHandlerFunc(s.domainAddHandler),
-	))
-	frontendRouter.Handle("/domain/{id}", chainHandlers(
-		s.htmlLoginRequiredHandler,
-		s.htmlValidatedEmailRequiredHandler,
-		finalHandlerFunc(s.domainPackagesHandler),
-	))
-	frontendRouter.Handle("/domain/{id}/settings", chainHandlers(
-		s.htmlLoginRequiredHandler,
-		s.htmlValidatedEmailRequiredHandler,
-		s.generateAntiXSRFCookieHandler,
-		finalHandlerFunc(s.domainSettingsHandler),
-	))
-	frontendRouter.Handle("/domain/{id}/team", chainHandlers(
-		s.htmlLoginRequiredHandler,
-		s.htmlValidatedEmailRequiredHandler,
-		s.generateAntiXSRFCookieHandler,
-		finalHandlerFunc(s.domainTeamHandler),
-	))
-	frontendRouter.Handle("/domain/{id}/changelog", chainHandlers(
-		s.htmlLoginRequiredHandler,
-		s.htmlValidatedEmailRequiredHandler,
-		s.generateAntiXSRFCookieHandler,
-		finalHandlerFunc(s.domainChangelogHandler),
-	))
-	frontendRouter.Handle("/domain/{id}/user", chainHandlers(
-		s.htmlLoginRequiredHandler,
-		s.htmlValidatedEmailRequiredHandler,
-		s.generateAntiXSRFCookieHandler,
-		finalHandlerFunc(s.domainDomainUserGrantHandler),
-	))
-	frontendRouter.Handle("/domain/{id}/user/{user-id}/revoke", chainHandlers(
-		s.htmlLoginRequiredHandler,
-		s.htmlValidatedEmailRequiredHandler,
-		s.generateAntiXSRFCookieHandler,
-		finalHandlerFunc(s.domainDomainUserRevokeHandler),
-	))
-	frontendRouter.Handle("/domain/{id}/owner", chainHandlers(
-		s.htmlLoginRequiredHandler,
-		s.htmlValidatedEmailRequiredHandler,
-		s.generateAntiXSRFCookieHandler,
-		finalHandlerFunc(s.domainDomainOwnerChangeHandler),
-	))
-	frontendRouter.Handle("/domain/{domain-id}/package", chainHandlers(
-		s.htmlLoginRequiredHandler,
-		s.htmlValidatedEmailRequiredHandler,
-		s.generateAntiXSRFCookieHandler,
-		finalHandlerFunc(s.domainPackageEditHandler),
-	))
-	frontendRouter.Handle("/package/{package-id}", chainHandlers(
-		s.htmlLoginRequiredHandler,
-		s.htmlValidatedEmailRequiredHandler,
-		s.generateAntiXSRFCookieHandler,
-		finalHandlerFunc(s.domainPackageEditHandler),
-	))
-	frontendRouter.Handle("/user/{id}", chainHandlers(
-		s.htmlLoginRequiredHandler,
-		finalHandlerFunc(s.userPageHandler),
-	))
-	// Frontend routes end
-
-	//
-	// Frontend API ruter
-	//
-	frontendAPIRouter := mux.NewRouter().StrictSlash(true)
-	baseRouter.Handle("/i/", chainHandlers(
-		handlers.CompressHandler,
-		s.jsonRecoveryHandler,
-		accessLogHandler,
-		s.jsonMaintenanceHandler,
-		s.jsonAntiXSRFHandler,
-		jsonMaxBodyBytesHandler,
-		finalHandler(frontendAPIRouter),
-	))
-	frontendAPIRouter.NotFoundHandler = http.HandlerFunc(jsonNotFoundHandler)
-	// Frontend API routes start
-	// ACME
-	frontendAPIRouter.Handle("/i/register-acme-user", jsonMethodHandler{
-		"POST": http.HandlerFunc(s.registerACMEUserFEAPIHandler),
-	})
-	// User public
-	frontendAPIRouter.Handle("/i/auth", jsonMethodHandler{
-		"POST":   http.HandlerFunc(s.authLoginFEAPIHandler),
-		"DELETE": http.HandlerFunc(s.authLogoutFEAPIHandler),
-	})
-	frontendAPIRouter.Handle("/i/registration", jsonMethodHandler{
-		"POST": http.HandlerFunc(s.registrationFEAPIHandler),
-	})
-	frontendAPIRouter.Handle("/i/password-reset-token", jsonMethodHandler{
-		"POST": http.HandlerFunc(s.passwordResetTokenFEAPIHandler),
-	})
-	frontendAPIRouter.Handle("/i/password-reset", jsonMethodHandler{
-		"POST": http.HandlerFunc(s.passwordResetFEAPIHandler),
-	})
-	frontendAPIRouter.Handle(`/i/email/opt-out/{token:\w{27,}}`, jsonMethodHandler{
-		"POST":   http.HandlerFunc(s.emailOptOutFEAPIHandler),
-		"DELETE": http.HandlerFunc(s.emailRemoveOptOutFEAPIHandler),
-	})
-	// Contact
-	frontendAPIRouter.Handle("/i/contact", jsonMethodHandler{
-		"POST": s.htmlLoginAltHandler(
-			http.HandlerFunc(s.contactPrivateFEAPIHandler),
-			http.HandlerFunc(s.contactFEAPIHandler),
-		),
-	})
-	// User settings
-	frontendAPIRouter.Handle("/i/user", chainHandlers(
-		s.jsonLoginRequiredHandler,
-		finalHandler(jsonMethodHandler{
-			"POST": http.HandlerFunc(s.userFEAPIHandler),
-		}),
-	))
-	frontendAPIRouter.Handle("/i/user/email", chainHandlers(
-		s.jsonLoginRequiredHandler,
-		finalHandler(jsonMethodHandler{
-			"POST": http.HandlerFunc(s.userEmailFEAPIHandler),
-		}),
-	))
-	frontendAPIRouter.Handle("/i/user/notifications", chainHandlers(
-		s.jsonLoginRequiredHandler,
-		finalHandler(jsonMethodHandler{
-			"POST": http.HandlerFunc(s.userNotificationsSettingsFEAPIHandler),
-		}),
-	))
-	frontendAPIRouter.Handle("/i/user/email/validation-email", chainHandlers(
-		s.jsonLoginRequiredHandler,
-		finalHandler(jsonMethodHandler{
-			"POST": http.HandlerFunc(s.userSendEmailValidationEmailFEAPIHandler),
-		}),
-	))
-	frontendAPIRouter.Handle("/i/user/password", chainHandlers(
-		s.jsonLoginRequiredHandler,
-		finalHandler(jsonMethodHandler{
-			"POST": http.HandlerFunc(s.userPasswordFEAPIHandler),
-		}),
-	))
-	frontendAPIRouter.Handle("/i/user/delete", chainHandlers(
-		s.jsonLoginRequiredHandler,
-		finalHandler(jsonMethodHandler{
-			"POST": http.HandlerFunc(s.userDeleteFEAPIHandler),
-		}),
-	))
-	// API settings
-	frontendAPIRouter.Handle(`/i/api/key`, chainHandlers(
-		s.apiDisabledHandler,
-		s.jsonLoginRequiredHandler,
-		finalHandler(jsonMethodHandler{
-			"POST":   http.HandlerFunc(s.apiKeyFEAPIHandler),
-			"DELETE": http.HandlerFunc(s.apiKeyDeleteFEAPIHandler),
-		}),
-	))
-	frontendAPIRouter.Handle(`/i/api/networks`, chainHandlers(
-		s.apiDisabledHandler,
-		s.jsonLoginRequiredHandler,
-		finalHandler(jsonMethodHandler{
-			"POST": http.HandlerFunc(s.apiNetworksFEAPIHandler),
-		}),
-	))
-	frontendAPIRouter.Handle(`/i/api/secret`, chainHandlers(
-		s.apiDisabledHandler,
-		s.jsonLoginRequiredHandler,
-		finalHandler(jsonMethodHandler{
-			"POST": http.HandlerFunc(s.apiRegenerateSecretFEAPIHandler),
-		}),
-	))
-	// SSL Certificate
-	frontendAPIRouter.Handle(`/i/certificate/{id}`, chainHandlers(
-		s.jsonLoginRequiredHandler,
-		s.jsonValidatedEmailRequiredHandler,
-		finalHandler(jsonMethodHandler{
-			"POST": http.HandlerFunc(s.certificateFEAPIHandler),
-		}),
-	))
-	// Domain
-	frontendAPIRouter.Handle(`/i/domain`, chainHandlers(
-		s.jsonLoginRequiredHandler,
-		s.jsonValidatedEmailRequiredHandler,
-		finalHandler(jsonMethodHandler{
-			"POST": http.HandlerFunc(s.domainFEAPIHandler),
-		}),
-	))
-	frontendAPIRouter.Handle(`/i/domain/{id}`, chainHandlers(
-		s.jsonLoginRequiredHandler,
-		s.jsonValidatedEmailRequiredHandler,
-		finalHandler(jsonMethodHandler{
-			"POST":   http.HandlerFunc(s.domainFEAPIHandler),
-			"DELETE": http.HandlerFunc(s.domainDeleteFEAPIHandler),
-		}),
-	))
-	frontendAPIRouter.Handle(`/i/domain/{id}/user`, chainHandlers(
-		s.jsonLoginRequiredHandler,
-		s.jsonValidatedEmailRequiredHandler,
-		finalHandler(jsonMethodHandler{
-			"POST":   http.HandlerFunc(s.domainUserGrantFEAPIHandler),
-			"DELETE": http.HandlerFunc(s.domainUserRevokeFEAPIHandler),
-		}),
-	))
-	frontendAPIRouter.Handle(`/i/domain/{id}/owner`, chainHandlers(
-		s.jsonLoginRequiredHandler,
-		s.jsonValidatedEmailRequiredHandler,
-		finalHandler(jsonMethodHandler{
-			"POST": http.HandlerFunc(s.domainOwnerChangeFEAPIHandler),
-		}),
-	))
-	// Package
-	frontendAPIRouter.Handle(`/i/package`, chainHandlers(
-		s.jsonLoginRequiredHandler,
-		s.jsonValidatedEmailRequiredHandler,
-		finalHandler(jsonMethodHandler{
-			"POST": http.HandlerFunc(s.packageFEAPIHandler),
-		}),
-	))
-	frontendAPIRouter.Handle(`/i/package/{id}`, chainHandlers(
-		s.jsonLoginRequiredHandler,
-		s.jsonValidatedEmailRequiredHandler,
-		finalHandler(jsonMethodHandler{
-			"POST":   http.HandlerFunc(s.packageFEAPIHandler),
-			"DELETE": http.HandlerFunc(s.packageDeleteFEAPIHandler),
-		}),
-	))
-	// Frontend API routes end
-
-	//
-	// API ruter
-	//
-	apiRouter := mux.NewRouter().StrictSlash(true)
-	baseRouter.Handle("/api/", chainHandlers(
-		handlers.CompressHandler,
-		s.jsonRecoveryHandler,
-		accessLogHandler,
-		s.apiDisabledHandler,
-		s.jsonMaintenanceHandler,
-		jsonMaxBodyBytesHandler,
-		s.jsonAPIKeyAuthHandler,
-		s.jsonValidatedEmailRequiredHandler,
-		finalHandler(apiRouter),
-	))
-	apiRouter.NotFoundHandler = http.HandlerFunc(jsonNotFoundHandler)
-	// API routes start
-	apiRouter.Handle("/api/v1/domains", jsonMethodHandler{
-		"GET": http.HandlerFunc(s.domainsAPIHandler),
-		"POST": chainHandlers(
-			s.jsonAPIRateLimiterHandler,
-			finalHandlerFunc(s.updateDomainAPIHandler),
-		),
-	})
-	apiRouter.Handle("/api/v1/domains/{id}", jsonMethodHandler{
-		"GET": http.HandlerFunc(s.domainAPIHandler),
-		"POST": chainHandlers(
-			s.jsonAPIRateLimiterHandler,
-			finalHandlerFunc(s.updateDomainAPIHandler),
-		),
-		"DELETE": http.HandlerFunc(s.deleteDomainAPIHandler),
-	})
-	apiRouter.Handle("/api/v1/domains/{id}/tokens", jsonMethodHandler{
-		"GET": http.HandlerFunc(s.domainTokensAPIHandler),
-	})
-	apiRouter.Handle("/api/v1/domains/{id}/users", jsonMethodHandler{
-		"GET": http.HandlerFunc(s.domainUsersAPIHandler),
-	})
-	apiRouter.Handle("/api/v1/domains/{id}/users/{user-id}", jsonMethodHandler{
-		"POST":   http.HandlerFunc(s.grantDomainUserAPIHandler),
-		"DELETE": http.HandlerFunc(s.revokeDomainUserAPIHandler),
-	})
-	apiRouter.Handle("/api/v1/domains/{id}/packages", jsonMethodHandler{
-		"GET": http.HandlerFunc(s.domainPackagesAPIHandler),
-	})
-	apiRouter.Handle("/api/v1/packages", jsonMethodHandler{
-		"POST": http.HandlerFunc(s.updatePackageAPIHandler),
-	})
-	apiRouter.Handle("/api/v1/packages/{id}", jsonMethodHandler{
-		"GET":    http.HandlerFunc(s.packageAPIHandler),
-		"POST":   http.HandlerFunc(s.updatePackageAPIHandler),
-		"DELETE": http.HandlerFunc(s.deletePackageAPIHandler),
-	})
-	// API routes end
-
-	//
-	// Final handler
-	//
-	s.handler = chainHandlers(
-		s.domainHandler,
-		func(h http.Handler) http.Handler {
-			return httputils.NewSetHeadersHandler(h, o.Headers)
-		},
-		finalHandler(baseRouter),
-	)
-
-	//
-	// Top level internal router
-	//
-	internalBaseRouter := http.NewServeMux()
-
-	//
-	// Internal router
-	//
-	internalRouter := http.NewServeMux()
-	internalBaseRouter.Handle("/", chainHandlers(
-		handlers.CompressHandler,
-		httputils.NoCacheHeadersHandler,
-		finalHandler(internalRouter),
-	))
-	internalRouter.Handle("/", http.HandlerFunc(textNotFoundHandler))
-	internalRouter.Handle("/status", http.HandlerFunc(s.statusHandler))
-	internalRouter.Handle("/data", http.HandlerFunc(s.dataDumpHandler))
-
-	internalRouter.Handle("/debug/pprof/", http.HandlerFunc(pprof.Index))
-	internalRouter.Handle("/debug/pprof/cmdline", http.HandlerFunc(pprof.Cmdline))
-	internalRouter.Handle("/debug/pprof/profile", http.HandlerFunc(pprof.Profile))
-	internalRouter.Handle("/debug/pprof/symbol", http.HandlerFunc(pprof.Symbol))
-	internalRouter.Handle("/debug/pprof/trace", http.HandlerFunc(pprof.Trace))
-
-	//
-	// Internal API router
-	//
-	internalAPIRouter := http.NewServeMux()
-	internalBaseRouter.Handle("/api/", chainHandlers(
-		handlers.CompressHandler,
-		s.jsonRecoveryHandler,
-		httputils.NoCacheHeadersHandler,
-		finalHandler(internalAPIRouter),
-	))
-	internalAPIRouter.Handle("/api/", http.HandlerFunc(jsonNotFoundHandler))
-	internalAPIRouter.Handle("/api/status", http.HandlerFunc(s.statusAPIHandler))
-	internalAPIRouter.Handle("/api/maintenance", jsonMethodHandler{
-		"GET":    http.HandlerFunc(s.maintenanceStatusAPIHandler),
-		"POST":   http.HandlerFunc(s.maintenanceOnAPIHandler),
-		"DELETE": http.HandlerFunc(s.maintenanceOffAPIHandler),
-	})
-
-	//
-	// Final internal handler
-	//
-	s.internalHandler = chainHandlers(
-		func(h http.Handler) http.Handler {
-			return httputils.NewSetHeadersHandler(h, o.Headers)
-		},
-		finalHandler(internalBaseRouter),
-	)
-	return
-}
-
-// ServeOptions structure contains options for HTTP servers
-// when invoking Server.Serve.
-type ServeOptions struct {
-	Listen            string
-	ListenTLS         string
-	ListenInternal    string
-	ListenInternalTLS string
-	TLSKey            string
-	TLSCert           string
-}
-
-// Serve starts HTTP servers based on provided ServeOptions properties.
-func (s *Server) Serve(o ServeOptions) error {
-	tlsConfig := &tls.Config{
+	// Configure TLS
+	s.tlsConfig = &tls.Config{
 		MinVersion:         tls.VersionTLS10,
 		NextProtos:         []string{"h2"},
 		ClientSessionCache: tls.NewLRUClientSessionCache(-1),
 	}
-	tlsConfig.GetCertificate = func(clientHello *tls.ClientHelloInfo) (*tls.Certificate, error) {
+	s.tlsConfig.GetCertificate = func(clientHello *tls.ClientHelloInfo) (*tls.Certificate, error) {
 		// If ServerName is defined in Options as Domain and there is TLSCert in Options
 		// use static configuration by returning nil or both cert and err
-		if clientHello.ServerName == s.Domain && o.TLSCert != "" {
+		if clientHello.ServerName == srv.Domain && srv.TLSCert != "" {
 			return nil, nil
 		}
 		// Get certificate for this ServerName
-		c, err := s.certificateCache.Certificate(clientHello.ServerName)
+		c, err := srv.certificateCache.Certificate(clientHello.ServerName)
 		switch err {
 		case certificateCache.ErrCertificateNotFound, certificate.CertificateNotFound:
 			// If ServerName is the same as configured domain or it's www subdomain
 			// and tls listener is on https port 443, try to obtain the certificate.
-			if strings.HasSuffix(o.ListenTLS, ":443") && (clientHello.ServerName == s.Domain || clientHello.ServerName == "www."+s.Domain) {
+			if strings.HasSuffix(srv.ListenTLS, ":443") && (clientHello.ServerName == srv.Domain || clientHello.ServerName == "www."+srv.Domain) {
 				obtainCertificate := false
 				// Check if there is not already a request for new certificate active.
 				for i := 0; i < 50; i++ {
-					yes, err := s.CertificateService.IsCertificateBeingObtained(clientHello.ServerName)
+					yes, err := srv.CertificateService.IsCertificateBeingObtained(clientHello.ServerName)
 					if err != nil {
 						return nil, fmt.Errorf("get certificate %s: is certificate being obtained: %s", clientHello.ServerName, err)
 					}
@@ -778,8 +308,8 @@ func (s *Server) Serve(o ServeOptions) error {
 				}
 
 				if obtainCertificate {
-					s.logger.Debugf("get certificate: %s: obtaining certificate for domain", clientHello.ServerName)
-					cert, err := s.CertificateService.ObtainCertificate(clientHello.ServerName)
+					srv.logger.Debugf("get certificate: %s: obtaining certificate for domain", clientHello.ServerName)
+					cert, err := srv.CertificateService.ObtainCertificate(clientHello.ServerName)
 					if err != nil {
 						return nil, fmt.Errorf("get certificate %s: obtain certificate: %s", clientHello.ServerName, err)
 					}
@@ -789,9 +319,9 @@ func (s *Server) Serve(o ServeOptions) error {
 						return nil, fmt.Errorf("get certificate: %s: tls X509KeyPair: %s", clientHello.ServerName, err)
 					}
 					// Clean cached empty certificate.
-					s.certificateCache.InvalidateCertificate(clientHello.ServerName)
+					srv.certificateCache.InvalidateCertificate(clientHello.ServerName)
 				} else {
-					c, err = s.certificateCache.Certificate(clientHello.ServerName)
+					c, err = srv.certificateCache.Certificate(clientHello.ServerName)
 					if err != nil {
 						return nil, fmt.Errorf("get certificate: %s: certificate cache: %s", clientHello.ServerName, err)
 					}
@@ -804,13 +334,13 @@ func (s *Server) Serve(o ServeOptions) error {
 		if c != nil {
 			return c, nil
 		}
-		if len(tlsConfig.NameToCertificate) != 0 {
+		if len(s.tlsConfig.NameToCertificate) != 0 {
 			name := strings.ToLower(clientHello.ServerName)
 			for len(name) > 0 && name[len(name)-1] == '.' {
 				name = name[:len(name)-1]
 			}
 
-			if cert, ok := tlsConfig.NameToCertificate[name]; ok {
+			if cert, ok := s.tlsConfig.NameToCertificate[name]; ok {
 				return cert, nil
 			}
 
@@ -818,7 +348,7 @@ func (s *Server) Serve(o ServeOptions) error {
 			for i := range labels {
 				labels[i] = "*"
 				candidate := strings.Join(labels, ".")
-				if cert, ok := tlsConfig.NameToCertificate[candidate]; ok {
+				if cert, ok := s.tlsConfig.NameToCertificate[candidate]; ok {
 					return cert, nil
 				}
 			}
@@ -826,28 +356,43 @@ func (s *Server) Serve(o ServeOptions) error {
 		return nil, fmt.Errorf("get certificate: %s: certificate not found", clientHello.ServerName)
 	}
 
-	if o.TLSCert != "" && o.TLSKey != "" {
-		cert, err := tls.LoadX509KeyPair(o.TLSCert, o.TLSKey)
+	if s.TLSCert != "" && s.TLSKey != "" {
+		cert, err := tls.LoadX509KeyPair(s.TLSCert, s.TLSKey)
 		if err != nil {
 			return fmt.Errorf("TLS Certificates: %s", err)
 		}
-		tlsConfig.Certificates = []tls.Certificate{cert}
-		tlsConfig.BuildNameToCertificate()
+		s.tlsConfig.Certificates = []tls.Certificate{cert}
+		s.tlsConfig.BuildNameToCertificate()
 	}
 
-	if o.ListenTLS != "" {
-		ln, err := net.Listen("tcp", o.ListenTLS)
+	// Set the global srv variable
+	srv = s
+
+	return
+}
+
+// Serve starts HTTP servers.
+func Serve() error {
+	if srv == nil {
+		return errors.New("server not configured")
+	}
+
+	setupRouters()
+	setupInternalRouters()
+
+	if srv.ListenTLS != "" {
+		ln, err := net.Listen("tcp", srv.ListenTLS)
 		if err != nil {
-			return fmt.Errorf("listen tls '%v': %s", o.ListenTLS, err)
+			return fmt.Errorf("listen tls '%v': %s", srv.ListenTLS, err)
 		}
 
 		ln = &httputils.TLSListener{
 			TCPListener: ln.(*net.TCPListener),
-			TLSConfig:   tlsConfig,
+			TLSConfig:   srv.tlsConfig,
 		}
 
 		server := &http.Server{
-			Handler: s.nilRecoveryHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			Handler: nilRecoveryHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				if r.TLS == nil {
 					httputils.HTTPToHTTPSRedirectHandler(w, r)
 					return
@@ -855,48 +400,48 @@ func (s *Server) Serve(o ServeOptions) error {
 				switch {
 				case strings.HasSuffix(r.URL.Path, "/info/refs"):
 					// Handle git refs info if git reference is set.
-					if notFound := s.packageGitInfoRefsHandler(w, r); !notFound {
+					if notFound := packageGitInfoRefsHandler(w, r); !notFound {
 						return
 					}
 				case strings.HasSuffix(r.URL.Path, "/git-upload-pack"):
 					// Handle git upload pack if git reference is set.
-					if notFound := s.packageGitUploadPackHandler(w, r); !notFound {
+					if notFound := packageGitUploadPackHandler(w, r); !notFound {
 						return
 					}
 				}
 				// Handle go get domain/...
 				if r.URL.Query().Get("go-get") == "1" {
-					s.packageResolverHandler(w, r)
+					packageResolverHandler(w, r)
 					return
 				}
-				s.handler.ServeHTTP(w, r)
+				srv.handler.ServeHTTP(w, r)
 			})),
-			TLSConfig: tlsConfig,
+			TLSConfig: srv.tlsConfig,
 		}
-		s.servers = append(s.servers, server)
+		srv.servers = append(srv.servers, server)
 
 		go func() {
-			defer s.RecoveryService.Recover()
+			defer srv.RecoveryService.Recover()
 
-			s.logger.Infof("TLS HTTP Listening on %v", o.ListenTLS)
+			srv.logger.Infof("TLS HTTP Listening on %v", srv.ListenTLS)
 
 			if err := server.Serve(ln); err != nil && err != http.ErrServerClosed {
-				s.logger.Errorf("Serve TLS '%v': %s", o.ListenTLS, err)
+				srv.logger.Errorf("Serve TLS '%v': %s", srv.ListenTLS, err)
 			}
 		}()
 	}
-	if o.Listen != "" {
-		ln, err := net.Listen("tcp", o.Listen)
+	if srv.Listen != "" {
+		ln, err := net.Listen("tcp", srv.Listen)
 		if err != nil {
-			return fmt.Errorf("listen '%v': %s", o.Listen, err)
+			return fmt.Errorf("listen '%v': %s", srv.Listen, err)
 		}
 
 		var handler http.Handler
 
-		if o.ListenTLS != "" && s.Domain != "" {
+		if srv.ListenTLS != "" && srv.Domain != "" {
 			// Initialize handler that will redirect http:// to https:// only if
 			// certificate for configured domain or it's www subdomain is available.
-			_, tlsPort, err := net.SplitHostPort(o.ListenTLS)
+			_, tlsPort, err := net.SplitHostPort(srv.ListenTLS)
 			if err != nil {
 				return fmt.Errorf("invalid tls: %s", err)
 			}
@@ -905,137 +450,141 @@ func (s *Server) Serve(o ServeOptions) error {
 			} else {
 				tlsPort = ":" + tlsPort
 			}
-			wwwDomain := "www." + s.Domain
+			wwwDomain := "www." + srv.Domain
 			handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				domain, _, err := net.SplitHostPort(r.Host)
 				if err != nil {
 					domain = r.Host
 				}
-				if (domain == s.Domain || domain == wwwDomain) && !strings.HasPrefix(r.URL.Path, acmeURLPrefix) {
-					c, _ := s.certificateCache.Certificate(s.Domain)
+				if (domain == srv.Domain || domain == wwwDomain) && !strings.HasPrefix(r.URL.Path, acmeURLPrefix) {
+					c, _ := srv.certificateCache.Certificate(srv.Domain)
 					if c != nil {
-						http.Redirect(w, r, strings.Join([]string{"https://", s.Domain, tlsPort, r.RequestURI}, ""), http.StatusMovedPermanently)
+						http.Redirect(w, r, strings.Join([]string{"https://", srv.Domain, tlsPort, r.RequestURI}, ""), http.StatusMovedPermanently)
 						return
 					}
 				}
-				s.handler.ServeHTTP(w, r)
+				srv.handler.ServeHTTP(w, r)
 			})
 		} else {
-			handler = s.handler
+			handler = srv.handler
 		}
 
 		server := &http.Server{
-			Addr: o.Listen,
-			Handler: s.nilRecoveryHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			Addr: srv.Listen,
+			Handler: nilRecoveryHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				switch {
 				case strings.HasSuffix(r.URL.Path, "/info/refs"):
 					// Handle git refs info if git reference is set.
-					if notFound := s.packageGitInfoRefsHandler(w, r); !notFound {
+					if notFound := packageGitInfoRefsHandler(w, r); !notFound {
 						return
 					}
 				case strings.HasSuffix(r.URL.Path, "/git-upload-pack"):
 					// Handle git upload pack if git reference is set.
-					if notFound := s.packageGitUploadPackHandler(w, r); !notFound {
+					if notFound := packageGitUploadPackHandler(w, r); !notFound {
 						return
 					}
 				}
 				// Handle go get domain/...
 				if r.URL.Query().Get("go-get") == "1" {
-					s.packageResolverHandler(w, r)
+					packageResolverHandler(w, r)
 					return
 				}
 				handler.ServeHTTP(w, r)
 			})),
 		}
-		s.servers = append(s.servers, server)
+		srv.servers = append(srv.servers, server)
 
 		go func() {
-			defer s.RecoveryService.Recover()
+			defer srv.RecoveryService.Recover()
 
-			s.logger.Infof("Plain HTTP Listening on %v", o.Listen)
+			srv.logger.Infof("Plain HTTP Listening on %v", srv.Listen)
 
 			if err := server.Serve(ln); err != nil && err != http.ErrServerClosed {
-				s.logger.Errorf("Serve '%v': %s", o.Listen, err)
+				srv.logger.Errorf("Serve '%v': %s", srv.Listen, err)
 			}
 		}()
 	}
 
-	if o.ListenInternalTLS != "" {
-		ln, err := net.Listen("tcp", o.ListenInternalTLS)
+	if srv.ListenInternalTLS != "" {
+		ln, err := net.Listen("tcp", srv.ListenInternalTLS)
 		if err != nil {
-			return fmt.Errorf("listen internal tls '%v': %s", o.ListenInternalTLS, err)
+			return fmt.Errorf("listen internal tls '%v': %s", srv.ListenInternalTLS, err)
 		}
 
 		ln = &httputils.TLSListener{
 			TCPListener: ln.(*net.TCPListener),
-			TLSConfig:   tlsConfig,
+			TLSConfig:   srv.tlsConfig,
 		}
 
 		server := &http.Server{
-			Handler:   s.nilRecoveryHandler(s.internalHandler),
-			TLSConfig: tlsConfig,
+			Handler:   nilRecoveryHandler(srv.internalHandler),
+			TLSConfig: srv.tlsConfig,
 		}
-		s.servers = append(s.servers, server)
+		srv.servers = append(srv.servers, server)
 
 		go func() {
-			defer s.RecoveryService.Recover()
+			defer srv.RecoveryService.Recover()
 
-			s.logger.Infof("Internal TLS HTTP Listening on %v", o.ListenInternalTLS)
+			srv.logger.Infof("Internal TLS HTTP Listening on %v", srv.ListenInternalTLS)
 
 			if err := server.Serve(ln); err != nil && err != http.ErrServerClosed {
-				s.logger.Errorf("Serve Internal TLS '%v': %s", o.ListenInternalTLS, err)
+				srv.logger.Errorf("Serve Internal TLS '%v': %s", srv.ListenInternalTLS, err)
 			}
 		}()
 	}
 
-	if o.ListenInternal != "" {
-		ln, err := net.Listen("tcp", o.ListenInternal)
+	if srv.ListenInternal != "" {
+		ln, err := net.Listen("tcp", srv.ListenInternal)
 		if err != nil {
-			return fmt.Errorf("listen internal '%v': %s", o.ListenInternal, err)
+			return fmt.Errorf("listen internal '%v': %s", srv.ListenInternal, err)
 		}
 
 		server := &http.Server{
-			Addr:    o.ListenInternal,
-			Handler: s.nilRecoveryHandler(s.internalHandler),
+			Addr:    srv.ListenInternal,
+			Handler: nilRecoveryHandler(srv.internalHandler),
 		}
-		s.servers = append(s.servers, server)
+		srv.servers = append(srv.servers, server)
 
 		go func() {
-			defer s.RecoveryService.Recover()
+			defer srv.RecoveryService.Recover()
 
-			s.logger.Infof("Internal plain HTTP Listening on %v", o.ListenInternal)
+			srv.logger.Infof("Internal plain HTTP Listening on %v", srv.ListenInternal)
 
 			if err := server.Serve(ln); err != nil && err != http.ErrServerClosed {
-				s.logger.Errorf("Serve internal '%v': %s", o.ListenInternal, err)
+				srv.logger.Errorf("Serve internal '%v': %s", srv.ListenInternal, err)
 			}
 		}()
 	}
 	return nil
 }
 
-// Version returns service version based on values from version and
-// build information.
-func (s Server) Version() string {
-	if s.BuildInfo != "" {
-		return fmt.Sprintf("%s-%s", s.Options.Version, s.BuildInfo)
-	}
-	return s.Options.Version
-}
-
 // Shutdown gracefully terminates HTTP servers.
-func (s *Server) Shutdown(ctx context.Context) {
-	s.logger.Debug("Shutting down HTTP servers")
+func Shutdown(ctx context.Context) {
+	if srv == nil {
+		return
+	}
+
+	srv.logger.Debug("Shutting down HTTP servers")
 	wg := sync.WaitGroup{}
-	for _, server := range s.servers {
+	for _, server := range srv.servers {
 		wg.Add(1)
 		go func(server *http.Server) {
-			defer s.RecoveryService.Recover()
+			defer srv.RecoveryService.Recover()
 			defer wg.Done()
 
 			if err := server.Shutdown(ctx); err != nil {
-				s.logger.Errorf("Server shutdown: %s", err)
+				srv.logger.Errorf("Server shutdown: %s", err)
 			}
 		}(server)
 	}
 	wg.Wait()
+}
+
+// Version returns service version based on values from version and
+// build information.
+func version() string {
+	if srv.BuildInfo != "" {
+		return fmt.Sprintf("%s-%s", srv.Options.Version, srv.BuildInfo)
+	}
+	return srv.Options.Version
 }

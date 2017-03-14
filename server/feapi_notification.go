@@ -12,62 +12,62 @@ import (
 	"resenje.org/jsonresponse"
 )
 
-func (s Server) emailOptOutFEAPIHandler(w http.ResponseWriter, r *http.Request) {
+func emailOptOutFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	token := vars["token"]
 
-	email, err := s.emailFromToken(token)
+	email, err := emailFromToken(token)
 	if err != nil {
-		s.logger.Errorf("email opt-out fe api: token %s: %s", token, err)
+		srv.logger.Errorf("email opt-out fe api: token %s: %s", token, err)
 		jsonresponse.NotFound(w, nil)
 		return
 	}
 
 	if !emailRegex.MatchString(email) {
-		s.logger.Warningf("email opt-out fe api: token %s: invalid data %s", token, email)
+		srv.logger.Warningf("email opt-out fe api: token %s: invalid data %s", token, email)
 		jsonresponse.NotFound(w, nil)
 		return
 	}
 
-	if err := s.NotificationService.OptOutEmail(email); err != nil {
-		s.logger.Errorf("email opt-out fe api: opt-out email %s: %s", email, err)
+	if err := srv.NotificationService.OptOutEmail(email); err != nil {
+		srv.logger.Errorf("email opt-out fe api: opt-out email %s: %s", email, err)
 		jsonServerError(w, err)
 		return
 	}
 
-	s.logger.Infof("email opt-out fe api: success %s", email)
+	srv.logger.Infof("email opt-out fe api: success %s", email)
 
-	s.audit(r, nil, "email opt-out", email)
+	audit(r, nil, "email opt-out", email)
 
 	jsonresponse.OK(w, nil)
 }
 
-func (s Server) emailRemoveOptOutFEAPIHandler(w http.ResponseWriter, r *http.Request) {
+func emailRemoveOptOutFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	token := vars["token"]
 
-	email, err := s.emailFromToken(token)
+	email, err := emailFromToken(token)
 	if err != nil {
-		s.logger.Errorf("email opt-out remove fe api: token %s: %s", token, err)
+		srv.logger.Errorf("email opt-out remove fe api: token %s: %s", token, err)
 		jsonresponse.NotFound(w, nil)
 		return
 	}
 
 	if !emailRegex.MatchString(email) {
-		s.logger.Warningf("email opt-out remove fe api: token %s: invalid data %s", token, email)
+		srv.logger.Warningf("email opt-out remove fe api: token %s: invalid data %s", token, email)
 		jsonresponse.NotFound(w, nil)
 		return
 	}
 
-	if err := s.NotificationService.RemoveOptedOutEmail(email); err != nil {
-		s.logger.Errorf("email opt-out remove fe api: remove email opt-out %s: %s", email, err)
+	if err := srv.NotificationService.RemoveOptedOutEmail(email); err != nil {
+		srv.logger.Errorf("email opt-out remove fe api: remove email opt-out %s: %s", email, err)
 		jsonServerError(w, err)
 		return
 	}
 
-	s.logger.Infof("email opt-out remove fe api: success %s", email)
+	srv.logger.Infof("email opt-out remove fe api: success %s", email)
 
-	s.audit(r, nil, "email opt-out remove", email)
+	audit(r, nil, "email opt-out remove", email)
 
 	jsonresponse.OK(w, nil)
 }
