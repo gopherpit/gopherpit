@@ -33,7 +33,7 @@ func packageAPIHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if err == packages.PackageNotFound {
 			srv.logger.Warningf("package api: package %s: %s", id, err)
-			jsonresponse.NotFound(w, api.ErrPackageNotFound)
+			jsonresponse.BadRequest(w, api.ErrPackageNotFound)
 			return
 		}
 		srv.logger.Errorf("package api: package %s: %s", id, err)
@@ -279,10 +279,6 @@ func deletePackageAPIHandler(w http.ResponseWriter, r *http.Request) {
 	case packages.Forbidden:
 		srv.logger.Warningf("package delete api: user %s: delete package %s: %s", u.ID, id, err)
 		jsonresponse.Forbidden(w, nil)
-		return
-	case packages.DomainNotFound:
-		srv.logger.Warningf("package delete api: user %s: delete package %s: %s", u.ID, id, err)
-		jsonresponse.BadRequest(w, api.ErrDomainNotFound)
 		return
 	case packages.PackageNotFound:
 		srv.logger.Warningf("package delete api: user %s: delete package %s: %s", u.ID, id, err)

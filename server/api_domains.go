@@ -39,7 +39,7 @@ func domainAPIHandler(w http.ResponseWriter, r *http.Request) {
 		switch err {
 		case packages.DomainNotFound:
 			srv.logger.Warningf("domain api: domain %s: %s", id, err)
-			jsonresponse.NotFound(w, api.ErrDomainNotFound)
+			jsonresponse.BadRequest(w, api.ErrDomainNotFound)
 			return
 		case nil:
 		default:
@@ -55,7 +55,7 @@ func domainAPIHandler(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			if err == packages.DomainNotFound {
 				srv.logger.Warningf("domain api: domain users %s: %s", id, err)
-				jsonresponse.NotFound(w, api.ErrDomainNotFound)
+				jsonresponse.BadRequest(w, api.ErrDomainNotFound)
 				return
 			}
 			srv.logger.Errorf("domain api: domain users %s: %s", id, err)
@@ -121,8 +121,8 @@ func domainTokensAPIHandler(w http.ResponseWriter, r *http.Request) {
 		verificationDomain = srv.VerificationSubdomain + "." + d
 
 		tokens = append(tokens, api.DomainToken{
-			Domain: verificationDomain,
-			Token:  token,
+			FQDN:  verificationDomain,
+			Token: token,
 		})
 	}
 
@@ -388,7 +388,7 @@ func deleteDomainAPIHandler(w http.ResponseWriter, r *http.Request) {
 		switch err {
 		case packages.DomainNotFound:
 			srv.logger.Warningf("delete domain api: delete domain %s: %s", id, err)
-			jsonresponse.NotFound(w, api.ErrDomainNotFound)
+			jsonresponse.BadRequest(w, api.ErrDomainNotFound)
 			return
 		case nil:
 		default:
@@ -424,11 +424,11 @@ func domainsAPIHandler(w http.ResponseWriter, r *http.Request) {
 		switch err {
 		case packages.DomainNotFound:
 			srv.logger.Warningf("domains api: domains by user %s: start ref %q: %s", u.ID, startRef, err)
-			jsonresponse.NotFound(w, api.ErrDomainNotFound)
+			jsonresponse.BadRequest(w, api.ErrDomainNotFound)
 			return
 		case packages.UserDoesNotExist:
 			srv.logger.Warningf("domains api: domains by user %s: %s", u.ID, err)
-			jsonresponse.NotFound(w, api.ErrUserDoesNotExist)
+			jsonresponse.BadRequest(w, api.ErrUserDoesNotExist)
 			return
 		case nil:
 		default:
@@ -465,7 +465,7 @@ func domainUsersAPIHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if err == packages.DomainNotFound {
 			srv.logger.Warningf("domain users api: domain %s: %s", id, err)
-			jsonresponse.NotFound(w, api.ErrDomainNotFound)
+			jsonresponse.BadRequest(w, api.ErrDomainNotFound)
 			return
 		}
 		srv.logger.Errorf("domain users api: domain %s: %s", id, err)
@@ -484,7 +484,7 @@ func domainUsersAPIHandler(w http.ResponseWriter, r *http.Request) {
 		switch err {
 		case packages.DomainNotFound:
 			srv.logger.Warningf("domain users api: domain users %s: %s", id, err)
-			jsonresponse.NotFound(w, api.ErrDomainNotFound)
+			jsonresponse.BadRequest(w, api.ErrDomainNotFound)
 			return
 		case nil:
 		default:

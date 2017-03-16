@@ -62,7 +62,7 @@
           <div class="message-header" v-if="tokens.length == 1">To verify this domain the following DNS record must be present.</div>
           <div class="message-header" v-else-if="tokens.length > 1">To verify this domain any of the following DNS records must be present.</div>
           <div class="message-body">
-          <p v-for="token in tokens"><code v-html="token.domain +' TXT '+ token.token"></code></p>
+          <p v-for="token in tokens"><code v-html="token.fqdn +' TXT '+ token.token"></code></p>
           <p>After you add DNS record, come back to this form and submit this domain again.</p>
           <p>Keep in mind that DNS propagation requires some time after the record is set, depending on TTL value.</p>
           </div>

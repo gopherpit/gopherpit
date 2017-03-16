@@ -94,8 +94,8 @@ type domainFEAPIRequest struct {
 }
 
 type domainToken struct {
-	Domain string `json:"domain"`
-	Token  string `json:"token"`
+	FQDN  string `json:"fqdn"`
+	Token string `json:"token"`
 }
 
 type validationFormErrorResponse struct {
@@ -225,8 +225,8 @@ func domainFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 				}
 
 				tokens = append(tokens, domainToken{
-					Domain: verificationDomain,
-					Token:  token,
+					FQDN:  verificationDomain,
+					Token: token,
 				})
 			}
 

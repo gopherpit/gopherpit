@@ -32,8 +32,8 @@ type DomainsPage struct {
 }
 
 type DomainToken struct {
-	Domain string `json:"domain"`
-	Token  string `json:"token"`
+	FQDN  string `json:"fqdn"`
+	Token string `json:"token"`
 }
 
 type DomainTokens struct {
@@ -95,6 +95,7 @@ type PackagesPage struct {
 var (
 	ErrForbidden                     = NewError(403, "Forbidden")
 	ErrTooManyRequests               = NewError(429, "Too Many Requests")
+	ErrInternalServerError           = NewError(500, "Internal Server Error")
 	ErrMaintenance                   = NewError(503, "Maintenance")
 	ErrDomainNotFound                = NewError(1000, "Domain Not Found")
 	ErrDomainAlreadyExists           = NewError(1001, "Domain Already Exists")
