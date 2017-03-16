@@ -8,11 +8,13 @@ package server
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"resenje.org/jsonresponse"
 
 	"gopherpit.com/gopherpit/api"
 	"gopherpit.com/gopherpit/services/packages"
+	"gopherpit.com/gopherpit/services/user"
 )
 
 func packagesDomainToAPIDomain(d packages.Domain) api.Domain {
@@ -46,20 +48,34 @@ func packagesPackageToAPIPackage(p packages.Package, d *packages.Domain) api.Pac
 
 func jsonAPIRateLimiterHandler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		u, r, err := getRequestUser(r)
-		if err != nil {
-			panic(err)
-		}
-		limited, result, err := srv.apiRateLimiter.RateLimit(fmt.Sprintf("userID:%s", u.ID), 1)
-		if err != nil {
-			srv.logger.Errorf("api rate limiter: rate limit: %s", err)
-			jsonresponse.InternalServerError(w, nil)
-			return
-		}
-		if limited {
-			srv.logger.Warningf("api rate limiter: blocked %s: retry after %s", u.ID, result.RetryAfter)
-			jsonresponse.BadRequest(w, api.ErrTooManyRequests)
-			return
+		if srv.APIHourlyRateLimit > 0 {
+			var u *user.User
+			var err error
+			u, r, err = getRequestUser(r)
+			if err != nil {
+				panic(err)
+			}
+			limited, result, err := srv.apiRateLimiter.RateLimit(fmt.Sprintf("userID:%s", u.ID), 1)
+			if err != nil {
+				srv.logger.Errorf("api rate limiter: rate limit: %s", err)
+				jsonresponse.InternalServerError(w, nil)
+				return
+			}
+			if result.Limit > 0 {
+				w.Header().Set("X-Ratelimit-Limit", strconv.Itoa(result.Limit))
+				w.Header().Set("X-Ratelimit-Remaining", strconv.Itoa(result.Remaining))
+				if result.ResetAfter > 0 {
+					w.Header().Set("X-Ratelimit-Reset", fmt.Sprintf("%f", result.ResetAfter.Seconds()))
+				}
+				if result.RetryAfter > 0 {
+					w.Header().Set("X-Ratelimit-Retry", fmt.Sprintf("%f", result.RetryAfter.Seconds()))
+				}
+			}
+			if limited {
+				srv.logger.Warningf("api rate limiter: blocked %s: retry after %s", u.ID, result.RetryAfter)
+				jsonresponse.BadRequest(w, api.ErrTooManyRequests)
+				return
+			}
 		}
 		h.ServeHTTP(w, r)
 	})
