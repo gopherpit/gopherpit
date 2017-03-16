@@ -20,7 +20,7 @@ type APIOptions struct {
 	TrustedProxyCIDRs []string `json:"trusted-proxy-cidrs" yaml:"trusted-proxy-cidrs" envconfig:"TRUSTED_PROXY_CIDRS"`
 	ProxyRealIPHeader string   `json:"proxy-real-ip-header" yaml:"proxy-real-ip-header" envconfig:"PROXY_REAL_IP_HEADER"`
 	HourlyRateLimit   int      `json:"hourly-rate-limit" yaml:"hourly-rate-limit" envconfig:"HOURLY_RATE_LIMIT"`
-	Disable           bool     `json:"disable" yaml:"disable" envconfig:"DISABLE"`
+	Disabled          bool     `json:"disabled" yaml:"disable" envconfig:"DISABLE"`
 }
 
 // NewAPIOptions initializes APIOptions with default values.
@@ -32,7 +32,7 @@ func NewAPIOptions() *APIOptions {
 		},
 		ProxyRealIPHeader: "X-Real-Ip",
 		HourlyRateLimit:   0,
-		Disable:           false,
+		Disabled:          false,
 	}
 }
 

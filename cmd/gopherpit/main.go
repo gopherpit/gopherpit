@@ -527,7 +527,7 @@ COPYRIGHT
 			APITrustedProxyCIDRs:    apiOptions.TrustedProxyCIDRs,
 			APIProxyRealIPHeader:    apiOptions.ProxyRealIPHeader,
 			APIHourlyRateLimit:      apiOptions.HourlyRateLimit,
-			APIEnabled:              !apiOptions.Disable,
+			APIEnabled:              !apiOptions.Disabled,
 
 			EmailService:        *emailService,
 			RecoveryService:     *recoveryService,
