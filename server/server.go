@@ -266,7 +266,7 @@ func Configure(o Options) (err error) {
 
 		s.apiRateLimiter, err = throttled.NewGCRARateLimiter(
 			apiRateLimiterStore,
-			throttled.RateQuota{throttled.PerHour(1), s.APIHourlyRateLimit},
+			throttled.RateQuota{throttled.PerHour(1), s.APIHourlyRateLimit - 1},
 		)
 		if err != nil {
 			return fmt.Errorf("api rate limiter: %s", err)
