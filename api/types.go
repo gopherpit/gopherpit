@@ -5,8 +5,10 @@
 
 package api
 
+// MaxLimit is a default maximum number of elements for paged responses.
 const MaxLimit = 100
 
+// Domain holds information about GopherPit domain instance.
 type Domain struct {
 	ID                string `json:"id"`
 	FQDN              string `json:"fqdn"`
@@ -15,6 +17,7 @@ type Domain struct {
 	Disabled          bool   `json:"disabled,omitempty"`
 }
 
+// DomainOptions defines Domain fields that can be changed.
 type DomainOptions struct {
 	FQDN              *string `json:"fqdn,omitempty"`
 	OwnerUserID       *string `json:"owner_user_id,omitempty"`
@@ -22,31 +25,35 @@ type DomainOptions struct {
 	Disabled          *bool   `json:"disabled,omitempty"`
 }
 
-type Domains []Domain
-
+// DomainsPage is a paginated list of Domain instances.
 type DomainsPage struct {
-	Domains  Domains `json:"domains"`
-	Count    int     `json:"count"`
-	Previous string  `json:"previous,omitempty"`
-	Next     string  `json:"next,omitempty"`
+	Domains  []Domain `json:"domains"`
+	Count    int      `json:"count"`
+	Previous string   `json:"previous,omitempty"`
+	Next     string   `json:"next,omitempty"`
 }
 
+// DomainToken holds information about validation token for a specific fully qualified domain name.
 type DomainToken struct {
 	FQDN  string `json:"fqdn"`
 	Token string `json:"token"`
 }
 
+// DomainTokens is an API response with a list of domain tokens.
 type DomainTokens struct {
 	Tokens []DomainToken `json:"tokens"`
 }
 
+// DomainUsers holds information with User IDs who have access to a Domain.
 type DomainUsers struct {
 	OwnerUserID string   `json:"owner_user_id"`
 	UserIDs     []string `json:"user_ids,omitempty"`
 }
 
+// VCS is a type that defines possible VCS values for the Package.
 type VCS string
 
+// Possible VCS values.
 var (
 	VCSGit        VCS = "git"
 	VCSMercurial  VCS = "hg"
@@ -55,7 +62,7 @@ var (
 )
 
 // Package holds data that represents Go package location
-// and metadate for remote import path.
+// and metadata for remote import path.
 // https://golang.org/cmd/go/#hdr-Remote_import_paths
 type Package struct {
 	ID          string `json:"id"`
@@ -71,6 +78,7 @@ type Package struct {
 	Disabled    bool   `json:"disabled,omitempty"`
 }
 
+// PackageOptions defines Package fields that can be changed.
 type PackageOptions struct {
 	Domain      *string `json:"domain,omitempty"`
 	Path        *string `json:"path,omitempty"`
@@ -83,16 +91,17 @@ type PackageOptions struct {
 	Disabled    *bool   `json:"disabled,omitempty"`
 }
 
-type Packages []Package
-
+// PackagesPage is a paginated list of Package instances.
 type PackagesPage struct {
-	Packages Packages `json:"packages"`
-	Count    int      `json:"count"`
-	Previous string   `json:"previous,omitempty"`
-	Next     string   `json:"next,omitempty"`
+	Packages []Package `json:"packages"`
+	Count    int       `json:"count"`
+	Previous string    `json:"previous,omitempty"`
+	Next     string    `json:"next,omitempty"`
 }
 
+// Errors that the API can return.
 var (
+	ErrBadRequest                    = NewError(400, "Bad Request")
 	ErrForbidden                     = NewError(403, "Forbidden")
 	ErrTooManyRequests               = NewError(429, "Too Many Requests")
 	ErrInternalServerError           = NewError(500, "Internal Server Error")

@@ -325,6 +325,11 @@ func domainPackagesAPIHandler(w http.ResponseWriter, r *http.Request) {
 			jsonresponse.BadRequest(w, api.ErrDomainNotFound)
 			return
 		}
+		if err == packages.PackageNotFound {
+			srv.logger.Warningf("domain packages api: packages by domain %s: %s", id, err)
+			jsonresponse.BadRequest(w, api.ErrPackageNotFound)
+			return
+		}
 		srv.logger.Errorf("domain packages api: packages by domain %s: %s", id, err)
 		jsonresponse.InternalServerError(w, nil)
 		return
@@ -365,7 +370,7 @@ func domainPackagesAPIHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response := api.PackagesPage{
-		Packages: api.Packages{},
+		Packages: []api.Package{},
 		Previous: pkgs.Previous,
 		Next:     pkgs.Next,
 		Count:    pkgs.Count,

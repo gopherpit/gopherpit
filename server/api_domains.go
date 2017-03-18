@@ -426,11 +426,7 @@ func domainsAPIHandler(w http.ResponseWriter, r *http.Request) {
 			srv.logger.Warningf("domains api: domains by user %s: start ref %q: %s", u.ID, startRef, err)
 			jsonresponse.BadRequest(w, api.ErrDomainNotFound)
 			return
-		case packages.UserDoesNotExist:
-			srv.logger.Warningf("domains api: domains by user %s: %s", u.ID, err)
-			jsonresponse.BadRequest(w, api.ErrUserDoesNotExist)
-			return
-		case nil:
+		case nil, packages.UserDoesNotExist:
 		default:
 			srv.logger.Errorf("domains api: domains by user %s: start ref %q: %s", u.ID, startRef, err)
 			jsonresponse.InternalServerError(w, nil)
@@ -439,7 +435,7 @@ func domainsAPIHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response := api.DomainsPage{
-		Domains:  api.Domains{},
+		Domains:  []api.Domain{},
 		Previous: domains.Previous,
 		Next:     domains.Next,
 		Count:    domains.Count,
