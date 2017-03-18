@@ -53,3 +53,11 @@ span.button {
 .is-middle {
   vertical-align: middle!important;
 }
+
+.content pre:not(:last-child) {
+    margin-bottom: 1em;
+}
+
+code {
+  color: inherit;
+}

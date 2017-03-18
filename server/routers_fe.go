@@ -48,6 +48,7 @@ func setupFrontendRouter(baseRouter *http.ServeMux) {
 	))
 	frontendRouter.Handle("/about", http.HandlerFunc(aboutHandler))
 	frontendRouter.Handle("/license", http.HandlerFunc(licenseHandler))
+	frontendRouter.Handle("/doc", http.HandlerFunc(docHandler))
 	frontendRouter.Handle("/contact", chainHandlers(
 		generateAntiXSRFCookieHandler,
 		finalHandlerFunc(contactHandler),

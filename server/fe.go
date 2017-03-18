@@ -141,3 +141,23 @@ func licenseHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	respond(w, "License", nil)
 }
+
+func docHandler(w http.ResponseWriter, r *http.Request) {
+	if !srv.APIEnabled {
+		htmlNotFoundHandler(w, r)
+		return
+	}
+
+	u, r, err := getRequestUser(r)
+	if err != nil {
+		panic(err)
+	}
+
+	if u != nil {
+		respond(w, "DocPrivate", map[string]interface{}{
+			"User": u,
+		})
+		return
+	}
+	respond(w, "Doc", nil)
+}
