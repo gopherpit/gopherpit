@@ -21,7 +21,7 @@ LDFLAGS += -X $(GO_PACKAGE_PATH)/server/config.BuildInfo="$(shell git describe -
 
 BULMA_VERSION ?= 0.3.2
 FONTAWESOME_VERSION ?= 4.7.0
-VUE_VERSION ?= 2.2.0
+VUE_VERSION ?= 2.2.4
 AXIOS_VERSION ?= 0.15.3
 LODASH_VERSION ?= 4.17.4
 LODASH_INCLUDE ?= debounce,throttle,includes
