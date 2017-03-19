@@ -17,6 +17,7 @@ import (
 	"resenje.org/jsonresponse"
 	"resenje.org/marshal"
 
+	"gopherpit.com/gopherpit/services/packages"
 	"gopherpit.com/gopherpit/services/session"
 	"gopherpit.com/gopherpit/services/user"
 )
@@ -201,12 +202,23 @@ func passwordResetFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 		jsonresponse.BadRequest(w, errors)
 		return
 	}
-	if len(request.Password) < 8 {
-		srv.logger.Warning("password reset: short password")
+
+	if len(request.Password) == 0 {
+		srv.logger.Warningf("password reset fe api: empty password %s", request.Token)
+		errors.AddFieldError("password1", "Password is required.")
+	} else if len(request.Password) < 8 {
+		srv.logger.Warningf("password reset fe api: short password %s", request.Token)
 		errors.AddFieldError("password1", "Password is too short.")
+	} else if request.Password != request.Password2 {
+		srv.logger.Warningf("password reset fe api: password confirmation invalid %s", request.Token)
+		errors.AddFieldError("password2", "Password is not confirmed.")
+	}
+
+	if errors.HasErrors() {
 		jsonresponse.BadRequest(w, errors)
 		return
 	}
+
 	err := srv.UserService.ResetPassword(request.Token, request.Password)
 	if err != nil {
 		if err == user.PasswordResetTokenExpired {
@@ -271,19 +283,19 @@ func userFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if err == user.UsernameExists {
 			srv.logger.Warningf("user fe api: user ID %s: %s", u.ID, err)
-			errors.AddError("This username is already taken.")
+			errors.AddFieldError("username", "This username is already taken.")
 			jsonresponse.BadRequest(w, errors)
 			return
 		}
 		if err == user.UsernameInvalid {
 			srv.logger.Warningf("user fe api: user ID %s: %s", u.ID, err)
-			errors.AddError("This username is invalid.")
+			errors.AddFieldError("username", "This username is invalid.")
 			jsonresponse.BadRequest(w, errors)
 			return
 		}
 		if err == user.UsernameMissing {
 			srv.logger.Warningf("user fe api: user ID %s: %s", u.ID, err)
-			errors.AddError("Username is required.")
+			errors.AddFieldError("username", "Username is required.")
 			jsonresponse.BadRequest(w, errors)
 			return
 		}
@@ -502,7 +514,7 @@ func userDeleteFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	domains, err := srv.PackagesService.DomainsByOwner(u.ID, "", 1)
-	if err != nil {
+	if err != nil && err != packages.UserDoesNotExist {
 		srv.logger.Errorf("user delete fe api: domains by owner: %s", err)
 		jsonServerError(w, err)
 		return

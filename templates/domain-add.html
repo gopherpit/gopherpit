@@ -50,11 +50,12 @@
 </script>
 [[ end ]]
 [[ define "main" ]]
-<div class="columns content">
+<div class="columns">
   <div class="column">
-    <h1 class="title is-1">New domain</h1>
-    <p>A domain is DNS domain that serves as a logical unit under which you can specify import paths for packages and their repositories.</p>
-
+    <div class="content">
+      <h1 class="title is-1">New domain</h1>
+      <p>A domain is DNS domain that serves as a logical unit under which you can specify import paths for packages and their repositories.</p>
+    </div>
     <form id="domain-form" method="post" v-on:submit.prevent="submit" v-bind:class="{'is-disabled': isLoading}">
       <div class="notification is-danger" v-for="err in errors" v-cloak v-html="err"></div>
       <div class="content" v-if="tokens.length > 0" v-cloak>
@@ -68,27 +69,31 @@
           </div>
         </article>
       </div>
-      <p class="control">
-        <input class="input" type="text" v-model="fields.fqdn" placeholder="Fully qualified domain name" autofocus>
-        <p class="control help is-danger" v-for="err in fieldErrors.fqdn" v-cloak v-html="err"></p>
-      </p>
-      <p class="control">
-        <nav class="level">
-          <div class="level-left">
-          </div>
-          <div class="level-right">
-            <div class="level-item">
-              <p class="control">
-                <a class="ui button" href="/">Cancel</a> 
-                <button type="submit" class="button is-primary" tabindex="0" v-bind:class="{'is-loading': isLoading}">Add</button>
-              </p>
+      <div class="field">
+        <p class="control">
+          <input class="input" type="text" v-model="fields.fqdn" placeholder="Fully qualified domain name" v-bind:class="{'is-danger': fieldErrors.fqdn}" autofocus>
+        </p>
+        <p class="help is-danger" v-for="err in fieldErrors.fqdn" v-cloak v-html="err"></p>
+      </div>
+      <div class="field">
+        <p class="control">
+          <nav class="level">
+            <div class="level-left">
             </div>
-          </div>
-        </nav>
-      </p>
+            <div class="level-right">
+              <div class="level-item">
+                <p class="control">
+                  <a class="ui button" href="/">Cancel</a> 
+                  <button type="submit" class="button is-primary" tabindex="0" v-bind:class="{'is-loading': isLoading}">Add</button>
+                </p>
+              </div>
+            </div>
+          </nav>
+        </p>
+      </div>
     </form>
   </div>
-  <div class="column" id="help">
+  <div class="column content" id="help">
     <h2 class="title is-4">Your own domain or subdomain</h2>
     <div class="subtitle is-5">example.com or project.example.com</div>
     <p>Custom domain must have a CNAME DNS record with value: <code>[[ context "AliasCNAME" ]].</code><br />in order to be functional and to successfully request a TLS certificate. A verification of ownership is required by adding TXT DNS records with a unique value provided in the next step.</p>

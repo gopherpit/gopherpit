@@ -71,21 +71,25 @@
         <p class="content">Account deletion is irreversible and all your data will be lost.</p>
         <label class="label">Enter password to confirm account deletion</label>
         <div class="notification is-danger" v-for="err in errors" v-cloak v-html="err"></div>
-        <p class="control">
-          <input class="input" v-model="fields.password" type="password" autofocus>
-          <p class="control help is-danger" v-for="err in fieldErrors.password" v-cloak v-html="err"></p>
-        </p>
-        <p class="control">
-          <nav class="level">
-            <div class="level-left">
-            </div>
-            <div class="level-right">
-              <div class="level-item">
-                <button type="submit" class="button is-danger" v-bind:class="{'is-loading': isLoading}">Yes, delete my account!</button>
+        <div class="field">
+          <p class="control">
+            <input class="input" v-model="fields.password" type="password" v-bind:class="{'is-danger': fieldErrors.password}" autofocus>
+          </p>
+          <p class="help is-danger" v-for="err in fieldErrors.password" v-cloak v-html="err"></p>
+        </div>
+        <div class="field">
+          <p class="control">
+            <nav class="level">
+              <div class="level-left">
               </div>
-            </div>
-          </nav>
-        </p>
+              <div class="level-right">
+                <div class="level-item">
+                  <button type="submit" class="button is-danger" v-bind:class="{'is-loading': isLoading}">Yes, delete my account!</button>
+                </div>
+              </div>
+            </nav>
+          </p>
+        </div>
       </form>
     </div>
   </div>

@@ -19,7 +19,7 @@ LDFLAGS += -X $(GO_PACKAGE_PATH)/server/config.Dir="$(CONFIG_DIR)"
 endif
 LDFLAGS += -X $(GO_PACKAGE_PATH)/server/config.BuildInfo="$(shell git describe --long --dirty --always || true)"
 
-BULMA_VERSION ?= 0.3.2
+BULMA_VERSION ?= 0.4.0
 FONTAWESOME_VERSION ?= 4.7.0
 VUE_VERSION ?= 2.2.4
 AXIOS_VERSION ?= 0.15.3

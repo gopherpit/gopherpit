@@ -38,8 +38,8 @@
     methods: {
       submit: _.throttle(function() {
         if (this.form.fields.vcs != "git") {
-          this.form.fields["ref-type"] = "";
-          this.form.fields["ref-name"] = "";
+          this.form.fields.refType = "";
+          this.form.fields.refName = "";
         };
         httpPost(this.form, '[[ if .Package.ID ]]/i/package/[[ .Package.ID ]][[ else ]]/i/package[[ end ]]', function(response) {
           window.location = encodeURI("/domain/[[ .Domain.FQDN ]]")
@@ -64,7 +64,7 @@
   </div>
 </div>
 <div class="hero-foot">
-  <div class="tabs is-boxed">
+  <div class="tabs is-centered is-boxed">
     <div class="container">
       <ul>
         <li class="is-active"><a href="/domain/[[ .Domain.FQDN ]]">Packages</a></li>
@@ -99,109 +99,133 @@
     <form id="package-form" method="post" v-on:submit.prevent="submit" v-bind:class="{'is-disabled': form.isLoading}">
       <div class="notification is-danger" v-for="err in form.errors" v-cloak v-html="err"></div>
 
-      <label class="label">Go remote import path</label>
-      <p class="control has-addons">
-        <span class="button is-unselectable">
-          [[ .Domain.FQDN ]]
-        </span>
-        <input class="input is-expanded" type="text" v-model="form.fields.path" autofocus>
-        <p class="control help is-danger" v-for="err in form.fieldErrors.path" v-cloak v-html="err"></p>
-      </p>
+      <div class="field">
+        <label class="label">Go remote import path</label>
+        <div class="field has-addons">
+          <p class="control">
+            <span class="button is-unselectable" v-bind:class="{'is-danger': form.fieldErrors.path}">
+              [[ .Domain.FQDN ]]
+            </span>
+          </p>
+          <p class="control is-expanded">
+            <input class="input" type="text" v-model="form.fields.path" v-bind:class="{'is-danger': form.fieldErrors.path}" autofocus>
+          </p>
+        </div>
+        <p class="help is-danger" v-for="err in form.fieldErrors.path" v-cloak v-html="err"></p>
+      </div>
 
-      <label class="label">Repository</label>
-      <p class="control has-addons">
-        <input class="input is-expanded" type="text" v-model="form.fields.repoRoot">
-        <span class="select">
-          <select v-model="form.fields.vcs">
-            [[ range $vcs := .VCSInfos ]]
-            <option value="[[ $vcs.VCS ]]">[[ $vcs.Name ]]</option>
-            [[ end ]]
-          </select>
-        </span>
-        <span class="select" v-if="form.fields.vcs == 'git'">
-          <select v-model="form.fields.refType">
-            <option value="">Master</option>
-            <option value="branch">Branch</option>
-            <option value="tag">Tag</option>
-          </select>
-        </span>
-        <input class="input" type="text" v-model="form.fields.refName" v-if="form.fields.refType && form.fields.vcs == 'git'">
-        <p class="control help is-danger" v-for="err in form.fieldErrors.vcs" v-cloak v-html="err"></p>
-        <p class="control help is-danger" v-for="err in form.fieldErrors.repoRoot" v-cloak v-html="err"></p>
-        <p class="control help is-danger" v-for="err in form.fieldErrors.refName" v-cloak v-html="err"></p>
-        <p class="control help is-danger" v-for="err in form.fieldErrors.refType" v-cloak v-html="err"></p>
-      </p>
-      <p class="help">Repository must be a valid URI with a scheme valid hostname, optional port separated by a colon ":" and a path.<br><br>Examples:<br>
-      https://github.com/gopherpit/gopherpit<br>
-      git+ssh://git@github.com/gopherpit/gopherpit<br>
-      git+ssh://git@repo.example.com:22022/gopherpit/gopherpit<br><br>
-      A <i>scp</i> style (git@github.com:gopherpit/gopherpit.git) referencing is not valid for <i>go get</i> tool.<br><br>
-      For Git HTTP and HTTPS repositories a custom branch or tag can be specified. It allows to have different package paths for different package versions in the same repository that break backward compatibility with master or other branches.
-      </p>
+      <div class="field">
+        <label class="label">Repository</label>
+        <div class="field has-addons">
+          <p class="control is-expanded">
+            <input class="input" type="text" v-model="form.fields.repoRoot" v-bind:class="{'is-danger': form.fieldErrors.repoRoot}">
+          </p>
+          <p class="control">
+            <span class="select">
+              <select v-model="form.fields.vcs" v-bind:class="{'is-danger': form.fieldErrors.vcs}">
+                [[ range $vcs := .VCSInfos ]]
+                <option value="[[ $vcs.VCS ]]">[[ $vcs.Name ]]</option>
+                [[ end ]]
+              </select>
+            </span>
+          </p>
+          <p class="control">
+            <span class="select" v-if="form.fields.vcs == 'git'">
+              <select v-model="form.fields.refType" v-bind:class="{'is-danger': form.fieldErrors.refType}">
+                <option value="">Master</option>
+                <option value="branch">Branch</option>
+                <option value="tag">Tag</option>
+              </select>
+            </span>
+          </p>
+          <p class="control">
+            <input class="input" type="text" v-model="form.fields.refName" v-if="form.fields.refType && form.fields.vcs == 'git'" v-bind:class="{'is-danger': form.fieldErrors.refName}">
+          </p>
+        </div>
+        <p class="help is-danger" v-for="err in form.fieldErrors.vcs" v-cloak v-html="err"></p>
+        <p class="help is-danger" v-for="err in form.fieldErrors.repoRoot" v-cloak v-html="err"></p>
+        <p class="help is-danger" v-for="err in form.fieldErrors.refName" v-cloak v-html="err"></p>
+        <p class="help is-danger" v-for="err in form.fieldErrors.refType" v-cloak v-html="err"></p>
 
-      <label class="label">Go Source</label>
-      <p class="control">
-        <input class="input" type="text" v-model="form.fields.goSource">
-        <p class="control help is-danger" v-for="err in form.fieldErrors.goSource" v-cloak v-html="err"></p>
+        <p class="help">Repository must be a valid URI with a scheme valid hostname, optional port separated by a colon ":" and a path.<br><br>Examples:<br>
+        https://github.com/gopherpit/gopherpit<br>
+        git+ssh://git@github.com/gopherpit/gopherpit<br>
+        git+ssh://git@repo.example.com:22022/gopherpit/gopherpit<br><br>
+        A <i>scp</i> style (git@github.com:gopherpit/gopherpit.git) referencing is not valid for <i>go get</i> tool.<br><br>
+        For Git HTTP and HTTPS repositories a custom branch or tag can be specified. It allows to have different package paths for different package versions in the same repository that break backward compatibility with master or other branches.
+        </p>
+      </div>
+
+      <div class="field">
+        <label class="label">Go Source</label>
+        <p class="control">
+          <input class="input" type="text" v-model="form.fields.goSource" v-bind:class="{'is-danger': form.fieldErrors.goSource}">
+        </p>
+        <p class="help is-danger" v-for="err in form.fieldErrors.goSource" v-cloak v-html="err"></p>
         <p class="help">An optional value for HTML meta tag go-source, used for <a href="https://github.com/golang/gddo/wiki/Source-Code-Links" target="_blank">documentation links</a>.
         <br><br>Example:<br>
         example.com/package https://github.com/example/package/ https://github.com/example/package/tree/master{/dir} https://github.com/example/package/blob/master{/dir}/{file}#L{line}
         </p>
-      </p>
+      </div>
 
-      <label class="label">Redirect URL</label>
-      <p class="control">
-        <input class="input" type="text" v-model="form.fields.redirectUrl">
-        <p class="control help is-danger" v-for="err in form.fieldErrors.redirectUrl" v-cloak v-html="err"></p>
+      <div class="field">
+        <label class="label">Redirect URL</label>
+        <p class="control">
+          <input class="input" type="text" v-model="form.fields.redirectUrl" v-bind:class="{'is-danger': form.fieldErrors.redirectUrl}">
+        </p>
+        <p class="help is-danger" v-for="err in form.fieldErrors.redirectUrl" v-cloak v-html="err"></p>
         <span class="help">An otponal URL to redirect request not made by the <i>go get</i> tool.</span>
-      </p>
+      </div>
 
-      <br>
-      <p class="control">
-        <label class="checkbox">
-          <input type="checkbox" v-model="form.fields.disabled">
-          Disabled
-        </label>
-        <p class="control help is-danger" v-for="err in form.fieldErrors.disabled" v-cloak v-html="err"></p>
-      </p>
+      <div class="field">
+        <p class="control">
+          <label class="checkbox">
+            <input type="checkbox" v-model="form.fields.disabled">
+            Disabled
+          </label>
+        </p>
+        <p class="help is-danger" v-for="err in form.fieldErrors.disabled" v-cloak v-html="err"></p>
+      </div>
 
-      <p class="control">
-        <nav class="level">
-          <div class="level-left">
-            [[ if .Package.ID ]]
-            <a class="button is-danger is-outlined" v-on:click.prevent="packageDelete.isModalActive = true" tabindex="1">Delete</a>
-            <div class="modal" v-bind:class="{'is-active': packageDelete.isModalActive}" v-cloak>
-              <div class="modal-background" v-on:click="packageDelete.isModalActive = false"></div>
-              <div class="modal-container">
-                <div class="modal-content box">
-                  <div class="title">Delete package [[ .Domain.FQDN ]][[ .Package.Path ]]?</div>
-                  <div class="notification is-danger" v-for="err in packageDelete.errors" v-cloak v-html="err"></div>
-                  <nav class="level">
-                    <div class="level-left">
-                    </div>
-                    <div class="level-right">
-                      <div class="level-item">
-                        <a class="button modal-close-button" v-on:click.prevent="packageDelete.isModalActive = false">No</a>
-                        <a class="button is-danger" v-on:click.prevent="deletePackage" v-bind:class="{'is-loading': packageDelete.isLoading}">Yes, delete it!</a>
+      <div class="field">
+        <p class="control">
+          <nav class="level">
+            <div class="level-left">
+              [[ if .Package.ID ]]
+              <a class="button is-danger is-outlined" v-on:click.prevent="packageDelete.isModalActive = true" tabindex="1">Delete</a>
+              <div class="modal" v-bind:class="{'is-active': packageDelete.isModalActive}" v-cloak>
+                <div class="modal-background" v-on:click="packageDelete.isModalActive = false"></div>
+                <div class="modal-container">
+                  <div class="modal-content box">
+                    <div class="title">Delete package [[ .Domain.FQDN ]][[ .Package.Path ]]?</div>
+                    <div class="notification is-danger" v-for="err in packageDelete.errors" v-cloak v-html="err"></div>
+                    <nav class="level">
+                      <div class="level-left">
                       </div>
-                    </div>
-                  </nav>
+                      <div class="level-right">
+                        <div class="level-item">
+                          <a class="button modal-close-button" v-on:click.prevent="packageDelete.isModalActive = false">No</a>
+                          <a class="button is-danger" v-on:click.prevent="deletePackage" v-bind:class="{'is-loading': packageDelete.isLoading}">Yes, delete it!</a>
+                        </div>
+                      </div>
+                    </nav>
+                  </div>
                 </div>
+                <a class="modal-close" v-on:click.prevent="packageDelete.isModalActive = false"></a>
               </div>
-              <a class="modal-close" v-on:click.prevent="packageDelete.isModalActive = false"></a>
+              [[ end ]]
             </div>
-            [[ end ]]
-          </div>
-          <div class="level-right">
-            <div class="level-item">
-              <p class="control">
-                <a class="ui button" href="/domain/[[ .Domain.FQDN ]]">Cancel</a> 
-                <button type="submit" class="button is-primary" v-bind:class="{'is-loading': form.isLoading}">Save</button>
-              </p>
+            <div class="level-right">
+              <div class="level-item">
+                <p class="control">
+                  <a class="ui button" href="/domain/[[ .Domain.FQDN ]]">Cancel</a> 
+                  <button type="submit" class="button is-primary" v-bind:class="{'is-loading': form.isLoading}">Save</button>
+                </p>
+              </div>
             </div>
-          </div>
-        </nav>
-      </p>
+          </nav>
+        </p>
+      </div>
     </form>
   </div>
 </div>

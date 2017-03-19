@@ -16,12 +16,12 @@
       form: {
         fields: {
           fqdn: "[[ .Domain.FQDN ]]",
-          "certificate-ignore": [[ if .Domain.CertificateIgnore ]]true[[ else ]]false[[ end ]],
+          certificateIgnore: [[ if .Domain.CertificateIgnore ]]true[[ else ]]false[[ end ]],
           disabled: [[ if .Domain.Disabled ]]true[[ else ]]false[[ end ]]
         },
         errors: [],
         fieldErrors: {},
-        secrets: [],
+        tokens: [],
         isLoading: false,
         isDone: false
       },
@@ -38,15 +38,15 @@
     methods: {
       submit: _.throttle(function() {
         var app = this;
-        app.form.secrets = [];
+        app.form.tokens = [];
         httpPost(app.form, '/i/domain/[[ .Domain.ID ]]', function(response) {
           app.form.isDone = true
         }, function(response){
-          standardHTTPError(app, response);
+          standardHTTPError(app.form, response);
           if (response.data === null) {
             return
           };
-          app.form.secrets = response.data['secrets'] || [];
+          app.form.tokens = response.data['tokens'] || [];
         })
       }, 500),
       reload() {
@@ -76,7 +76,7 @@
   </div>
 </div>
 <div class="hero-foot">
-  <div class="tabs is-boxed">
+  <div class="tabs is-centered is-boxed">
     <div class="container">
       <ul>
         <li><a href="/domain/[[ .Domain.FQDN ]]">Packages</a></li>
@@ -115,29 +115,33 @@
     </div>
     <form method="post" v-on:submit.prevent="submit" v-bind:class="{'is-disabled': form.isLoading}" v-if="!form.isDone">
       <div class="notification is-danger" v-for="err in form.errors" v-cloak v-html="err"></div>
-      <div class="content" v-if="form.secrets.length > 0" v-cloak>
+      <div class="content" v-if="form.tokens.length > 0" v-cloak>
         <article class="message is-danger">
-          <div class="message-header" v-if="form.secrets.length == 1">To verify this domain the following DNS record must be present.</div>
-          <div class="message-header" v-else-if="form.secrets.length > 1">To verify this domain any of the following DNS records must be present.</div>
+          <div class="message-header" v-if="form.tokens.length == 1">To verify this domain the following DNS record must be present.</div>
+          <div class="message-header" v-else-if="form.tokens.length > 1">To verify this domain any of the following DNS records must be present.</div>
           <div class="message-body">
-          <p v-for="secret in form.secrets"><code v-html="secret.domain +' TXT '+ secret.secret"></code></p>
+          <p v-for="token in form.tokens"><code v-html="token.fqdn +' TXT '+ token.token"></code></p>
           <p>After you add DNS record, come back to this form and submit this domain again.</p>
           <p>Keep in mind that DNS propagation requires some time after the record is set, depending on TTL value.</p>
           </div>
         </article>
       </div>
-      <label class="label">Fully qualified domain name</label>
-      <p class="control">
-        <input class="input" type="text"  v-model="form.fields.fqdn" placeholder="example.com" autofocus>
-        <p class="control help is-danger" v-for="err in form.fieldErrors.fqdn" v-cloak v-html="err"></p>
-      </p>
-      <p class="control">
-        <label class="checkbox">
-          <input type="checkbox"  v-model="form.fields.disabled">
-          Disabled
-        </label>
-        <p class="control help is-danger" v-for="err in form.fieldErrors.disabled" v-cloak v-html="err"></p>
-      </p>
+      <div class="field">
+        <label class="label">Fully qualified domain name</label>
+        <p class="control">
+          <input class="input" type="text" v-model="form.fields.fqdn" placeholder="example.com" v-bind:class="{'is-danger': form.fieldErrors.fqdn}" autofocus>
+        </p>
+        <p class="help is-danger" v-for="err in form.fieldErrors.fqdn" v-cloak v-html="err"></p>
+      </div>
+      <div class="field">
+        <p class="control">
+          <label class="checkbox">
+            <input type="checkbox" v-model="form.fields.disabled">
+            Disabled
+          </label>
+        </p>
+        <p class="help is-danger" v-for="err in form.fieldErrors.disabled" v-cloak v-html="err"></p>
+      </div>
       [[ if .IsCertificateBeingObtained ]]
       <article class="message is-warning">
         <div class="message-header">
@@ -172,56 +176,60 @@
               </div>
             </div>
             <div class="level-right">
-              <p class="control">
-                <label class="checkbox">
-                  <input type="checkbox" v-model="form.fields['certificate-ignore']">
-                  TLS certificate is not needed
-                </label>
-              </p>
+              <div class="field">
+                <p class="control">
+                  <label class="checkbox">
+                    <input type="checkbox" v-model="form.fields.certificateIgnore">
+                    TLS certificate is not needed
+                  </label>
+                </p>
+              </div>
             </div>
           </nav>
         </div>
       </article>
       [[ end ]][[ end ]]
-      <p class="control">
-        <nav class="level">
-          <div class="level-left">
-            [[ if .Domain.ID ]]
-            <a class="button is-danger is-outlined" v-on:click.prevent="domainDelete.isModalActive = true" tabindex="1">Delete</a>
-            <div class="modal" v-bind:class="{'is-active': domainDelete.isModalActive}" v-cloak>
-              <div class="modal-background" v-on:click="domainDelete.isModalActive = false"></div>
-              <div class="modal-container">
-                <div class="modal-content box">
-                  <div class="title">Delete domain [[ .Domain.FQDN ]] and all its packages?</div>
-                  <div class="notification is-danger" v-for="err in domainDelete.errors" v-cloak v-html="err"></div>
-                  <nav class="level">
-                    <div class="level-left">
-                    </div>
-                    <div class="level-right">
-                      <div class="level-item">
-                        <p class="control">
-                          <a class="button modal-close-button" v-on:click.prevent="domainDelete.isModalActive = false">No</a>
-                          <a class="button is-danger" v-on:click.prevent="deleteDomain" v-bind:class="{'is-loading': domainDelete.isLoading}">Yes, delete it!</a>
-                        </p>
+      <div class="field">
+        <p class="control">
+          <nav class="level">
+            <div class="level-left">
+              [[ if .Domain.ID ]]
+              <a class="button is-danger is-outlined" v-on:click.prevent="domainDelete.isModalActive = true" tabindex="1">Delete</a>
+              <div class="modal" v-bind:class="{'is-active': domainDelete.isModalActive}" v-cloak>
+                <div class="modal-background" v-on:click="domainDelete.isModalActive = false"></div>
+                <div class="modal-container">
+                  <div class="modal-content box">
+                    <div class="title">Delete domain [[ .Domain.FQDN ]] and all its packages?</div>
+                    <div class="notification is-danger" v-for="err in domainDelete.errors" v-cloak v-html="err"></div>
+                    <nav class="level">
+                      <div class="level-left">
                       </div>
-                    </div>
-                  </nav>
+                      <div class="level-right">
+                        <div class="level-item">
+                          <p class="control">
+                            <a class="button modal-close-button" v-on:click.prevent="domainDelete.isModalActive = false">No</a>
+                            <a class="button is-danger" v-on:click.prevent="deleteDomain" v-bind:class="{'is-loading': domainDelete.isLoading}">Yes, delete it!</a>
+                          </p>
+                        </div>
+                      </div>
+                    </nav>
+                  </div>
                 </div>
+                <a class="modal-close" v-on:click="domainDelete.isModalActive = false"></a>
               </div>
-              <a class="modal-close" v-on:click="domainDelete.isModalActive = false"></a>
+              [[ end ]]
             </div>
-            [[ end ]]
-          </div>
-          <div class="level-right">
-            <div class="level-item">
-              <p class="control">
-                <a class="ui button" href="/[[ if .Domain.ID ]]domain/[[ .Domain.FQDN ]][[ end ]]">Cancel</a> 
-                <button type="submit" class="button is-primary" v-bind:class="{'is-loading': form.isLoading}">Save</button>
-              </p>
+            <div class="level-right">
+              <div class="level-item">
+                <p class="control">
+                  <a class="ui button" href="/[[ if .Domain.ID ]]domain/[[ .Domain.FQDN ]][[ end ]]">Cancel</a> 
+                  <button type="submit" class="button is-primary" v-bind:class="{'is-loading': form.isLoading}">Save</button>
+                </p>
+              </div>
             </div>
-          </div>
-        </nav>
-      </p>
+          </nav>
+        </p>
+      </div>
     </form>
     [[ end ]]
   </div>

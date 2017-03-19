@@ -173,11 +173,11 @@
           <div class="message-body">
             Your API key:
             <strong v-text="secret"></strong>
-            <a class="button is-small pull-right" title="Regenerate token" v-on:click="regenerateSecret" v-bind:class="{'is-loading': regenerateForm.isLoading}">
+            <button class="button is-small pull-right" title="Regenerate token" v-on:click="regenerateSecret" v-bind:class="{'is-loading': regenerateForm.isLoading}">
               <span class="icon is-small">
                 <i class="fa fa-refresh"></i>
               </span>
-            </a>
+            </button>
           </div>
         </article>
         <button type="button" class="button is-primary" v-on:click="disableApi" v-bind:class="{'is-loading': keyForm.isLoading}">Disable API access for your account</button>

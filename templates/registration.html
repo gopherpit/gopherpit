@@ -41,60 +41,72 @@
   <form id="registration-form" method="post" v-on:submit.prevent="submit" v-bind:class="{'is-disabled': isLoading}">
     <p class="content">GopherPit is a service that requires a personal account in order to submit and manage your data.</p>
     <div class="notification is-danger" v-for="err in errors" v-cloak v-html="err"></div>
-    <p class="control has-icon">
-      <input class="input" type="text" v-model="fields.name" placeholder="Name" autofocus>
-      <span class="icon is-small">
-        <i class="fa fa-user"></i>
-      </span>
+    <div class="field">
+      <p class="control has-icon">
+        <input class="input" type="text" v-model="fields.name" placeholder="Name" v-bind:class="{'is-danger': fieldErrors.name}" autofocus>
+        <span class="icon is-small">
+          <i class="fa fa-user"></i>
+        </span>
+      </p>
+      <p class="help is-danger" v-for="err in fieldErrors.name" v-cloak v-html="err"></p>
       <span class="help">Your name is required and it will be visible to other users.</span>
-      <p class="control help is-danger" v-for="err in fieldErrors.name" v-cloak v-html="err"></p>
-    </p>
-    <p class="control has-icon">
-      <input class="input" type="email" v-model="fields.email" placeholder="E-mail address">
-      <span class="icon is-small">
-        <i class="fa fa-envelope"></i>
-      </span>
+    </div>
+    <div class="field">
+      <p class="control has-icon">
+        <input class="input" type="email" v-model="fields.email" placeholder="E-mail address" v-bind:class="{'is-danger': fieldErrors.email}">
+        <span class="icon is-small">
+          <i class="fa fa-envelope"></i>
+        </span>
+      </p>
+      <p class="help is-danger" v-for="err in fieldErrors.email" v-cloak v-html="err"></p>
       <span class="help">Your e-mail is required, but it will never be revealed to other user or visitors.</span>
-      <p class="control help is-danger" v-for="err in fieldErrors.email" v-cloak v-html="err"></p>
-    </p>
-    <p class="control has-icon">
-      <input class="input" type="text" v-model="fields.username" placeholder="Pick a username">
-      <span class="icon is-small">
-        <i class="fa fa-user"></i>
-      </span>
+    </div>
+    <div class="field">
+      <p class="control has-icon">
+        <input class="input" type="text" v-model="fields.username" placeholder="Pick a username" v-bind:class="{'is-danger': fieldErrors.username}">
+        <span class="icon is-small">
+          <i class="fa fa-user"></i>
+        </span>
+      </p>
+      <p class="help is-danger" v-for="err in fieldErrors.username" v-cloak v-html="err"></p>
       <span class="help">Username is optional and can be set or removed later. It can be used instead of account ID or E-mail address as a reference to gain a team access.</span>
-      <p class="control help is-danger" v-for="err in fieldErrors.username" v-cloak v-html="err"></p>
-    </p>
-    <p class="control has-icon">
-      <input class="input" type="password" v-model="fields.password1" placeholder="Password">
-      <span class="icon is-small">
-        <i class="fa fa-lock"></i>
-      </span>
+    </div>
+    <div class="field">
+      <p class="control has-icon">
+        <input class="input" type="password" v-model="fields.password1" placeholder="Password" v-bind:class="{'is-danger': fieldErrors.password1}">
+        <span class="icon is-small">
+          <i class="fa fa-lock"></i>
+        </span>
+      </p>
+      <p class="help is-danger" v-for="err in fieldErrors.password1" v-cloak v-html="err"></p>
       <span class="help">Pick a strong password.</span>
-      <p class="control help is-danger" v-for="err in fieldErrors.password1" v-cloak v-html="err"></p>
-    </p>
-    <p class="control has-icon">
-      <input class="input" type="password" v-model="fields.password2" placeholder="Password, again">
-      <span class="icon is-small">
-        <i class="fa fa-lock"></i>
-      </span>
+    </div>
+    <div class="field">
+      <p class="control has-icon">
+        <input class="input" type="password" v-model="fields.password2" placeholder="Password, again" v-bind:class="{'is-danger': fieldErrors.password2}">
+        <span class="icon is-small">
+          <i class="fa fa-lock"></i>
+        </span>
+      </p>
+      <p class="help is-danger" v-for="err in fieldErrors.password2" v-cloak v-html="err"></p>
       <span class="help">Confirm it, just to be sure you entered it right the first time.</span>
-      <p class="control help is-danger" v-for="err in fieldErrors.password2" v-cloak v-html="err"></p>
-    </p>
-    <p class="control">
-      <nav class="level">
-        <div class="level-left">
-          <div class="level-item">
-            <a class="link" href="/login">Already have an account?</a>
+    </div>
+    <div class="field">
+      <p class="control">
+        <nav class="level">
+          <div class="level-left">
+            <div class="level-item">
+              <a class="link" href="/login">Already have an account?</a>
+            </div>
           </div>
-        </div>
-        <div class="level-right">
-          <div class="level-item">
-            <button type="submit" class="button is-primary" v-bind:class="{'is-loading': isLoading}">Register</button>
+          <div class="level-right">
+            <div class="level-item">
+              <button type="submit" class="button is-primary" v-bind:class="{'is-loading': isLoading}">Register</button>
+            </div>
           </div>
-        </div>
-      </nav>
-    </p>
+        </nav>
+      </p>
+    </div>
   </form>
 </div>
 [[ end ]]

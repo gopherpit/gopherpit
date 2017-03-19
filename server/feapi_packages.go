@@ -89,7 +89,7 @@ func certificateFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 
 type domainFEAPIRequest struct {
 	FQDN              string           `json:"fqdn"`
-	CertificateIgnore marshal.Checkbox `json:"certificate-ignore"`
+	CertificateIgnore marshal.Checkbox `json:"certificateIgnore"`
 	Disabled          marshal.Checkbox `json:"disabled"`
 }
 
@@ -375,7 +375,7 @@ func domainUserGrantFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 	domainID := mux.Vars(r)["id"]
 
 	if request.ID == u.Username || request.ID == u.Email || request.ID == u.ID {
-		jsonresponse.BadRequest(w, httputils.NewError("You are already granted."))
+		jsonresponse.BadRequest(w, httputils.NewFieldError("id", "You are already granted."))
 		return
 	}
 
@@ -383,7 +383,7 @@ func domainUserGrantFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if err == user.UserNotFound {
 			srv.logger.Warningf("domain user grant fe api: user %s: %s", request.ID, err)
-			jsonresponse.BadRequest(w, httputils.NewError("Unknown user."))
+			jsonresponse.BadRequest(w, httputils.NewFieldError("id", "Unknown user."))
 			return
 		}
 		srv.logger.Errorf("domain user grant fe api: user %s: %s", request.ID, err)
@@ -396,7 +396,7 @@ func domainUserGrantFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 		jsonresponse.BadRequest(w, httputils.NewError("Unknown domain."))
 		return
 	case packages.UserExists:
-		jsonresponse.BadRequest(w, httputils.NewError("This user is already granted."))
+		jsonresponse.BadRequest(w, httputils.NewFieldError("id", "This user is already granted."))
 		return
 	case packages.Forbidden:
 		jsonresponse.BadRequest(w, httputils.NewError("You do not have permission to revoke user."))
@@ -427,14 +427,14 @@ func domainUserRevokeFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if request.ID == "" {
-		jsonresponse.BadRequest(w, httputils.NewError("User is required."))
+		jsonresponse.BadRequest(w, httputils.NewFieldError("id", "User is required."))
 		return
 	}
 
 	domainID := mux.Vars(r)["id"]
 
 	if request.ID == u.Username || request.ID == u.Email || request.ID == u.ID {
-		jsonresponse.BadRequest(w, httputils.NewError("You can not revoke yourself."))
+		jsonresponse.BadRequest(w, httputils.NewFieldError("id", "You can not revoke yourself."))
 		return
 	}
 
@@ -442,7 +442,7 @@ func domainUserRevokeFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if err == user.UserNotFound {
 			srv.logger.Warningf("domain user revoke fe api: user %s: %s", request.ID, err)
-			jsonresponse.BadRequest(w, httputils.NewError("Unknown user."))
+			jsonresponse.BadRequest(w, httputils.NewFieldError("id", "Unknown user."))
 			return
 		}
 		srv.logger.Errorf("domain user revoke fe api: user %s: %s", request.ID, err)
@@ -455,7 +455,7 @@ func domainUserRevokeFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 		jsonresponse.BadRequest(w, httputils.NewError("Unknown domain."))
 		return
 	case packages.UserDoesNotExist:
-		jsonresponse.BadRequest(w, httputils.NewError("This user is not granted."))
+		jsonresponse.BadRequest(w, httputils.NewFieldError("id", "This user is not granted."))
 		return
 	case packages.Forbidden:
 		jsonresponse.BadRequest(w, httputils.NewError("You do not have permission to revoke user."))
@@ -493,7 +493,7 @@ func domainOwnerChangeFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 
 	if request.ID == "" {
 		srv.logger.Warning("domain owner change fe api: request: id empty")
-		jsonresponse.BadRequest(w, httputils.NewError("User ID is required."))
+		jsonresponse.BadRequest(w, httputils.NewFieldError("id", "User ID is required."))
 		return
 	}
 
@@ -517,7 +517,7 @@ func domainOwnerChangeFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if request.ID == u.Username || request.ID == u.Email || request.ID == u.ID {
-		jsonresponse.BadRequest(w, httputils.NewError("You are already the owner."))
+		jsonresponse.BadRequest(w, httputils.NewFieldError("id", "You are already the owner."))
 		return
 	}
 
@@ -525,7 +525,7 @@ func domainOwnerChangeFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if err == user.UserNotFound {
 			srv.logger.Warningf("domain owner change fe api: user %s: %s", request.ID, err)
-			jsonresponse.BadRequest(w, httputils.NewError("Unknown user."))
+			jsonresponse.BadRequest(w, httputils.NewFieldError("id", "Unknown user."))
 			return
 		}
 		srv.logger.Errorf("domain user revoke fe api: user %s: %s", request.ID, err)

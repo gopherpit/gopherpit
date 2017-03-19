@@ -79,27 +79,33 @@
       </div>
       <form method="post" v-on:submit.prevent="submit" v-bind:class="{'is-disabled': isLoading}" v-if="!isDone">
         <div class="notification is-danger" v-for="err in errors" v-cloak v-html="err"></div>
+        <div class="field">
         <label class="label">Your name</label>
-        <p class="control">
-          <input class="input" v-model="fields.name" type="text" autofocus>
-          <p class="control help is-danger" v-for="err in fieldErrors.name" v-cloak v-html="err"></p>
-        </p>
+          <p class="control">
+            <input class="input" v-model="fields.name" type="text" v-bind:class="{'is-danger': fieldErrors.name}" autofocus>
+          </p>
+          <p class="help is-danger" v-for="err in fieldErrors.name" v-cloak v-html="err"></p>
+        </div>
+        <div class="field">
         <label class="label">Username</label>
-        <p class="control">
-          <input class="input" v-model="fields.username" type="text">
-          <p class="control help is-danger" v-for="err in fieldErrors.username" v-cloak v-html="err"></p>
-        </p>
-        <p class="control">
-          <nav class="level">
-            <div class="level-left">
-            </div>
-            <div class="level-right">
-              <div class="level-item">
-                <button type="submit" class="button is-primary" v-bind:class="{'is-loading': isLoading}">Save</button>
+          <p class="control">
+            <input class="input" v-model="fields.username" type="text" v-bind:class="{'is-danger': fieldErrors.username}">
+          </p>
+          <p class="help is-danger" v-for="err in fieldErrors.username" v-cloak v-html="err"></p>
+        </div>
+        <div class="field">
+          <p class="control">
+            <nav class="level">
+              <div class="level-left">
               </div>
-            </div>
-          </nav>
-        </p>
+              <div class="level-right">
+                <div class="level-item">
+                  <button type="submit" class="button is-primary" v-bind:class="{'is-loading': isLoading}">Save</button>
+                </div>
+              </div>
+            </nav>
+          </p>
+        </div>
       </form>
     </div>
   </div>

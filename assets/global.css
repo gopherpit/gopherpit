@@ -2,16 +2,12 @@
   vertical-align: baseline!important;
 }
 
-p.control.help {
-  margin-top: -8px;
-}
-
-p.help {
-  margin-bottom: 12px;
-}
-
 span.button {
   cursor: default;
+}
+
+.field .field {
+  margin-bottom: 0;
 }
 
 [v-cloak] { display:none; }
