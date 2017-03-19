@@ -25,31 +25,29 @@
 <section class="hero [[ block "hero-class" . ]]is-dark is-bold[[ end ]]">
   <div class="hero-head" id="header">
     <header class="nav">
-      <div class="container">
-        <div class="nav-left">
-          <a class="nav-item is-brand" href="/">
-            [[ block "brand" . ]]<img src="[[ "gopherpit-header.png" | asset ]]" alt="GopherPit">[[ end ]]
-          </a>
-        </div>
-        [[ if .User.EmailUnvalidated ]]
-        <div class="nav-center">
-          <a class="nav-item" href="/settings/email">
-            <span class="icon">
-              <i class="fa fa-envelope-o fa-pulse"></i>
-            </span>
-          </a>
-        </div>
-        [[ end ]]
-        <span class="nav-toggle" v-on:click="isActive = !isActive" v-bind:class="{'is-active': isActive}">
-          <span></span>
-          <span></span>
-          <span></span>
-        </span>
-        <div class="nav-right nav-menu" v-bind:class="{'is-active': isActive}">
-          <a class="nav-item" href="/user/[[ .User.ID ]]">[[ .User.Name ]]</a>
-          <a class="nav-item" href="/settings">Settings</a>
-          <a class="nav-item" href="/logout">Logout</a>
-        </div>
+      <div class="nav-left">
+        <a class="nav-item is-brand" href="/">
+          [[ block "brand" . ]]<img src="[[ "gopherpit-header.png" | asset ]]" alt="GopherPit">[[ end ]]
+        </a>
+      </div>
+      [[ if .User.EmailUnvalidated ]]
+      <div class="nav-center">
+        <a class="nav-item" href="/settings/email">
+          <span class="icon">
+            <i class="fa fa-envelope-o fa-pulse"></i>
+          </span>
+        </a>
+      </div>
+      [[ end ]]
+      <span class="nav-toggle" v-on:click="isActive = !isActive" v-bind:class="{'is-active': isActive}">
+        <span></span>
+        <span></span>
+        <span></span>
+      </span>
+      <div class="nav-right nav-menu" v-bind:class="{'is-active': isActive}">
+        <a class="nav-item" href="/user/[[ .User.ID ]]">[[ .User.Name ]]</a>
+        <a class="nav-item" href="/settings">Settings</a>
+        <a class="nav-item" href="/logout">Logout</a>
       </div>
     </header>
   </div>
@@ -64,13 +62,11 @@
 
 <section class="section">
   <nav class="tabs is-centered">
-    <div class="container">
-      <ul>
-        <li><a href="/">Home</a></li>
-        <li><a href="/contact">Contact</a></li>
-        <li><a href="/about">Copyright</a></li>
-      </ul>
-    </div>
+    <ul>
+      <li><a href="/">Home</a></li>
+      <li><a href="/contact">Contact</a></li>
+      <li><a href="/about">Copyright</a></li>
+    </ul>
   </nav>
 </section>
 [[ end ]]
