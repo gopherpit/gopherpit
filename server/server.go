@@ -22,7 +22,6 @@ import (
 	"time"
 
 	throttled "gopkg.in/throttled/throttled.v2"
-	"gopkg.in/throttled/throttled.v2/store/memstore"
 	"resenje.org/email"
 	"resenje.org/httputils"
 	"resenje.org/httputils/file-server"
@@ -31,6 +30,7 @@ import (
 
 	"gopherpit.com/gopherpit/pkg/certificate-cache"
 	"gopherpit.com/gopherpit/services/certificate"
+	"gopherpit.com/gopherpit/services/gcrastore"
 	"gopherpit.com/gopherpit/services/key"
 	"gopherpit.com/gopherpit/services/notification"
 	"gopherpit.com/gopherpit/services/packages"
@@ -117,6 +117,7 @@ type Options struct {
 	CertificateService  certificate.Service
 	PackagesService     packages.Service
 	KeyService          key.Service
+	GCRAStoreService    gcrastore.Service
 }
 
 // Configure initializes http server with provided options.
@@ -259,14 +260,12 @@ func Configure(o Options) (err error) {
 
 	// API rate limiter
 	if s.APIHourlyRateLimit > 0 {
-		apiRateLimiterStore, err := memstore.New(65536)
-		if err != nil {
-			return fmt.Errorf("api rate limiter memstore: %s", err)
-		}
-
 		s.apiRateLimiter, err = throttled.NewGCRARateLimiter(
-			apiRateLimiterStore,
-			throttled.RateQuota{throttled.PerHour(1), s.APIHourlyRateLimit - 1},
+			s.GCRAStoreService,
+			throttled.RateQuota{
+				MaxRate:  throttled.PerHour(1),
+				MaxBurst: s.APIHourlyRateLimit - 1,
+			},
 		)
 		if err != nil {
 			return fmt.Errorf("api rate limiter: %s", err)

@@ -21,6 +21,8 @@ import (
 	"syscall"
 	"time"
 
+	"gopkg.in/throttled/throttled.v2/store/memstore"
+
 	"resenje.org/daemon"
 	"resenje.org/email"
 	"resenje.org/httputils/client/api"
@@ -34,6 +36,8 @@ import (
 	"gopherpit.com/gopherpit/services/certificate"
 	"gopherpit.com/gopherpit/services/certificate/bolt"
 	"gopherpit.com/gopherpit/services/certificate/http"
+	"gopherpit.com/gopherpit/services/gcrastore"
+	"gopherpit.com/gopherpit/services/gcrastore/http"
 	"gopherpit.com/gopherpit/services/key"
 	"gopherpit.com/gopherpit/services/key/bolt"
 	"gopherpit.com/gopherpit/services/key/http"
@@ -491,6 +495,24 @@ COPYRIGHT
 			Logger: logger,
 		}
 	}
+	var gcraStoreService gcrastore.Service
+	if servicesOptions.GCRAStoreEndpoint != "" {
+		c := &apiClient.Client{
+			Endpoint:  servicesOptions.GCRAStoreEndpoint,
+			Key:       servicesOptions.GCRAStoreKey,
+			UserAgent: config.UserAgent,
+		}
+		if servicesOptions.GCRAStoreOptions != nil {
+			c.HTTPClient = httpClient.New(servicesOptions.GCRAStoreOptions)
+		}
+		gcraStoreService = httpGCRAStore.NewService(c)
+	} else {
+		gcraStoreService, err = memstore.New(65536)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "gcra memstore:", err)
+			os.Exit(2)
+		}
+	}
 
 	// Initialize server.
 	if err = server.Configure(
@@ -537,6 +559,7 @@ COPYRIGHT
 			CertificateService:  certificateService,
 			PackagesService:     packagesService,
 			KeyService:          keyService,
+			GCRAStoreService:    gcraStoreService,
 		},
 	); err != nil {
 		fmt.Fprintln(os.Stderr, "Error:", err)

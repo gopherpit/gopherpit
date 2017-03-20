@@ -36,6 +36,9 @@ type ServicesOptions struct {
 	KeyEndpoint          string              `json:"key-endpoint" yaml:"key-endpoint" envconfig:"KEY_ENDPOINT"`
 	KeyKey               string              `json:"key-key" yaml:"key-key" envconfig:"KEY_KEY"`
 	KeyOptions           *httpClient.Options `json:"key-options" yaml:"key-options" envconfig:"KEY_OPTIONS"`
+	GCRAStoreEndpoint    string              `json:"gcra-store-endpoint" yaml:"gcra-store-endpoint" envconfig:"GCRASTORE_ENDPOINT"`
+	GCRAStoreKey         string              `json:"gcra-store-key" yaml:"gcra-store-key" envconfig:"GCRASTORE_KEY"`
+	GCRAStoreOptions     *httpClient.Options `json:"gcra-store-options" yaml:"gcra-store-options" envconfig:"GCRASTORE_OPTIONS"`
 }
 
 // NewServicesOptions initializes ServicesOptions with empty values.
