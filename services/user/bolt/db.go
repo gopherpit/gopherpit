@@ -37,6 +37,7 @@ var (
 	bucketNameEmailValidations   = []byte("Email_Validations")
 	bucketNamePasswordResets     = []byte("Password_Resets")
 	emailRegex                   = regexp.MustCompile(`^[^@]+@[^@]+\.[^@]+$`)
+	usernameRegex                = regexp.MustCompile(`^[\pL\pN]`)
 )
 
 type userRecord struct {
@@ -266,6 +267,9 @@ func (r *userRecord) save(tx *bolt.Tx, usernameRequired bool) (err error) {
 	if r.Username != "" {
 		// Username can not be in email format.
 		if emailRegex.MatchString(r.Username) {
+			return user.UsernameInvalid
+		}
+		if !usernameRegex.MatchString(r.Username) {
 			return user.UsernameInvalid
 		}
 		// Username can not be the same as existing ID.
