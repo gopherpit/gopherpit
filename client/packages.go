@@ -20,43 +20,43 @@ import (
 )
 
 // Package retrieves a Package instance.
-func (s Service) Package(id string) (d *api.Package, err error) {
+func (c Client) Package(id string) (d *api.Package, err error) {
 	d = &api.Package{}
-	err = s.Client.JSON("GET", "/packages/"+id, nil, nil, d)
+	err = c.Client.JSON("GET", "/packages/"+id, nil, nil, d)
 	return
 }
 
 // AddPackage creates a new Package.
-func (s Service) AddPackage(o *api.PackageOptions) (d *api.Package, err error) {
+func (c Client) AddPackage(o *api.PackageOptions) (d *api.Package, err error) {
 	body, err := json.Marshal(o)
 	if err != nil {
 		return
 	}
 	d = &api.Package{}
-	err = s.Client.JSON("POST", "/packages", nil, bytes.NewReader(body), d)
+	err = c.Client.JSON("POST", "/packages", nil, bytes.NewReader(body), d)
 	return
 }
 
 // UpdatePackage creates a new Package.
-func (s Service) UpdatePackage(id string, o *api.PackageOptions) (d *api.Package, err error) {
+func (c Client) UpdatePackage(id string, o *api.PackageOptions) (d *api.Package, err error) {
 	body, err := json.Marshal(o)
 	if err != nil {
 		return
 	}
 	d = &api.Package{}
-	err = s.Client.JSON("POST", "/packages/"+id, nil, bytes.NewReader(body), d)
+	err = c.Client.JSON("POST", "/packages/"+id, nil, bytes.NewReader(body), d)
 	return
 }
 
 // DeletePackage removes a Package.
-func (s Service) DeletePackage(id string) (d *api.Package, err error) {
+func (c Client) DeletePackage(id string) (d *api.Package, err error) {
 	d = &api.Package{}
-	err = s.Client.JSON("DELETE", "/packages/"+id, nil, nil, d)
+	err = c.Client.JSON("DELETE", "/packages/"+id, nil, nil, d)
 	return
 }
 
 // DomainPackages retrieves a paginated list of Packages under a domain.
-func (s Service) DomainPackages(domainRef, start string, limit int) (page api.PackagesPage, err error) {
+func (c Client) DomainPackages(domainRef, start string, limit int) (page api.PackagesPage, err error) {
 	query := url.Values{}
 	if start != "" {
 		query.Set("start", start)
@@ -64,6 +64,6 @@ func (s Service) DomainPackages(domainRef, start string, limit int) (page api.Pa
 	if limit > 0 {
 		query.Set("limit", strconv.Itoa(limit))
 	}
-	err = s.Client.JSON("GET", "/domain/"+domainRef+"/packages", query, nil, page)
+	err = c.Client.JSON("GET", "/domain/"+domainRef+"/packages", query, nil, &page)
 	return
 }

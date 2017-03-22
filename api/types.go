@@ -3,7 +3,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package api
+package api // import "gopherpit.com/gopherpit/api"
 
 // MaxLimit is a default maximum number of elements for paged responses.
 const MaxLimit = 100
@@ -61,34 +61,43 @@ var (
 	VCSSubversion VCS = "svn"
 )
 
+// RefType is a type that defines possbile reference type values for the Package.
+type RefType string
+
+// Possible reference types.
+var (
+	RefTypeBranch RefType = "branch"
+	RefTypeTag    RefType = "tag"
+)
+
 // Package holds data that represents Go package location
 // and metadata for remote import path.
 // https://golang.org/cmd/go/#hdr-Remote_import_paths
 type Package struct {
-	ID          string `json:"id"`
-	DomainID    string `json:"domain_id"`
-	FQDN        string `json:"fqdn"`
-	Path        string `json:"path"`
-	VCS         VCS    `json:"vcs"`
-	RepoRoot    string `json:"repo_root"`
-	RefType     string `json:"ref_type,omitempty"`
-	RefName     string `json:"ref_name,omitempty"`
-	GoSource    string `json:"go_source,omitempty"`
-	RedirectURL string `json:"redirect_url,omitempty"`
-	Disabled    bool   `json:"disabled,omitempty"`
+	ID          string  `json:"id"`
+	DomainID    string  `json:"domain_id"`
+	FQDN        string  `json:"fqdn"`
+	Path        string  `json:"path"`
+	VCS         VCS     `json:"vcs"`
+	RepoRoot    string  `json:"repo_root"`
+	RefType     RefType `json:"ref_type,omitempty"`
+	RefName     string  `json:"ref_name,omitempty"`
+	GoSource    string  `json:"go_source,omitempty"`
+	RedirectURL string  `json:"redirect_url,omitempty"`
+	Disabled    bool    `json:"disabled,omitempty"`
 }
 
 // PackageOptions defines Package fields that can be changed.
 type PackageOptions struct {
-	Domain      *string `json:"domain,omitempty"`
-	Path        *string `json:"path,omitempty"`
-	VCS         *VCS    `json:"vcs,omitempty"`
-	RepoRoot    *string `json:"repo_root,omitempty"`
-	RefType     *string `json:"ref_type"`
-	RefName     *string `json:"ref_name"`
-	GoSource    *string `json:"go_source,omitempty"`
-	RedirectURL *string `json:"redirect_url,omitempty"`
-	Disabled    *bool   `json:"disabled,omitempty"`
+	Domain      *string  `json:"domain,omitempty"`
+	Path        *string  `json:"path,omitempty"`
+	VCS         *VCS     `json:"vcs,omitempty"`
+	RepoRoot    *string  `json:"repo_root,omitempty"`
+	RefType     *RefType `json:"ref_type"`
+	RefName     *string  `json:"ref_name"`
+	GoSource    *string  `json:"go_source,omitempty"`
+	RedirectURL *string  `json:"redirect_url,omitempty"`
+	Disabled    *bool    `json:"disabled,omitempty"`
 }
 
 // PackagesPage is a paginated list of Package instances.
@@ -102,7 +111,9 @@ type PackagesPage struct {
 // Errors that the API can return.
 var (
 	ErrBadRequest                    = NewError(400, "Bad Request")
+	ErrUnauthorized                  = NewError(401, "Unauthorized")
 	ErrForbidden                     = NewError(403, "Forbidden")
+	ErrNotFound                      = NewError(404, "Not Found")
 	ErrTooManyRequests               = NewError(429, "Too Many Requests")
 	ErrInternalServerError           = NewError(500, "Internal Server Error")
 	ErrMaintenance                   = NewError(503, "Maintenance")
