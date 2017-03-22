@@ -7,6 +7,8 @@ package gcrastore // import "gopherpit.com/gopherpit/services/gcrastore"
 
 import throttled "gopkg.in/throttled/throttled.v2"
 
+// Service encapsulates throttled.GCRAStore interface to be used as
+// rate limiter store.
 type Service interface {
 	throttled.GCRAStore
 }
