@@ -88,7 +88,7 @@ type Connection struct {
 	count     int64
 	expires   time.Duration
 	closeTime time.Time
-	mu        *sync.Mutex
+	mu        *sync.RWMutex
 }
 
 // Close function on Connection decrements reference counter and closes the database if needed.
@@ -96,31 +96,34 @@ func (c *Connection) Close() {
 	c.decrement()
 	if c.count <= 0 {
 		if c.expires == 0 {
+			c.pool.mu.Lock()
 			c.pool.errorChannel <- c.removeFromPool()
+			c.pool.mu.Unlock()
 			return
 		}
 
 		c.mu.Lock()
-		defer c.mu.Unlock()
-
 		c.closeTime = time.Now().Add(c.expires)
+		c.mu.Unlock()
 	}
 }
 
 func (c *Connection) increment() {
 	c.mu.Lock()
-	defer c.mu.Unlock()
 
 	// Reset the closing time
 	c.closeTime = time.Time{}
 	c.count++
+
+	c.mu.Unlock()
 }
 
 func (c *Connection) decrement() {
 	c.mu.Lock()
-	defer c.mu.Unlock()
 
 	c.count--
+
+	c.mu.Unlock()
 }
 
 func (c *Connection) removeFromPool() error {
@@ -146,10 +149,10 @@ type Options struct {
 	// BoltOptions is used on bolt.Open().
 	BoltOptions *bolt.Options
 
-	// FileMode is used in bolt.Open() as file mode for database file. Deafult: 0640.
+	// FileMode is used in bolt.Open() as file mode for database file. Default: 0640.
 	FileMode os.FileMode
 
-	// DirMode is used in os.MkdirAll() as file mode for database directories. Deafult: 0750.
+	// DirMode is used in os.MkdirAll() as file mode for database directories. Default: 0750.
 	DirMode os.FileMode
 
 	// ConnectionExpires is a duration between the reference count drops to 0 and
@@ -166,7 +169,7 @@ type Pool struct {
 	options      *Options
 	errorChannel chan error
 	connections  map[string]*Connection
-	mu           *sync.Mutex
+	mu           *sync.RWMutex
 }
 
 // New creates new pool with provided options and also starts database closing goroutone
@@ -188,15 +191,19 @@ func New(options *Options) *Pool {
 		options:      options,
 		errorChannel: make(chan error),
 		connections:  map[string]*Connection{},
-		mu:           &sync.Mutex{},
+		mu:           &sync.RWMutex{},
 	}
 	go func() {
 		for {
+			p.mu.Lock()
 			for _, c := range p.connections {
+				c.mu.RLock()
 				if !c.closeTime.IsZero() && c.closeTime.Before(time.Now()) {
 					p.errorChannel <- c.removeFromPool()
 				}
+				c.mu.RUnlock()
 			}
+			p.mu.Unlock()
 			time.Sleep(defaultCloseSleep)
 		}
 	}()
@@ -236,7 +243,7 @@ func (p *Pool) Get(path string) (*Connection, error) {
 		path:    path,
 		pool:    p,
 		expires: p.options.ConnectionExpires,
-		mu:      &sync.Mutex{},
+		mu:      &sync.RWMutex{},
 	}
 	p.connections[path] = c
 
@@ -246,8 +253,8 @@ func (p *Pool) Get(path string) (*Connection, error) {
 
 // Has returns true if a database with a file path is in the pool.
 func (p *Pool) Has(path string) bool {
-	p.mu.Lock()
-	defer p.mu.Unlock()
+	p.mu.RLock()
+	defer p.mu.RUnlock()
 
 	_, ok := p.connections[path]
 	return ok
@@ -256,6 +263,9 @@ func (p *Pool) Has(path string) bool {
 // Close function closes and removes from the pool all databases. After the execution
 // pool is not usable.
 func (p *Pool) Close() {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
 	for _, c := range p.connections {
 		p.errorChannel <- c.removeFromPool()
 	}
@@ -263,9 +273,6 @@ func (p *Pool) Close() {
 }
 
 func (p *Pool) remove(path string) error {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
 	c, ok := p.connections[path]
 	if !ok {
 		return fmt.Errorf("boltdbpool: Unknown DB %s", path)
