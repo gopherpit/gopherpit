@@ -40,7 +40,7 @@ Each API HTTP request requires a header `X-Key` to be provided with a Personal A
 
 Token is unique for every GopherPit user account and can be generated on a website under *Settings -> API access* page. It is also filtered by IP subnets that user can specify on the same page.
 
-If the token is missing or invalid, API will return a [Forbidden](#response-403) response.
+If the token is missing or invalid, API will return a [Unauthorized](#response-401) response.
 
 Example:
 
@@ -56,6 +56,8 @@ Rate limiting is configurable for Add and Update Domain requests. Additional HTT
   - `X-RateLimit-Retry`: Seconds remaining until new requests are permitted when limit is reached.
 
 If `X-Ratelimit-Limit` header is absent, no limit is enforced.
+
+When rate limit is reached, a [Too Many Requests](#response-429) response will be returned.
 
 
 ## 6. Resources
@@ -152,10 +154,9 @@ Example:
 
 ## 7. Queries
 
-GopherPit API uses HTTP for communication and this section describes HTTP requests, their parameters and responses from the API. Beside specified error responses for each query, the following errors may occur:
+GopherPit API uses HTTP for communication and this section describes HTTP requests, their parameters and responses from the API. Beside specified error responses for each query, the [Internal Server Error](#response-500) may occur.
 
-  - [Forbidden](#response-403): the resource is not available for user, or Personal Access Token is missing or invalid
-  - [Internal Server Error](#response-500): an unhandled error occurred
+If resource URL path is not valid, a [Not Found](#response-404) response will be returned.
 
 In case that the request body can not be decoded from JSON, a [Bad Request](#response-400) response will be returned.
 
@@ -175,8 +176,8 @@ Response returns resource:
 
   - **domains**: (array of [Domain](#domain-resource)) 
   - **count**: (integer)
-  - **previous**: (string, default "")
-  - **next**: (string, default "")
+  - **previous**: (string, default: "")
+  - **next**: (string, default: "")
 
 Example:
 
@@ -208,6 +209,7 @@ Returns [Domain](#domain-resource) resource.
 
 Errors:
 
+  - [Forbidden](#response-403)
   - [Domain Not Found](#response-1000)
 
 ### 7.3. Add Domain
@@ -254,9 +256,9 @@ Response returns [Domain](#domain-resource) resource.
 Errors:
 
   - [Bad Request](#response-400)
+  - [Forbidden](#response-403)
   - [Domain Not Found](#response-1000)
   - [Domain Already Exists](#response-1001)
-  - [Domain FQDN Required](#response-1010)
   - [Domain FQDN Invalid](#response-1011)
   - [Domain Not Available](#response-1012)
   - [Domain With Too Many Subdomains](#response-1013)
@@ -275,15 +277,16 @@ Response returns [OK](#response-200) response.
 
 Errors:
 
+  - [Forbidden](#response-403)
   - [Domain Not Found](#response-1000)
 
 ### 7.6. List Domain Tokens
 
-**GET /api/v1/domains/{ref}/tokens**
+**GET /api/v1/domains/{fqdn}/tokens**
 
 URL parameters:
 
-  - **ref**: domain reference, can be domain ID or FQDN
+  - **fqdn**: fully qualified domain name
 
 Response returns [Domain Tokens](#domain-tokens-resource) resource.
 
@@ -303,6 +306,7 @@ Response returns [Domain Users](#domain-users-resource) resource.
 
 Errors:
 
+  - [Forbidden](#response-403)
   - [Domain Not Found](#response-1000)
 
 ### 7.8. Grant Domain User
@@ -318,6 +322,7 @@ Response returns [OK](#response-200) response.
 
 Errors:
 
+  - [Forbidden](#response-403)
   - [Domain Not Found](#response-1000)
   - [User Does Not Exist](#response-1100)
   - [User Does Already Granted](#response-1101)
@@ -335,6 +340,7 @@ Response returns [OK](#response-200) response.
 
 Errors:
 
+  - [Forbidden](#response-403)
   - [Domain Not Found](#response-1000)
   - [User Does Not Exist](#response-1100)
   - [User Does Not Granted](#response-1102)
@@ -356,11 +362,12 @@ Response returns resource:
 
   - **packages**: (array of [Package](#package-resource)) 
   - **count**: (integer)
-  - **previous**: (string, default "")
-  - **next**: (string, default "")
+  - **previous**: (string, default: "")
+  - **next**: (string, default: "")
 
 Errors:
 
+  - [Forbidden](#response-403)
   - [Domain Not Found](#response-1000)
   - [Package Not Found](#response-2000)
 
@@ -376,6 +383,7 @@ Returns [Package](#package-resource) resource.
 
 Errors:
 
+  - [Forbidden](#response-403)
   - [Package Not Found](#response-2000)
 
 ### 7.12. Add Package
@@ -399,6 +407,7 @@ Response returns [Package](#package-resource) resource.
 Errors:
 
   - [Bad Request](#response-400)
+  - [Forbidden](#response-403)
   - [Domain Not Found](#response-1000)
   - [Package Already Exists](#response-2001)
   - [Package Domain Required](#response-2010)
@@ -439,6 +448,7 @@ Response returns [Package](#package-resource) resource.
 Errors:
 
   - [Bad Request](#response-400)
+  - [Forbidden](#response-403)
   - [Domain Not Found](#response-1000)
   - [Package Not Found](#response-2000)
   - [Package Already Exists](#response-2001)
@@ -467,6 +477,7 @@ Response returns [OK](#response-200) response.
 
 Errors:
 
+  - [Forbidden](#response-403)
   - [Package Not Found](#response-2000)
 
 
@@ -483,10 +494,11 @@ Message responses have the following example of JSON-encoded body:
 
 ---
 
-| Code                          | HTTP Status Code          | Message                                 |
-|-------------------------------|---------------------------|-----------------------------------------|
+| Code                              | HTTP Status Code          | Message                                 |
+|-----------------------------------|---------------------------|-----------------------------------------|
 | 200 <a name="response-200"></a>   | 200 OK                    | OK                                      |
 | 400 <a name="response-400"></a>   | 400 Bad Request           | Bad Request                             |
+| 403 <a name="response-401"></a>   | 401 Unauthorized          | Unauthorized                            |
 | 403 <a name="response-403"></a>   | 403 Forbidden             | Forbidden                               |
 | 404 <a name="response-404"></a>   | 404 Not Found             | Not Found                               |
 | 429 <a name="response-429"></a>   | 429 Too Many Requests     | Too Many Requests                       |
