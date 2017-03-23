@@ -51,9 +51,37 @@ span.button {
 }
 
 .content pre:not(:last-child) {
-    margin-bottom: 1em;
+  margin-bottom: 1em;
 }
 
-code {
+.content pre {
+  background-color: transparent;
+}
+
+.content pre code {
   color: inherit;
+  border-radius: 3px;
+  padding-left: 10px;
+  background-color: #f5f7fa;
+}
+
+.content p + ul {
+  margin-top: -0.5em;
+  margin-left: 0.5em;
+  margin-right: 0.5em;
+  list-style: none;
+}
+
+.content p + ul li:before {
+  content: "•";
+  padding-right: 8px;
+  color: #e4e9f1;
+}
+
+.content p + ul > li+li {
+  margin-top: 0;
+}
+
+pre + pre {
+  margin-top: -1em;
 }

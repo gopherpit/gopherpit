@@ -1,11 +1,10 @@
-<h1 class="title is-1">GopherPit API Documentation</h1>
-
+<h1 class="title is-1">GopherPit API Reference</h1>
 
 ## 1. Overview
 
 This documentation describes the resources that make up the GopherPit API v1.
 
-A Go implementation is implemented in package:
+Go API client is implemented in package:
 
     go get gopherpit.com/gopherpit/client
 
@@ -18,25 +17,25 @@ GopherPit can be used as a web service available on `gopherpit.com` address, or 
 
 To use publicly available service, the endpoint is:
 
-    https://gopherpit.com/api
+    https://gopherpit.com/api/v1
 
 If *on-premises* installation is used, for example on domain `go.example.com`, the endpoint is:
 
-    https://go.example.com/api
+    https://go.example.com/api/v1
 
 In the rest of this document `gopherpit.com` domain will be used in examples.
 
 
 ## 3. API Version
 
-All API paths are prefixed with a version number. This document describes only v1 version of the API, which is available on:
+All API paths are prefixed with a version number, as part of the root endpoint.
 
-    https://gopherpit.com/api/v1
+This document describes only v1 version of the API.
 
 
 ## 4. Authentication
 
-Each API HTTP request requires a header `X-Key` to be provided with a Personal Access Token as a value.
+Each HTTP request requires `X-Key` header to be provided with a Personal Access Token as a value.
 
 Token is unique for every GopherPit user account and can be generated on a website under *Settings -> API access* page. It is also filtered by IP subnets that user can specify on the same page.
 
@@ -44,16 +43,18 @@ If the token is missing or invalid, API will return a [Unauthorized](#response-4
 
 Example:
 
-    curl -H "X-API 0036CHARACTERLONGPERSONALACCESSTOKEN" https://gopherpit.com/api/v1/domainss
+```sh
+curl -H "X-Key: 0036CHARACTERLONGPERSONALACCESSTOKEN" https://gopherpit.com/api/v1/domains
+```
 
 ## 5. Rate Limiting
 
 Rate limiting is configurable for Add and Update Domain requests. Additional HTTP response headers are returned with more information:
 
-  - `X-RateLimit-Limit`: The maximum number of requests that the user is permitted to make per hour.
-  - `X-RateLimit-Remaining`: The number of requests remaining in the current rate limit window.
-  - `X-RateLimit-Reset`: Seconds remaining until current rate limit window reset.
-  - `X-RateLimit-Retry`: Seconds remaining until new requests are permitted when limit is reached.
+  - `X-Ratelimit-Limit`: The maximum number of requests that the user is permitted to make per hour.
+  - `X-Ratelimit-Remaining`: The number of requests remaining in the current rate limit window.
+  - `X-Ratelimit-Reset`: Seconds remaining until current rate limit window reset.
+  - `X-Ratelimit-Retry`: Seconds remaining until new requests are permitted when limit is reached.
 
 If `X-Ratelimit-Limit` header is absent, no limit is enforced.
 
@@ -76,12 +77,14 @@ Properties:
 
 Example:
 
-    {
-        "id": "wynw4p7wkj11r5qqnzhvr6yy1syy2vxed3cfvx3f",
-        "fqdn": "project.gopherpit.com",
-        "owner_user_id": "xpvzcny34b5jv69eyfd72bz4f4",
-        "disabled": true
-    }
+``` json
+{
+    "id": "wynw4p7wkj11r5qqnzhvr6yy1syy2vxed3cfvx3f",
+    "fqdn": "project.example.com",
+    "owner_user_id": "xpvzcny34b5jv69eyfd72bz4f4",
+    "disabled": true
+}
+```
 
 ### <a name="domain-tokens-resource"></a> 6.2. Domain Tokens
 
@@ -94,18 +97,20 @@ Properties:
 
 Example:
 
-    {
-        "tokens": [
-            {
-                "fqdn": "_gopherpit.example.com",
-                "token": "qroydpvr_28uIU7up_gikuIf0Yo="
-            },
-            {
-                "fqdn": "_gopherpit.project.example.com",
-                "token":"PW7XX5dIu38SPovHpYRIYpXd9jo="
-            }
-        ]
-    }
+```json
+{
+    "tokens": [
+        {
+            "fqdn": "_gopherpit.example.com",
+            "token": "qroydpvr_28uIU7up_gikuIf0Yo="
+        },
+        {
+            "fqdn": "_gopherpit.project.example.com",
+            "token":"PW7XX5dIu38SPovHpYRIYpXd9jo="
+        }
+    ]
+}
+```
 
 ### <a name="domain-users-resource"></a> 6.3. Domain Users
 
@@ -116,13 +121,15 @@ Properties:
 
 Example:
 
-    {
-        "owner_user_id": "xpvzcny34b5jv69eyfd72bz4f4",
-        "user_ids": [
-            "34ddsdyca45634b5jv6ds727as",
-            "jkndsi333e9dsn7012n423jb31"
-        ]
-    }
+```json
+{
+    "owner_user_id": "xpvzcny34b5jv69eyfd72bz4f4",
+    "user_ids": [
+        "34ddsdyca45634b5jv6ds727as",
+        "jkndsi333e9dsn7012n423jb31"
+    ]
+}
+```
 
 ### <a name="package-resource"></a> 6.4. Package
 
@@ -132,9 +139,9 @@ Properties:
   - **domain_id**: (string)
   - **fqdn**: (string)
   - **path**: (string)
-  - **vcs**: (string, possible values: git, hg, bzr, svn)
+  - **vcs**: (string, possible values: "git", "hg", "bzr", "svn")
   - **repo_root**: (string)
-  - **ref_type**: (string, default: "", possible values: branch, tag)
+  - **ref_type**: (string, default: "", possible values: "branch", "tag")
   - **ref_name**: (string, default: "")
   - **go_source**: (string, default: "")
   - **redirect_url**: (string, default: "")
@@ -142,14 +149,16 @@ Properties:
 
 Example:
 
-    {
-        "id": "dqn54p1jwvfxhbebd35w59g2h605t9wm5e2eh206",
-        "domain_id": "ahy4mp0rvbsvpw469fk5debwvegrmqv761g5mafm",
-        "fqdn": "project.example.com",
-        "path": "/application"
-        "vcs": "git",
-        "repo_root": "https://git.example.com/me/my-app"
-    }
+```json
+{
+    "id": "dqn54p1jwvfxhbebd35w59g2h605t9wm5e2eh206",
+    "domain_id": "ahy4mp0rvbsvpw469fk5debwvegrmqv761g5mafm",
+    "fqdn": "project.example.com",
+    "path": "/application",
+    "vcs": "git",
+    "repo_root": "https://git.example.com/me/my-app"
+}
+```
 
 
 ## 7. Queries
@@ -158,14 +167,16 @@ GopherPit API uses HTTP for communication and this section describes HTTP reques
 
 If resource URL path is not valid, a [Not Found](#response-404) response will be returned.
 
-In case that the request body can not be decoded from JSON, a [Bad Request](#response-400) response will be returned.
+In case that the request body can not be decoded from JSON, a [Bad Request](#response-400) response will be returned. All POST requests must have `Content-Type: application/json` header.
 
 URL paths may contain parameters which are indicated with a variable name surrounded with curly brackets *{}*.
 
 
 ### 7.1. List Domains
 
-**GET /api/v1/domains**
+```http
+GET /api/v1/domains
+```
 
 Query parameters:
 
@@ -179,27 +190,44 @@ Response returns resource:
   - **previous**: (string, default: "")
   - **next**: (string, default: "")
 
-Example:
-
-    {
-        "domains": [
-            {
-                "id": "wynw4p7wkj11r5qqnzhvr6yy1syy2vxed3cfvx3f",
-                "fqdn": "project.gopherpit.com",
-                "owner_user_id": "xpvzcny34b5jv69eyfd72bz4f4",
-                "disabled": true
-            }
-        ],
-        "count": 1
-    }
+```sh
+curl -H "X-Key: TOKEN" \
+     https://gopherpit.com/api/v1/domains
+```
+```json
+{
+    "domains": [
+        {
+            "id": "wynw4p7wkj11r5qqnzhvr6yy1syy2vxed3cfvx3f",
+            "fqdn": "project.example.com",
+            "owner_user_id": "xpvzcny34b5jv69eyfd72bz4f4",
+            "disabled": true
+        }
+    ],
+    "count": 1
+}
+```
 
 Errors:
 
   - [Domain Not Found](#response-1000)
 
+```sh
+curl -H "X-Key: TOKEN" \
+     "https://gopherpit.com/api/v1/domains?start=missing.example.com"
+```
+```json
+{
+    "message": "Domain Not Found",
+    "code": 1000
+}
+```
+
 ### 7.2. Get Domain
 
-**GET /api/v1/domains/{ref}**
+```http
+GET /api/v1/domains/{ref}
+```
 
 URL parameters:
 
@@ -207,14 +235,40 @@ URL parameters:
 
 Returns [Domain](#domain-resource) resource.
 
+```sh
+curl -H "X-Key: TOKEN" \
+     https://gopherpit.com/api/v1/domains/project.example.com
+```
+```json
+{
+    "id": "wynw4p7wkj11r5qqnzhvr6yy1syy2vxed3cfvx3f",
+    "fqdn": "project.example.com",
+    "owner_user_id": "xpvzcny34b5jv69eyfd72bz4f4",
+    "disabled": true
+}
+```
+
 Errors:
 
   - [Forbidden](#response-403)
   - [Domain Not Found](#response-1000)
 
+```sh
+curl -H "X-Key: TOKEN"
+     https://gopherpit.com/api/v1/domains/missing.example.com
+```
+```json
+{
+    "message": "Domain Not Found",
+    "code": 1000
+}
+```
+
 ### 7.3. Add Domain
 
-**POST /api/v1/domains**
+```http
+POST /api/v1/domains
+```
 
 Request body properties:
 
@@ -224,6 +278,21 @@ Request body properties:
   - **disabled**: (boolean)
 
 Response returns [Domain](#domain-resource) resource.
+
+```sh
+curl -H "X-Key: TOKEN" \
+     -H "Content-Type: application/json" \
+     -d '{"fqdn":"example.localhost"}' \
+     https://gopherpit.com/api/v1/domains
+```
+```json
+{
+    "id": "rv3npp3e9yr8kghrjaxzzc9shd2yav2pa92n6k95",
+    "fqdn": "project.example.com",
+    "owner_user_id": "xpvzcny34b5jv69eyfd72bz4f4",
+    "disabled": false
+}
+```
 
 Errors:
 
@@ -238,7 +307,9 @@ Errors:
 
 ### 7.4. Update Domain
 
-**POST /api/v1/domains/{ref}**
+```http
+POST /api/v1/domains/{ref}
+```
 
 URL parameters:
 
@@ -252,6 +323,21 @@ Request body properties:
   - **disabled**: (boolean)
 
 Response returns [Domain](#domain-resource) resource.
+
+```sh
+curl -H "X-Key: TOKEN" \
+     -H "Content-Type: application/json" \
+     -d '{"disabled":true}' \
+     https://gopherpit.com/api/v1/domains/project.example.com
+```
+```json
+{
+    "id": "rv3npp3e9yr8kghrjaxzzc9shd2yav2pa92n6k95",
+    "fqdn": "project.example.com",
+    "owner_user_id": "xpvzcny34b5jv69eyfd72bz4f4",
+    "disabled": true
+}
+```
 
 Errors:
 
@@ -267,13 +353,29 @@ Errors:
 
 ### 7.5. Delete Domain
 
-**DELETE /api/v1/domains/{ref}**
+```http
+DELETE /api/v1/domains/{ref}
+```
 
 URL parameters:
 
   - **ref**: domain reference, can be domain ID or FQDN
 
-Response returns [OK](#response-200) response.
+Response returns [Domain](#domain-resource) response that has been deleted.
+
+```sh
+curl -H "X-Key: TOKEN" \
+     -X DELETE \
+     https://gopherpit.com/api/v1/domains/project.example.com
+```
+```json
+{
+    "id": "rv3npp3e9yr8kghrjaxzzc9shd2yav2pa92n6k95",
+    "fqdn": "project.example.com",
+    "owner_user_id": "xpvzcny34b5jv69eyfd72bz4f4",
+    "disabled": true
+}
+```
 
 Errors:
 
@@ -282,7 +384,9 @@ Errors:
 
 ### 7.6. List Domain Tokens
 
-**GET /api/v1/domains/{fqdn}/tokens**
+```http
+GET /api/v1/domains/{fqdn}/tokens
+```
 
 URL parameters:
 
@@ -290,19 +394,54 @@ URL parameters:
 
 Response returns [Domain Tokens](#domain-tokens-resource) resource.
 
+```sh
+curl -H "X-Key: TOKEN" \
+     https://gopherpit.com/api/v1/domains/project.example.com/tokens
+```
+```json
+{
+    "tokens": [
+        {
+            "fqdn": "_gopherpit.example.com",
+            "token": "77e3EZ7UCQDcffzekSKHquXVyqU="
+        },
+        {
+            "fqdn": "_gopherpit.project.example.com",
+            "token": "5jwJ2BpmiZo4XHJBjAtTwtvzPkQ="
+        }
+    ]
+}
+```
+
 Errors:
 
   - [Domain FQDN Invalid](#response-1011)
 
 ### 7.7. List Domain Users
 
-**GET /api/v1/domains/{ref}/users**
+```http
+GET /api/v1/domains/{ref}/users
+```
 
 URL parameters:
 
   - **ref**: domain reference, can be domain ID or FQDN
 
 Response returns [Domain Users](#domain-users-resource) resource.
+
+```sh
+curl -H "X-Key: TOKEN" \
+     https://gopherpit.com/api/v1/domains/project.example.com/users
+```
+```json
+{
+    "owner_user_id": "xpvzcny34b5jv69eyfd72bz4f4",
+    "user_ids": [
+        "34ddsdyca45634b5jv6ds727as",
+        "jkndsi333e9dsn7012n423jb31"
+    ]
+}
+```
 
 Errors:
 
@@ -311,7 +450,9 @@ Errors:
 
 ### 7.8. Grant Domain User
 
-**POST /api/v1/domains/{ref}/users/{user}**
+```http
+POST /api/v1/domains/{ref}/users/{user}
+```
 
 URL parameters:
 
@@ -319,6 +460,18 @@ URL parameters:
   - **user**: user identification parameter, can be user ID, username or email
 
 Response returns [OK](#response-200) response.
+
+```sh
+curl -H "X-Key: TOKEN" \
+     -X POST \
+     https://gopherpit.com/api/v1/domains/project.example.com/users/634b5jv6ds727as34ddsdyca45
+```
+```json
+{
+    "message": "OK",
+    "code": 200
+}
+```
 
 Errors:
 
@@ -329,7 +482,9 @@ Errors:
 
 ### 7.9. Revoke Domain User
 
-**DELETE /api/v1/domains/{ref}/users/{user}**
+```http
+DELETE /api/v1/domains/{ref}/users/{user}
+```
 
 URL parameters:
 
@@ -337,6 +492,18 @@ URL parameters:
   - **user**: user identification parameter, can be user ID, username or email
 
 Response returns [OK](#response-200) response.
+
+```sh
+curl -H "X-Key: TOKEN" \
+     -X DELETE \
+     https://gopherpit.com/api/v1/domains/project.example.com/users/634b5jv6ds727as34ddsdyca45
+```
+```json
+{
+    "message": "OK",
+    "code": 200
+}
+```
 
 Errors:
 
@@ -347,7 +514,9 @@ Errors:
 
 ### 7.10. List Domain Packages
 
-**GET /api/v1/domains/{ref}/packages**
+```http
+GET /api/v1/domains/{ref}/packages
+```
 
 URL parameters:
 
@@ -365,6 +534,36 @@ Response returns resource:
   - **previous**: (string, default: "")
   - **next**: (string, default: "")
 
+```sh
+curl -H "X-Key: TOKEN" \
+     https://gopherpit.com/api/v1/domains/project.example.com/packages
+```
+```json
+{
+    "packages": [
+        {
+            "id": "dqn54p1jwvfxhbebd35w59g2h605t9wm5e2eh206",
+            "domain_id": "ahy4mp0rvbsvpw469fk5debwvegrmqv761g5mafm",
+            "fqdn": "project.example.com",
+            "path": "/application",
+            "vcs": "git",
+            "ref_type": "branch",
+            "ref_name": "stable",
+            "repo_root": "https://git.example.com/me/my-app"
+        }
+        {
+            "id": "dqn54p1jwvfxhbebd35w59g2h605t9wm5e2eh206",
+            "domain_id": "ahy4mp0rvbsvpw469fk5debwvegrmqv761g5mafm",
+            "fqdn": "project.example.com",
+            "path": "/library",
+            "vcs": "hg",
+            "repo_root": "ssh://mercurial.example.com/me/my-lib"
+        }
+    ],
+    "count": 2
+}
+```
+
 Errors:
 
   - [Forbidden](#response-403)
@@ -373,13 +572,32 @@ Errors:
 
 ### 7.11. Get Package
 
-**GET /api/v1/packages/{id}**
+```http
+GET /api/v1/packages/{id}
+```
 
 URL parameters:
 
   - **id**: package id
 
 Returns [Package](#package-resource) resource.
+
+```sh
+curl -H "X-Key: TOKEN" \
+     https://gopherpit.com/api/v1/packages/dqn54p1jwvfxhbebd35w59g2h605t9wm5e2eh206
+```
+```json
+{
+    "id": "dqn54p1jwvfxhbebd35w59g2h605t9wm5e2eh206",
+    "domain_id": "ahy4mp0rvbsvpw469fk5debwvegrmqv761g5mafm",
+    "fqdn": "project.example.com",
+    "path": "/application",
+    "vcs": "git",
+    "ref_type": "branch",
+    "ref_name": "stable",
+    "repo_root": "https://git.example.com/me/my-app"
+}
+```
 
 Errors:
 
@@ -388,21 +606,39 @@ Errors:
 
 ### 7.12. Add Package
 
-**POST /api/v1/packages**
+```http
+POST /api/v1/packages
+```
 
 Request body properties:
 
   - **domain**: (string, domain reference, can be domain ID or FQDN)
   - **path**: (string)
-  - **vcs**: (string, possible values: git, hg, bzr, svn)
+  - **vcs**: (string, possible values: "git", "hg", "bzr", "svn")
   - **repo_root**: (string)
-  - **ref_type**: (string, default: "", possible values: branch, tag)
+  - **ref_type**: (string, default: "", possible values: "branch", "tag")
   - **ref_name**: (string, default: "")
   - **go_source**: (string, default: "")
   - **redirect_url**: (string, default: "")
   - **disabled**: (string, default: false)
 
 Response returns [Package](#package-resource) resource.
+
+```sh
+curl -H "X-Key: TOKEN" \
+     -H "Content-Type: application/json" \
+     -d '{"domain":"project.example.com","path":"/my-app","vcs":"git","repo_root":"https://github.com/me/app"}' \
+     https://gopherpit.com/api/v1/packages
+```
+```json
+{
+    "id": "ghrjaxzzc9shd2yav2pa92n6k95rv3npp3e9yr8k",
+    "domain_id": "project.example.com",
+    "path": "/my-app",
+    "vcs": "git",
+    "repo_root": "https://github.com/example/my-app"
+}
+```
 
 Errors:
 
@@ -425,7 +661,9 @@ Errors:
 
 ### 7.13. Update Package
 
-**POST /api/v1/packages/{id}**
+```http
+POST /api/v1/packages/{id}
+```
 
 URL parameters:
 
@@ -435,15 +673,32 @@ Request body properties:
 
   - **domain**: (string, domain reference, can be domain ID or FQDN)
   - **path**: (string)
-  - **vcs**: (string, possible values: git, hg, bzr, svn)
+  - **vcs**: (string, possible values: "git", "hg", "bzr", "svn")
   - **repo_root**: (string)
-  - **ref_type**: (string, default: "", possible values: branch, tag)
+  - **ref_type**: (string, default: "", possible values: "branch", "tag")
   - **ref_name**: (string, default: "")
   - **go_source**: (string, default: "")
   - **redirect_url**: (string, default: "")
   - **disabled**: (string, default: false)
 
 Response returns [Package](#package-resource) resource.
+
+```sh
+curl -H "X-Key: TOKEN" \
+     -H "Content-Type: application/json" \
+     -d '{"path":"/our-app","disabled":true}' \
+     https://gopherpit.com/api/v1/packages
+```
+```json
+{
+    "id": "ghrjaxzzc9shd2yav2pa92n6k95rv3npp3e9yr8k",
+    "domain_id": "project.example.com",
+    "path": "/our-app",
+    "vcs": "git",
+    "repo_root": "https://github.com/example/my-app",
+    "disabled": true
+}
+```
 
 Errors:
 
@@ -467,13 +722,31 @@ Errors:
 
 ### 7.14. Delete Package
 
-**DELETE /api/v1/packages/{id}**
+```http
+DELETE /api/v1/packages/{id}
+```
 
 URL parameters:
 
   - **id**: package id
 
-Response returns [OK](#response-200) response.
+Response returns [Package](#package-resource) resource that has been deleted.
+
+```sh
+curl -H "X-Key: TOKEN" \
+     -X DELETE \
+     https://gopherpit.com/api/v1/packages/ghrjaxzzc9shd2yav2pa92n6k95rv3npp3e9yr8k
+```
+```json
+{
+    "id": "ghrjaxzzc9shd2yav2pa92n6k95rv3npp3e9yr8k",
+    "domain_id": "project.example.com",
+    "path": "/our-app",
+    "vcs": "git",
+    "repo_root": "https://github.com/example/my-app",
+    "disabled": true
+}
+```
 
 Errors:
 
@@ -487,12 +760,12 @@ API utilizes HTTP Status codes as well as specific codes for more granular error
 
 Message responses have the following example of JSON-encoded body:
 
-    {
-        "message": "Domain Not Found",
-        "code": 1000
-    }
-
----
+```json
+{
+    "message": "Domain Not Found",
+    "code": 1000
+}
+```
 
 | Code                              | HTTP Status Code          | Message                                 |
 |-----------------------------------|---------------------------|-----------------------------------------|
