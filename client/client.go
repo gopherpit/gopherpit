@@ -80,7 +80,7 @@ func NewClient(key string) *Client {
 // Endpoint URL must include schema, host and path components.
 // For example: https://go.example.com/api/v1
 func NewClientWithEndpoint(endpoint, key string) *Client {
-	return newClientWithAPIClient(&apiClient.Client{
+	return newClientWithAPIClient(apiClient.Client{
 		Endpoint:  endpoint,
 		Key:       key,
 		UserAgent: userAgent,
@@ -89,10 +89,7 @@ func NewClientWithEndpoint(endpoint, key string) *Client {
 
 // newClientWithAPIClient creates a new Client and injects
 // api.ErrorRegistry in the API Client.
-func newClientWithAPIClient(c *apiClient.Client) *Client {
-	if c == nil {
-		c = &apiClient.Client{}
-	}
+func newClientWithAPIClient(c apiClient.Client) *Client {
 	c.ErrorRegistry = api.ErrorRegistry
-	return &Client{Client: *c}
+	return &Client{Client: c}
 }
