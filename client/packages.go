@@ -3,11 +3,6 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// Copyright (c) 2017, Janoš Guljaš <janos@resenje.org>
-// All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 package client
 
 import (
@@ -20,38 +15,34 @@ import (
 )
 
 // Package retrieves a Package instance.
-func (c Client) Package(id string) (d *api.Package, err error) {
-	d = &api.Package{}
-	err = c.Client.JSON("GET", "/packages/"+id, nil, nil, d)
+func (c Client) Package(id string) (p api.Package, err error) {
+	err = c.JSON("GET", "/packages/"+id, nil, nil, &p)
 	return
 }
 
 // AddPackage creates a new Package.
-func (c Client) AddPackage(o *api.PackageOptions) (d *api.Package, err error) {
+func (c Client) AddPackage(o *api.PackageOptions) (p api.Package, err error) {
 	body, err := json.Marshal(o)
 	if err != nil {
 		return
 	}
-	d = &api.Package{}
-	err = c.Client.JSON("POST", "/packages", nil, bytes.NewReader(body), d)
+	err = c.JSON("POST", "/packages", nil, bytes.NewReader(body), &p)
 	return
 }
 
-// UpdatePackage creates a new Package.
-func (c Client) UpdatePackage(id string, o *api.PackageOptions) (d *api.Package, err error) {
+// UpdatePackage updates fields of an existing Package.
+func (c Client) UpdatePackage(id string, o *api.PackageOptions) (p api.Package, err error) {
 	body, err := json.Marshal(o)
 	if err != nil {
 		return
 	}
-	d = &api.Package{}
-	err = c.Client.JSON("POST", "/packages/"+id, nil, bytes.NewReader(body), d)
+	err = c.JSON("POST", "/packages/"+id, nil, bytes.NewReader(body), &p)
 	return
 }
 
 // DeletePackage removes a Package.
-func (c Client) DeletePackage(id string) (d *api.Package, err error) {
-	d = &api.Package{}
-	err = c.Client.JSON("DELETE", "/packages/"+id, nil, nil, d)
+func (c Client) DeletePackage(id string) (p api.Package, err error) {
+	err = c.JSON("DELETE", "/packages/"+id, nil, nil, &p)
 	return
 }
 
@@ -64,6 +55,6 @@ func (c Client) DomainPackages(domainRef, start string, limit int) (page api.Pac
 	if limit > 0 {
 		query.Set("limit", strconv.Itoa(limit))
 	}
-	err = c.Client.JSON("GET", "/domain/"+domainRef+"/packages", query, nil, &page)
+	err = c.JSON("GET", "/domain/"+domainRef+"/packages", query, nil, &page)
 	return
 }
