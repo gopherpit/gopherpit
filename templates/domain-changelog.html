@@ -57,10 +57,10 @@
     [[ end ]]
     <p class="content">
       [[ if .Next ]]
-      <a href="/domain/[[ .Domain.FQDN ]]/changelog?start=[[ .Next | urlquery ]]" class="button"><span class="icon"><i class="fa fa-arrow-left"></i></span><span>Newer changes</span></a>
+      <a href="/domain/[[ .Domain.FQDN ]]/changelog?start=[[ .Next | urlquery ]]" class="button"><span class="icon is-small"><i class="fa fa-arrow-left"></i></span><span>Newer changes</span></a>
       [[ end ]]
       [[ if .Previous ]]
-      <a href="/domain/[[ .Domain.FQDN ]]/changelog?start=[[ .Previous | urlquery ]]" class="button"><span>Older changes</span><span class="icon"><i class="fa fa-arrow-right"></i></span></a>
+      <a href="/domain/[[ .Domain.FQDN ]]/changelog?start=[[ .Previous | urlquery ]]" class="button"><span>Older changes</span><span class="icon is-small"><i class="fa fa-arrow-right"></i></span></a>
       [[ end ]]
     </p>
   </div>

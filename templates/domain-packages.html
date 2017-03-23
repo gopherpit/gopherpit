@@ -70,10 +70,10 @@
         </div>
         <div>
           [[ if .Previous ]]
-          <a href="/domain/[[ .Domain.FQDN ]]?start=[[ .Previous | base32encode ]]" class="button"><span class="icon"><i class="fa fa-arrow-left"></i></span><span>Previous</span></a>
+          <a href="/domain/[[ .Domain.FQDN ]]?start=[[ .Previous | base32encode ]]" class="button"><span class="icon is-small"><i class="fa fa-arrow-left"></i></span><span>Previous</span></a>
           [[ end ]]
           [[ if .Next ]]
-          <a href="/domain/[[ .Domain.FQDN ]]?start=[[ .Next | base32encode ]]" class="button"><span>Next</span><span class="icon"><i class="fa fa-arrow-right"></i></span></a>
+          <a href="/domain/[[ .Domain.FQDN ]]?start=[[ .Next | base32encode ]]" class="button"><span>Next</span><span class="icon is-small"><i class="fa fa-arrow-right"></i></span></a>
           [[ end ]]
         </div>
         [[ end ]]
