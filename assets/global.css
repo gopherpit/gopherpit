@@ -1,3 +1,7 @@
+html, .section {
+    background-color: #f5f7fa!important;
+}
+
 .icon.is-small {
   vertical-align: baseline!important;
 }

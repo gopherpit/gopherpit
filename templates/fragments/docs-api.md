@@ -180,8 +180,8 @@ GET /api/v1/domains
 
 Query parameters:
 
-  - **start**: (string, default: "") value returned in *previous* or *next* response property.
-  - **limit**: (integer, default: 100) maximal elements in response 
+  - **start**: (string, default: "") value returned in *previous* or *next* response property
+  - **limit**: (integer, default: 100) maximal elements in response
 
 Response returns resource:
 
@@ -189,6 +189,8 @@ Response returns resource:
   - **count**: (integer)
   - **previous**: (string, default: "")
   - **next**: (string, default: "")
+
+Values from the *previous* and *next* fields can be passed as *start* query parameter to get a previous or next page in the listing.
 
 ```sh
 curl -H "X-Key: TOKEN" \
@@ -305,6 +307,8 @@ Errors:
   - [Domain Needs Verification](#response-1014)
   - [User Does Not Exist](#response-1100)
 
+If domain needs verification, follow instructions described in [List Domain Tokens](#list-domain-tokens) section.
+
 ### 7.4. Update Domain
 
 ```http
@@ -351,6 +355,8 @@ Errors:
   - [Domain Needs Verification](#response-1014)
   - [User Does Not Exist](#response-1100)
 
+If domain needs verification, follow instructions described in [List Domain Tokens](#list-domain-tokens) section.
+
 ### 7.5. Delete Domain
 
 ```http
@@ -382,7 +388,11 @@ Errors:
   - [Forbidden](#response-403)
   - [Domain Not Found](#response-1000)
 
-### 7.6. List Domain Tokens
+### <a name="list-domain-tokens"></a> 7.6. List Domain Tokens
+
+This API call provides information to verify the ownership of a domain.
+
+Domain verification is done by setting a TXT DNS record for one of DNS records provided in the response. The value of the record is provided in the *token* field.
 
 ```http
 GET /api/v1/domains/{fqdn}/tokens
@@ -412,6 +422,22 @@ curl -H "X-Key: TOKEN" \
     ]
 }
 ```
+
+DNS record example for all example.com subdomains:
+
+```
+$ORIGIN example.com.
+_gopherpit TXT "77e3EZ7UCQDcffzekSKHquXVyqU="
+```
+
+To verify only project.example.com subdomains:
+
+```
+$ORIGIN project.example.com.
+_gopherpit TXT "5jwJ2BpmiZo4XHJBjAtTwtvzPkQ="
+```
+
+Tokens specific for each user. Verification of ownership by one user does not give permission other users to add subdomains. Each user must have a DNS record with a specific token.
 
 Errors:
 
@@ -524,8 +550,8 @@ URL parameters:
 
 Query parameters:
 
-  - **start**: (string, default: "") value returned in *previous* or *next* response property.
-  - **limit**: (integer, default: 100) maximal elements in response 
+  - **start**: (string, default: "") value returned in *previous* or *next* response property
+  - **limit**: (integer, default: 100) maximal elements in response
 
 Response returns resource:
 
@@ -533,6 +559,8 @@ Response returns resource:
   - **count**: (integer)
   - **previous**: (string, default: "")
   - **next**: (string, default: "")
+
+Values from the *previous* and *next* fields can be passed as *start* query parameter to get a previous or next page in the listing.
 
 ```sh
 curl -H "X-Key: TOKEN" \
