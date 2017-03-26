@@ -88,15 +88,12 @@ func (h AuthHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func getRequestIPs(r *http.Request) (ips []net.IP) {
-	idx := strings.LastIndex(r.RemoteAddr, ":")
-	if idx == -1 {
-		if i := net.ParseIP(r.RemoteAddr); i != nil {
-			ips = []net.IP{i}
-		}
-	} else {
-		if i := net.ParseIP(r.RemoteAddr[:idx]); i != nil {
-			ips = []net.IP{i}
-		}
+	ip, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err != nil {
+		ip = r.RemoteAddr
+	}
+	if i := net.ParseIP(ip); i != nil {
+		ips = []net.IP{i}
 	}
 	if h := r.Header.Get("X-Real-Ip"); h != "" {
 		if i := net.ParseIP(h); i != nil {

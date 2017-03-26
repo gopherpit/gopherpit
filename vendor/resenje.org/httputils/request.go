@@ -6,19 +6,18 @@
 package httputils
 
 import (
+	"net"
 	"net/http"
 	"strings"
 )
 
 // GetRequestIPs returns all possible IPs found in HTTP request.
 func GetRequestIPs(r *http.Request) string {
-	var ips []string
-	idx := strings.LastIndex(r.RemoteAddr, ":")
-	if idx == -1 {
-		ips = []string{r.RemoteAddr}
-	} else {
-		ips = []string{r.RemoteAddr[:idx]}
+	ip, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err != nil {
+		ip = r.RemoteAddr
 	}
+	ips := []string{ip}
 	xfr := r.Header.Get("X-Forwarded-For")
 	if xfr != "" {
 		ips = append(ips, xfr)

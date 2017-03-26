@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	// StandardTimeFormat defines a representaion of timestamps in log lines.
+	// StandardTimeFormat defines a representation of timestamps in log lines.
 	StandardTimeFormat = "2006-01-02 15:04:05.000Z07:00"
 	tolerance          = 100 * time.Millisecond
 )
