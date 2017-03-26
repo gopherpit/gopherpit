@@ -66,15 +66,15 @@ func respondError(w http.ResponseWriter, r *http.Request, c int) {
 	var ctx map[string]interface{}
 	u, r, err := getRequestUser(r)
 	if err != nil {
-		srv.logger.Errorf("get user: %s", err)
+		srv.Logger.Errorf("get user: %s", err)
 		if _, ok := err.(net.Error); ok {
 			if err := renderToResponse(w, srv.templates["ServiceUnavailable"], "", http.StatusServiceUnavailable, nil, "text/html; charset=utf-8"); err != nil {
-				srv.logger.Errorf("render service unavailable response: %s", err)
+				srv.Logger.Errorf("render service unavailable response: %s", err)
 			}
 			return
 		}
 		if err := renderToResponse(w, srv.templates["InternalServerError"], "", http.StatusServiceUnavailable, nil, "text/html; charset=utf-8"); err != nil {
-			srv.logger.Errorf("render internal server error response: %s", err)
+			srv.Logger.Errorf("render internal server error response: %s", err)
 		}
 		return
 	}
@@ -88,7 +88,7 @@ func respondError(w http.ResponseWriter, r *http.Request, c int) {
 		tpl = srv.templates[errorTemplates[c][0]]
 	}
 	if err := renderToResponse(w, tpl, "", c, ctx, "text/html; charset=utf-8"); err != nil {
-		srv.logger.Errorf("render http code %v response: %s", c, err)
+		srv.Logger.Errorf("render http code %v response: %s", c, err)
 	}
 }
 

@@ -47,6 +47,8 @@ func (c Client) DeletePackage(id string) (p api.Package, err error) {
 }
 
 // DomainPackages retrieves a paginated list of Packages under a domain.
+// Values from the previous and next fields in returned page can be provided as
+// startRef argument to get a previous or next page in the listing.
 func (c Client) DomainPackages(domainRef, start string, limit int) (page api.PackagesPage, err error) {
 	query := url.Values{}
 	if start != "" {
@@ -55,6 +57,6 @@ func (c Client) DomainPackages(domainRef, start string, limit int) (page api.Pac
 	if limit > 0 {
 		query.Set("limit", strconv.Itoa(limit))
 	}
-	err = c.JSON("GET", "/domain/"+domainRef+"/packages", query, nil, &page)
+	err = c.JSON("GET", "/domains/"+domainRef+"/packages", query, nil, &page)
 	return
 }

@@ -288,7 +288,23 @@ COPYRIGHT
 
 	logger, err := logging.GetLogger("default")
 	if err != nil {
-		return
+		fmt.Fprintf(os.Stderr, "Error: get default logger: %s", err)
+		os.Exit(2)
+	}
+	accessLogger, err := logging.GetLogger("access")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: get access logger: %s", err)
+		os.Exit(2)
+	}
+	auditLogger, err := logging.GetLogger("audit")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: get audit logger: %s", err)
+		os.Exit(2)
+	}
+	packageAccessLogger, err := logging.GetLogger("package-access")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: get package access logger: %s", err)
+		os.Exit(2)
 	}
 
 	// Initialize services required for server to function.
@@ -550,6 +566,11 @@ COPYRIGHT
 			APIProxyRealIPHeader:    apiOptions.ProxyRealIPHeader,
 			APIHourlyRateLimit:      apiOptions.HourlyRateLimit,
 			APIEnabled:              !apiOptions.Disabled,
+
+			Logger:              logger,
+			AccessLogger:        accessLogger,
+			AuditLogger:         auditLogger,
+			PackageAccessLogger: packageAccessLogger,
 
 			EmailService:        *emailService,
 			RecoveryService:     *recoveryService,

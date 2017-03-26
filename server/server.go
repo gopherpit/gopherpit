@@ -17,12 +17,12 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
 
 	throttled "gopkg.in/throttled/throttled.v2"
-	"resenje.org/email"
 	"resenje.org/httputils"
 	"resenje.org/httputils/file-server"
 	"resenje.org/logging"
@@ -46,11 +46,6 @@ var srv *server
 type server struct {
 	Options
 
-	logger              *logging.Logger
-	accessLogger        *logging.Logger
-	auditLogger         *logging.Logger
-	packageAccessLogger *logging.Logger
-
 	handler         http.Handler
 	internalHandler http.Handler
 
@@ -67,9 +62,17 @@ type server struct {
 
 	servers []*http.Server
 
+	port, portTLS, portInternal, portInternalTLS int
+
 	templates map[string]*template.Template
 
 	apiRateLimiter *throttled.GCRARateLimiter
+}
+
+// EmailService defines interface for sending email messages.
+type EmailService interface {
+	Notify(title, body string) error
+	SendEmail(from string, to []string, subject string, body string) error
 }
 
 // Options structure contains server's configurable properties.
@@ -108,7 +111,12 @@ type Options struct {
 	APIHourlyRateLimit      int
 	APIEnabled              bool
 
-	EmailService    email.Service
+	Logger              *logging.Logger
+	AccessLogger        *logging.Logger
+	AuditLogger         *logging.Logger
+	PackageAccessLogger *logging.Logger
+
+	EmailService    EmailService
 	RecoveryService recovery.Service
 
 	SessionService      session.Service
@@ -131,37 +139,13 @@ func Configure(o Options) (err error) {
 	if o.VerificationSubdomain == "" {
 		o.VerificationSubdomain = "_" + srv.Name
 	}
-	logger, err := logging.GetLogger("default")
-	if err != nil {
-		err = fmt.Errorf("get default logger: %s", err)
-		return
-	}
-	accessLogger, err := logging.GetLogger("access")
-	if err != nil {
-		err = fmt.Errorf("get access logger: %s", err)
-		return
-	}
-	auditLogger, err := logging.GetLogger("audit")
-	if err != nil {
-		err = fmt.Errorf("get audit logger: %s", err)
-		return
-	}
-	packageAccessLogger, err := logging.GetLogger("package-access")
-	if err != nil {
-		err = fmt.Errorf("get package access logger: %s", err)
-		return
-	}
 	s := &server{
-		Options:             o,
-		logger:              logger,
-		accessLogger:        accessLogger,
-		auditLogger:         auditLogger,
-		packageAccessLogger: packageAccessLogger,
-		certificateCache:    certificateCache.NewCache(o.CertificateService, 15*time.Minute, time.Minute),
-		startTime:           time.Now(),
-		templates:           map[string]*template.Template{},
-		tlsEnabled:          o.ListenTLS != "",
-		registerACMEUser:    o.ListenTLS != "",
+		Options:          o,
+		certificateCache: certificateCache.NewCache(o.CertificateService, 15*time.Minute, time.Minute),
+		startTime:        time.Now(),
+		templates:        map[string]*template.Template{},
+		tlsEnabled:       o.ListenTLS != "",
+		registerACMEUser: o.ListenTLS != "",
 	}
 	// Load or generate a salt value.
 	saltFilename := filepath.Join(s.StorageDir, s.Name+".salt")
@@ -177,7 +161,7 @@ func Configure(o Options) (err error) {
 			err = fmt.Errorf("generate new salt: %s", err)
 			return
 		}
-		logger.Infof("saving new salt to file %s", saltFilename)
+		s.Logger.Infof("saving new salt to file %s", saltFilename)
 		if err = ioutil.WriteFile(saltFilename, salt, 0600); err != nil {
 			err = fmt.Errorf("saving salt %s: %s", saltFilename, err)
 			return
@@ -307,7 +291,7 @@ func Configure(o Options) (err error) {
 				}
 
 				if obtainCertificate {
-					srv.logger.Debugf("get certificate: %s: obtaining certificate for domain", clientHello.ServerName)
+					srv.Logger.Debugf("get certificate: %s: obtaining certificate for domain", clientHello.ServerName)
 					cert, err := srv.CertificateService.ObtainCertificate(clientHello.ServerName)
 					if err != nil {
 						return nil, fmt.Errorf("get certificate %s: obtain certificate: %s", clientHello.ServerName, err)
@@ -385,6 +369,8 @@ func Serve() error {
 			return fmt.Errorf("listen tls '%v': %s", srv.ListenTLS, err)
 		}
 
+		srv.portTLS = ln.Addr().(*net.TCPAddr).Port
+
 		ln = &httputils.TLSListener{
 			TCPListener: ln.(*net.TCPListener),
 			TLSConfig:   srv.tlsConfig,
@@ -422,10 +408,12 @@ func Serve() error {
 		go func() {
 			defer srv.RecoveryService.Recover()
 
-			srv.logger.Infof("TLS HTTP Listening on %v", srv.ListenTLS)
+			addr := net.JoinHostPort(ln.Addr().(*net.TCPAddr).IP.String(), strconv.Itoa(ln.Addr().(*net.TCPAddr).Port))
+
+			srv.Logger.Infof("TLS HTTP Listening on %v", addr)
 
 			if err := server.Serve(ln); err != nil && err != http.ErrServerClosed {
-				srv.logger.Errorf("Serve TLS '%v': %s", srv.ListenTLS, err)
+				srv.Logger.Errorf("Serve TLS '%v': %s", addr, err)
 			}
 		}()
 	}
@@ -434,6 +422,8 @@ func Serve() error {
 		if err != nil {
 			return fmt.Errorf("listen '%v': %s", srv.Listen, err)
 		}
+
+		srv.port = ln.Addr().(*net.TCPAddr).Port
 
 		var handler http.Handler
 
@@ -496,10 +486,12 @@ func Serve() error {
 		go func() {
 			defer srv.RecoveryService.Recover()
 
-			srv.logger.Infof("Plain HTTP Listening on %v", srv.Listen)
+			addr := net.JoinHostPort(ln.Addr().(*net.TCPAddr).IP.String(), strconv.Itoa(ln.Addr().(*net.TCPAddr).Port))
+
+			srv.Logger.Infof("Plain HTTP Listening on %v", addr)
 
 			if err := server.Serve(ln); err != nil && err != http.ErrServerClosed {
-				srv.logger.Errorf("Serve '%v': %s", srv.Listen, err)
+				srv.Logger.Errorf("Serve '%v': %s", addr, err)
 			}
 		}()
 	}
@@ -509,6 +501,8 @@ func Serve() error {
 		if err != nil {
 			return fmt.Errorf("listen internal tls '%v': %s", srv.ListenInternalTLS, err)
 		}
+
+		srv.portInternalTLS = ln.Addr().(*net.TCPAddr).Port
 
 		ln = &httputils.TLSListener{
 			TCPListener: ln.(*net.TCPListener),
@@ -524,10 +518,12 @@ func Serve() error {
 		go func() {
 			defer srv.RecoveryService.Recover()
 
-			srv.logger.Infof("Internal TLS HTTP Listening on %v", srv.ListenInternalTLS)
+			addr := net.JoinHostPort(ln.Addr().(*net.TCPAddr).IP.String(), strconv.Itoa(ln.Addr().(*net.TCPAddr).Port))
+
+			srv.Logger.Infof("Internal TLS HTTP Listening on %v", addr)
 
 			if err := server.Serve(ln); err != nil && err != http.ErrServerClosed {
-				srv.logger.Errorf("Serve Internal TLS '%v': %s", srv.ListenInternalTLS, err)
+				srv.Logger.Errorf("Serve Internal TLS '%v': %s", addr, err)
 			}
 		}()
 	}
@@ -538,6 +534,8 @@ func Serve() error {
 			return fmt.Errorf("listen internal '%v': %s", srv.ListenInternal, err)
 		}
 
+		srv.portInternal = ln.Addr().(*net.TCPAddr).Port
+
 		server := &http.Server{
 			Addr:    srv.ListenInternal,
 			Handler: nilRecoveryHandler(srv.internalHandler),
@@ -547,10 +545,12 @@ func Serve() error {
 		go func() {
 			defer srv.RecoveryService.Recover()
 
-			srv.logger.Infof("Internal plain HTTP Listening on %v", srv.ListenInternal)
+			addr := net.JoinHostPort(ln.Addr().(*net.TCPAddr).IP.String(), strconv.Itoa(ln.Addr().(*net.TCPAddr).Port))
+
+			srv.Logger.Infof("Internal plain HTTP Listening on %v", addr)
 
 			if err := server.Serve(ln); err != nil && err != http.ErrServerClosed {
-				srv.logger.Errorf("Serve internal '%v': %s", srv.ListenInternal, err)
+				srv.Logger.Errorf("Serve Internal '%v': %s", addr, err)
 			}
 		}()
 	}
@@ -563,7 +563,7 @@ func Shutdown(ctx context.Context) {
 		return
 	}
 
-	srv.logger.Debug("Shutting down HTTP servers")
+	srv.Logger.Debug("Shutting down HTTP servers")
 	wg := sync.WaitGroup{}
 	for _, server := range srv.servers {
 		wg.Add(1)
@@ -572,7 +572,7 @@ func Shutdown(ctx context.Context) {
 			defer wg.Done()
 
 			if err := server.Shutdown(ctx); err != nil {
-				srv.logger.Errorf("Server shutdown: %s", err)
+				srv.Logger.Errorf("Server shutdown: %s", err)
 			}
 		}(server)
 	}

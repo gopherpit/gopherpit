@@ -18,24 +18,24 @@ func emailOptOutFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 
 	email, err := emailFromToken(token)
 	if err != nil {
-		srv.logger.Errorf("email opt-out fe api: token %s: %s", token, err)
+		srv.Logger.Errorf("email opt-out fe api: token %s: %s", token, err)
 		jsonresponse.NotFound(w, nil)
 		return
 	}
 
 	if !emailRegex.MatchString(email) {
-		srv.logger.Warningf("email opt-out fe api: token %s: invalid data %s", token, email)
+		srv.Logger.Warningf("email opt-out fe api: token %s: invalid data %s", token, email)
 		jsonresponse.NotFound(w, nil)
 		return
 	}
 
 	if err := srv.NotificationService.OptOutEmail(email); err != nil {
-		srv.logger.Errorf("email opt-out fe api: opt-out email %s: %s", email, err)
+		srv.Logger.Errorf("email opt-out fe api: opt-out email %s: %s", email, err)
 		jsonServerError(w, err)
 		return
 	}
 
-	srv.logger.Infof("email opt-out fe api: success %s", email)
+	srv.Logger.Infof("email opt-out fe api: success %s", email)
 
 	audit(r, nil, "email opt-out", email)
 
@@ -48,24 +48,24 @@ func emailRemoveOptOutFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 
 	email, err := emailFromToken(token)
 	if err != nil {
-		srv.logger.Errorf("email opt-out remove fe api: token %s: %s", token, err)
+		srv.Logger.Errorf("email opt-out remove fe api: token %s: %s", token, err)
 		jsonresponse.NotFound(w, nil)
 		return
 	}
 
 	if !emailRegex.MatchString(email) {
-		srv.logger.Warningf("email opt-out remove fe api: token %s: invalid data %s", token, email)
+		srv.Logger.Warningf("email opt-out remove fe api: token %s: invalid data %s", token, email)
 		jsonresponse.NotFound(w, nil)
 		return
 	}
 
 	if err := srv.NotificationService.RemoveOptedOutEmail(email); err != nil {
-		srv.logger.Errorf("email opt-out remove fe api: remove email opt-out %s: %s", email, err)
+		srv.Logger.Errorf("email opt-out remove fe api: remove email opt-out %s: %s", email, err)
 		jsonServerError(w, err)
 		return
 	}
 
-	srv.logger.Infof("email opt-out remove fe api: success %s", email)
+	srv.Logger.Infof("email opt-out remove fe api: success %s", email)
 
 	audit(r, nil, "email opt-out remove", email)
 

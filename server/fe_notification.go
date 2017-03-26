@@ -17,14 +17,14 @@ func publicEmailSettingsHandler(w http.ResponseWriter, r *http.Request) {
 
 	email, err := emailFromToken(token)
 	if err != nil {
-		srv.logger.Errorf("public email settings: email from token %s: %s", token, err)
+		srv.Logger.Errorf("public email settings: email from token %s: %s", token, err)
 		htmlNotFoundHandler(w, r)
 		return
 	}
 
 	optedOut, err := srv.NotificationService.IsEmailOptedOut(email)
 	if err != nil {
-		srv.logger.Errorf("public email settings: is email %s opted-out: %s", email, err)
+		srv.Logger.Errorf("public email settings: is email %s opted-out: %s", email, err)
 		htmlServerError(w, r, err)
 		return
 	}

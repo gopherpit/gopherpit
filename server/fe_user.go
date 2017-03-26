@@ -17,7 +17,7 @@ import (
 func logoutHandler(w http.ResponseWriter, r *http.Request) {
 	r, err := logout(w, r)
 	if err != nil {
-		srv.logger.Errorf("logout: %s", err)
+		srv.Logger.Errorf("logout: %s", err)
 		htmlServerError(w, r, err)
 		return
 	}
@@ -49,14 +49,14 @@ func emailValidationHandler(w http.ResponseWriter, r *http.Request) {
 	u2, err := srv.UserService.ChangeEmail(u.ID, token)
 	if err != nil {
 		if terr, ok := err.(*user.Error); ok {
-			srv.logger.Warningf("email validation: user %s: change email token %s: %s", u.ID, token, terr)
+			srv.Logger.Warningf("email validation: user %s: change email token %s: %s", u.ID, token, terr)
 			respond(w, "EmailValidation", map[string]interface{}{
 				"Valid": false,
 				"User":  u,
 			})
 			return
 		}
-		srv.logger.Errorf("email validation: user %s: change email token %s: %s", u.ID, token, err)
+		srv.Logger.Errorf("email validation: user %s: change email token %s: %s", u.ID, token, err)
 		htmlServerError(w, r, err)
 		return
 	}
@@ -84,7 +84,7 @@ func settingsEmailHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	optedOut, err := srv.NotificationService.IsEmailOptedOut(u.Email)
 	if err != nil {
-		srv.logger.Errorf("settings email: %s: is email opted out api: %s", u.Email, err)
+		srv.Logger.Errorf("settings email: %s: is email opted out api: %s", u.Email, err)
 		htmlServerError(w, r, err)
 		return
 	}
@@ -102,7 +102,7 @@ func settingsNotificationsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	optedOut, err := srv.NotificationService.IsEmailOptedOut(u.Email)
 	if err != nil {
-		srv.logger.Errorf("settings notifications: %s: is email opted out api: %s", u.Email, err)
+		srv.Logger.Errorf("settings notifications: %s: is email opted out api: %s", u.Email, err)
 		htmlServerError(w, r, err)
 		return
 	}
@@ -139,7 +139,7 @@ func apiAccessSettingsHandler(w http.ResponseWriter, r *http.Request) {
 	case key.KeyNotFound:
 		k = &key.Key{}
 	default:
-		srv.logger.Errorf("settings api access: %s: get key by ref: %s", u.ID, err)
+		srv.Logger.Errorf("settings api access: %s: get key by ref: %s", u.ID, err)
 		htmlServerError(w, r, err)
 		return
 	}

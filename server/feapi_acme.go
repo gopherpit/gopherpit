@@ -28,7 +28,7 @@ func registerACMEUserFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 
 	au, err := srv.CertificateService.ACMEUser()
 	if err != nil && err != certificate.ACMEUserNotFound {
-		srv.logger.Warningf("register acme user fe api: acme user: %s", err)
+		srv.Logger.Warningf("register acme user fe api: acme user: %s", err)
 		jsonServerError(w, err)
 		return
 	}
@@ -40,7 +40,7 @@ func registerACMEUserFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 	request := registerACMEUserRequest{}
 	errors := httputils.FormErrors{}
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		srv.logger.Warningf("register acme user fe api: request decode %s %s: %s", u.ID, u.Email, err)
+		srv.Logger.Warningf("register acme user fe api: request decode %s %s: %s", u.ID, u.Email, err)
 		errors.AddError("Invalid data.")
 		jsonresponse.BadRequest(w, errors)
 		return
@@ -49,14 +49,14 @@ func registerACMEUserFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 	var directoryURL string
 	switch request.Directory {
 	case "":
-		srv.logger.Warningf("register acme user fe api: directory empty")
+		srv.Logger.Warningf("register acme user fe api: directory empty")
 		errors.AddFieldError("directory", "Directory is required.")
 	case "production":
 		directoryURL = srv.ACMEDirectoryURL
 	case "staging":
 		directoryURL = srv.ACMEDirectoryURLStaging
 	default:
-		srv.logger.Warningf("register acme user fe api: directory invalid: %s", request.Directory)
+		srv.Logger.Warningf("register acme user fe api: directory invalid: %s", request.Directory)
 		errors.AddFieldError("directory", "Directory is not valid.")
 	}
 
@@ -72,12 +72,12 @@ func registerACMEUserFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 			jsonresponse.BadRequest(w, errors)
 			return
 		}
-		srv.logger.Warningf("register acme user fe api: register acme user: %s", err)
+		srv.Logger.Warningf("register acme user fe api: register acme user: %s", err)
 		jsonServerError(w, err)
 		return
 	}
 
-	srv.logger.Infof("register acme user fe api: success %d %s", au.ID, au.Email)
+	srv.Logger.Infof("register acme user fe api: success %d %s", au.ID, au.Email)
 
 	auditf(r, nil, "register acme user", "%d: %s", au.ID, au.Email)
 

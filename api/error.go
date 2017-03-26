@@ -13,9 +13,7 @@ import (
 
 var (
 	// ErrorRegistry is a map of error codes to errors.
-	// It is usually used in gopherpit.com/gopherpit/pkg/client.Client.
 	ErrorRegistry = apiClient.NewMapErrorRegistry(nil)
-	serviceName   = "packages"
 )
 
 // Error is a structure that holds error message and code.
@@ -40,7 +38,7 @@ func NewError(code int, message string) (err *Error) {
 		Code:    code,
 	}
 	if e := ErrorRegistry.AddError(code, err); e != nil {
-		panic(fmt.Sprintf("%s service error %v: %s", serviceName, code, e))
+		panic(fmt.Sprintf("error registry: code %v: %s", code, e))
 	}
 	return
 }

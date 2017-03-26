@@ -31,14 +31,14 @@ func contactPrivateFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 	request := contactRequest{}
 	errors := httputils.FormErrors{}
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		srv.logger.Warningf("contact private fe api: request decode %s %s: %s", u.ID, u.Email, err)
+		srv.Logger.Warningf("contact private fe api: request decode %s %s: %s", u.ID, u.Email, err)
 		errors.AddError("Invalid data.")
 		jsonresponse.BadRequest(w, errors)
 		return
 	}
 
 	if request.Message == "" {
-		srv.logger.Warningf("contact private fe api: message empty")
+		srv.Logger.Warningf("contact private fe api: message empty")
 		errors.AddFieldError("message", "The message is required.")
 		jsonresponse.BadRequest(w, errors)
 		return
@@ -49,11 +49,11 @@ func contactPrivateFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Sprintf("Contact message from user: %s %s", u.Name, u.Username),
 		request.Message,
 	); err != nil {
-		srv.logger.Errorf("contact private fe api: %s", err)
+		srv.Logger.Errorf("contact private fe api: %s", err)
 		jsonServerError(w, err)
 		return
 	}
-	srv.logger.Infof("contact private fe api: success %s %s", u.ID, u.Email)
+	srv.Logger.Infof("contact private fe api: success %s %s", u.ID, u.Email)
 
 	auditf(r, request, "contact private", "%s: %s", u.ID, u.Email)
 
@@ -64,30 +64,30 @@ func contactFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 	request := contactRequest{}
 	errors := httputils.FormErrors{}
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		srv.logger.Warningf("contact fe api: request decode: %s", err)
+		srv.Logger.Warningf("contact fe api: request decode: %s", err)
 		errors.AddError("Invalid data.")
 		jsonresponse.BadRequest(w, errors)
 		return
 	}
 	if request.Email == "" {
-		srv.logger.Warning("contact fe api: request: email empty")
+		srv.Logger.Warning("contact fe api: request: email empty")
 		errors.AddFieldError("email", "E-mail is required.")
 	} else {
 		emailParts := strings.Split(request.Email, "@")
 		if len(emailParts) != 2 {
-			srv.logger.Warning("contact fe api: invalid email %s", request.Email)
+			srv.Logger.Warning("contact fe api: invalid email %s", request.Email)
 			errors.AddFieldError("email", "E-mail address is invalid.")
 		} else if _, err := net.ResolveIPAddr("ip", emailParts[1]); err != nil {
-			srv.logger.Warning("contact fe api: invalid email domain %s", request.Email)
+			srv.Logger.Warning("contact fe api: invalid email domain %s", request.Email)
 			errors.AddFieldError("email", "E-mail address has invalid domain.")
 		}
 	}
 	if request.Message == "" {
-		srv.logger.Warningf("contact fe api: message empty %s", request.Email)
+		srv.Logger.Warningf("contact fe api: message empty %s", request.Email)
 		errors.AddFieldError("message", "The message is required.")
 	}
 	if request.Name == "" {
-		srv.logger.Warningf("contact fe api: name empty %s", request.Email)
+		srv.Logger.Warningf("contact fe api: name empty %s", request.Email)
 		errors.AddFieldError("name", "Your name is required.")
 	}
 	if errors.HasErrors() {
@@ -100,11 +100,11 @@ func contactFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Sprintf("Contact message from: %s", request.Name),
 		request.Message,
 	); err != nil {
-		srv.logger.Errorf("contact fe api: %s", err)
+		srv.Logger.Errorf("contact fe api: %s", err)
 		jsonServerError(w, err)
 		return
 	}
-	srv.logger.Infof("contact fe api: request: success %s", request.Email)
+	srv.Logger.Infof("contact fe api: request: success %s", request.Email)
 
 	audit(r, request, "contact", request.Email)
 

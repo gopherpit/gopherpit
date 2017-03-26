@@ -31,7 +31,7 @@ func maintenanceHandler(h http.Handler, body string, contentType string) http.Ha
 func htmlMaintenanceHandler(h http.Handler) http.Handler {
 	m, err := renderToString(srv.templates["Maintenance"], "", nil)
 	if err != nil {
-		srv.logger.Errorf("htmlMaintenanceHandler TemplateMaintenance error: %s", err)
+		srv.Logger.Errorf("htmlMaintenanceHandler TemplateMaintenance error: %s", err)
 		m = "Maintenance"
 	}
 	return maintenanceHandler(h, m, "text/html; charset=utf-8")
@@ -66,12 +66,12 @@ func maintenanceOnAPIHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	f, err := os.Create(filepath.Join(srv.StorageDir, srv.MaintenanceFilename))
 	if err != nil {
-		srv.logger.Errorf("maintenance on: %s", err)
+		srv.Logger.Errorf("maintenance on: %s", err)
 		jsonServerError(w, err)
 		return
 	}
 	f.Close()
-	srv.logger.Info("maintenance on")
+	srv.Logger.Info("maintenance on")
 	jsonresponse.Created(w, nil)
 }
 
@@ -81,10 +81,10 @@ func maintenanceOffAPIHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := os.Remove(filepath.Join(srv.StorageDir, srv.MaintenanceFilename)); err != nil {
-		srv.logger.Errorf("maintenance off: %s", err)
+		srv.Logger.Errorf("maintenance off: %s", err)
 		jsonServerError(w, err)
 		return
 	}
-	srv.logger.Info("maintenance off")
+	srv.Logger.Info("maintenance off")
 	jsonresponse.OK(w, nil)
 }

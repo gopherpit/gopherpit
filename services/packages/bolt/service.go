@@ -123,6 +123,10 @@ func (s Service) UpdateDomain(ref string, o *packages.DomainOptions, byUserID st
 		if err != nil {
 			return
 		}
+		if !r.isOwner(byUserID) {
+			err = packages.Forbidden
+			return
+		}
 		crd = chagelogRecordData{
 			domainID: r.id,
 			fqdn:     r.FQDN,
@@ -148,6 +152,10 @@ func (s Service) DeleteDomain(ref, byUserID string) (d *packages.Domain, err err
 	if err = s.DB.Update(func(tx *bolt.Tx) (err error) {
 		r, err = getDomainRecord(tx, []byte(ref))
 		if err != nil {
+			return
+		}
+		if !r.isOwner(byUserID) {
+			err = packages.Forbidden
 			return
 		}
 		return r.delete(tx)
@@ -471,6 +479,17 @@ func (s Service) UpdatePackage(id string, o *packages.PackageOptions, byUserID s
 		crd.changes, err = r.update(tx, o)
 		if err != nil {
 			return err
+		}
+		// validate domain access after package update
+		if r.DomainID == "" {
+			return packages.PackageDomainRequired
+		}
+		d, err = getDomainRecordByID(tx, []byte(r.DomainID))
+		if err != nil {
+			return err
+		}
+		if !d.isUser(tx, byUserID) {
+			return packages.Forbidden
 		}
 		if err = r.save(tx); err != nil {
 			return

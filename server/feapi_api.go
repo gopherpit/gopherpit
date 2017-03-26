@@ -29,7 +29,7 @@ func apiKeyFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 
 	k, err := srv.KeyService.CreateKey(u.ID, nil)
 	if err != nil {
-		srv.logger.Errorf("api key fe api: create key %s: %s", u.ID, err)
+		srv.Logger.Errorf("api key fe api: create key %s: %s", u.ID, err)
 		jsonServerError(w, err)
 		return
 	}
@@ -55,7 +55,7 @@ func apiKeyDeleteFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = srv.KeyService.DeleteKey(u.ID)
 	if err != nil {
-		srv.logger.Errorf("api key delete fe api: delete key: %s: %s", u.ID, err)
+		srv.Logger.Errorf("api key delete fe api: delete key: %s: %s", u.ID, err)
 		jsonServerError(w, err)
 		return
 	}
@@ -77,7 +77,7 @@ func apiRegenerateSecretFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 
 	secret, err := srv.KeyService.RegenerateSecret(u.ID)
 	if err != nil {
-		srv.logger.Errorf("api regenerate secret fe api: regenerate secret %s: %s", u.ID, err)
+		srv.Logger.Errorf("api regenerate secret fe api: regenerate secret %s: %s", u.ID, err)
 		jsonServerError(w, err)
 		return
 	}
@@ -106,7 +106,7 @@ func apiNetworksFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 	request := apiNetworksFEAPIRequest{}
 	errors := httputils.FormErrors{}
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		srv.logger.Warningf("api networks fe api: request decode %s %s: %s", u.ID, u.Email, err)
+		srv.Logger.Warningf("api networks fe api: request decode %s %s: %s", u.ID, u.Email, err)
 		errors.AddError("Invalid data.")
 		jsonresponse.BadRequest(w, errors)
 		return
@@ -116,7 +116,7 @@ func apiNetworksFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 	for _, a := range request.AuthorizedNetworks {
 		_, net, err := net.ParseCIDR(a)
 		if err != nil {
-			srv.logger.Warningf("api networks fe api: user id %s: invalid cidr notation: %s", u.ID, a)
+			srv.Logger.Warningf("api networks fe api: user id %s: invalid cidr notation: %s", u.ID, a)
 			errors.AddFieldError("authorized_network_"+a, "Invalid CIDR notation.")
 			continue
 		}
@@ -143,11 +143,11 @@ func apiNetworksFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		if err == key.KeyNotFound {
-			srv.logger.Warningf("api networks fe api: update key %s: %s", u.ID, err)
+			srv.Logger.Warningf("api networks fe api: update key %s: %s", u.ID, err)
 			jsonresponse.NotFound(w, jsonresponse.NewMessage("API key not found"))
 			return
 		}
-		srv.logger.Errorf("api networks fe api: update key %s: %s", u.ID, err)
+		srv.Logger.Errorf("api networks fe api: update key %s: %s", u.ID, err)
 		jsonServerError(w, err)
 		return
 	}

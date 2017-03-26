@@ -55,7 +55,7 @@ func packageResolverHandler(w http.ResponseWriter, r *http.Request) {
 		default:
 			level = logging.DEBUG
 		}
-		srv.packageAccessLogger.Logf(level, "%s \"%s\" %s %s %s %d %f \"%s\" \"%s\"", r.RemoteAddr, xips, r.Method, httputils.GetRequestEndpoint(r)+r.URL.String(), r.Proto, code, time.Since(startTime).Seconds(), referrer, userAgent)
+		srv.PackageAccessLogger.Logf(level, "%s \"%s\" %s %s %s %d %f \"%s\" \"%s\"", r.RemoteAddr, xips, r.Method, httputils.GetRequestEndpoint(r)+r.URL.String(), r.Proto, code, time.Since(startTime).Seconds(), referrer, userAgent)
 	}(time.Now())
 
 	domain, _, err := net.SplitHostPort(r.Host)
@@ -72,7 +72,7 @@ func packageResolverHandler(w http.ResponseWriter, r *http.Request) {
 			fmt.Fprintln(w, fmt.Sprintf("%s: package %s", http.StatusText(code), path))
 			return
 		}
-		srv.logger.Errorf("package resolver: resolve package: %s", err)
+		srv.Logger.Errorf("package resolver: resolve package: %s", err)
 		code = http.StatusInternalServerError
 		textServerError(w, err)
 		return
@@ -143,7 +143,7 @@ func packageGitUploadPackHandler(w http.ResponseWriter, r *http.Request) (notFou
 			default:
 				level = logging.DEBUG
 			}
-			srv.packageAccessLogger.Logf(level, "%s \"%s\" %s %s %s %d %f \"%s\" \"%s\"", r.RemoteAddr, xips, r.Method, httputils.GetRequestEndpoint(r)+r.URL.String(), r.Proto, code, time.Since(startTime).Seconds(), referrer, userAgent)
+			srv.PackageAccessLogger.Logf(level, "%s \"%s\" %s %s %s %d %f \"%s\" \"%s\"", r.RemoteAddr, xips, r.Method, httputils.GetRequestEndpoint(r)+r.URL.String(), r.Proto, code, time.Since(startTime).Seconds(), referrer, userAgent)
 		}
 	}(time.Now())
 
@@ -158,7 +158,7 @@ func packageGitUploadPackHandler(w http.ResponseWriter, r *http.Request) (notFou
 			notFound = true
 			return
 		}
-		srv.logger.Errorf("package git upload pack: resolve package: %s", err)
+		srv.Logger.Errorf("package git upload pack: resolve package: %s", err)
 		code = 500
 		textServerError(w, err)
 		return
@@ -171,7 +171,7 @@ func packageGitUploadPackHandler(w http.ResponseWriter, r *http.Request) (notFou
 
 	req, err := http.NewRequest(r.Method, strings.TrimSuffix(resolution.RepoRoot, ".git")+".git/git-upload-pack", r.Body)
 	if err != nil {
-		srv.logger.Errorf("package git upload pack: new request: %s", err)
+		srv.Logger.Errorf("package git upload pack: new request: %s", err)
 		code = 500
 		textServerError(w, err)
 		return
@@ -184,7 +184,7 @@ func packageGitUploadPackHandler(w http.ResponseWriter, r *http.Request) (notFou
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		srv.logger.Errorf("package git upload pack: make request: %s", err)
+		srv.Logger.Errorf("package git upload pack: make request: %s", err)
 		code = 500
 		textServerError(w, err)
 		return
@@ -192,7 +192,7 @@ func packageGitUploadPackHandler(w http.ResponseWriter, r *http.Request) (notFou
 	defer resp.Body.Close()
 
 	if _, err = io.Copy(w, resp.Body); err != nil {
-		srv.logger.Errorf("package git upload pack: copy request data: %s", err)
+		srv.Logger.Errorf("package git upload pack: copy request data: %s", err)
 		code = 500
 		textServerError(w, err)
 		return
@@ -247,7 +247,7 @@ func packageGitInfoRefsHandler(w http.ResponseWriter, r *http.Request) (notFound
 			default:
 				level = logging.DEBUG
 			}
-			srv.packageAccessLogger.Logf(level, "%s \"%s\" %s %s %s %d %f \"%s\" \"%s\"", r.RemoteAddr, xips, r.Method, httputils.GetRequestEndpoint(r)+r.URL.String(), r.Proto, code, time.Since(startTime).Seconds(), referrer, userAgent)
+			srv.PackageAccessLogger.Logf(level, "%s \"%s\" %s %s %s %d %f \"%s\" \"%s\"", r.RemoteAddr, xips, r.Method, httputils.GetRequestEndpoint(r)+r.URL.String(), r.Proto, code, time.Since(startTime).Seconds(), referrer, userAgent)
 		}
 	}(time.Now())
 
@@ -262,7 +262,7 @@ func packageGitInfoRefsHandler(w http.ResponseWriter, r *http.Request) (notFound
 			notFound = true
 			return
 		}
-		srv.logger.Errorf("package git info refs: resolve package: %s", err)
+		srv.Logger.Errorf("package git info refs: resolve package: %s", err)
 		code = 500
 		textServerError(w, err)
 		return
@@ -274,7 +274,7 @@ func packageGitInfoRefsHandler(w http.ResponseWriter, r *http.Request) (notFound
 
 	resp, err := httpClient.Get(refsURL)
 	if err != nil {
-		srv.logger.Errorf("package git info refs: http get: %s", err)
+		srv.Logger.Errorf("package git info refs: http get: %s", err)
 		code = 500
 		textServerError(w, err)
 		return
@@ -282,7 +282,7 @@ func packageGitInfoRefsHandler(w http.ResponseWriter, r *http.Request) (notFound
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		srv.logger.Warningf("package git info refs: http get: %s: status code %v", refsURL, resp.StatusCode)
+		srv.Logger.Warningf("package git info refs: http get: %s: status code %v", refsURL, resp.StatusCode)
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		w.WriteHeader(resp.StatusCode)
 		fmt.Fprintln(w, resp.Status)
@@ -292,7 +292,7 @@ func packageGitInfoRefsHandler(w http.ResponseWriter, r *http.Request) (notFound
 
 	data, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		srv.logger.Errorf("package git info refs: http read body: %s", err)
+		srv.Logger.Errorf("package git info refs: http read body: %s", err)
 		code = 500
 		textServerError(w, err)
 		return
@@ -302,14 +302,14 @@ func packageGitInfoRefsHandler(w http.ResponseWriter, r *http.Request) (notFound
 
 	if err = writeAlteredGitInfoRef(data, w, resolution.RefType, resolution.RefName); err != nil {
 		if err == errRefNotFound {
-			srv.logger.Warningf("package git info refs: alter refs: %s", err)
+			srv.Logger.Warningf("package git info refs: alter refs: %s", err)
 			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 			w.WriteHeader(http.StatusNotFound)
 			fmt.Fprintln(w, fmt.Sprintf("%s: %s %s", http.StatusText(http.StatusNotFound), resolution.RefType, resolution.RefName))
 			code = 404
 			return
 		}
-		srv.logger.Errorf("package git info refs: alter refs: %s", err)
+		srv.Logger.Errorf("package git info refs: alter refs: %s", err)
 		code = 500
 		textServerError(w, err)
 		return
@@ -318,7 +318,7 @@ func packageGitInfoRefsHandler(w http.ResponseWriter, r *http.Request) (notFound
 	return
 }
 
-func writeAlteredGitInfoRef(data []byte, w io.Writer, refType, refName string) error {
+func writeAlteredGitInfoRef(data []byte, w io.Writer, refType packages.RefType, refName string) error {
 	var ref string
 	switch refType {
 	case packages.RefTypeBranch:

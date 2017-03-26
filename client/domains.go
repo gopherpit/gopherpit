@@ -47,6 +47,8 @@ func (c Client) DeleteDomain(ref string) (d api.Domain, err error) {
 }
 
 // Domains retrieves a paginated list of Domains.
+// Values from the previous and next fields in returned page can be provided as
+// startRef argument to get a previous or next page in the listing.
 func (c Client) Domains(startRef string, limit int) (page api.DomainsPage, err error) {
 	query := url.Values{}
 	if startRef != "" {

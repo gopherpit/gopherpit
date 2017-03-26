@@ -31,7 +31,7 @@ func domainHandler(h http.Handler) http.Handler {
 		}
 		// Handle ACME challenges.
 		if strings.HasPrefix(r.URL.Path, acmeURLPrefix) {
-			srv.logger.Debugf("domain: acme challenge: %s%s", r.Host, r.URL.String())
+			srv.Logger.Debugf("domain: acme challenge: %s%s", r.Host, r.URL.String())
 			token := r.URL.Path[acmeURLPrefixLen:]
 			if token != "" {
 				c, err := srv.CertificateService.ACMEChallenge(rDomain)
@@ -48,7 +48,7 @@ func domainHandler(h http.Handler) http.Handler {
 					fmt.Fprintln(w, c.KeyAuth)
 					return
 				}
-				srv.logger.Warningf("domain: acme challenge: %s: invalid token %s", r.URL.String(), c.Token)
+				srv.Logger.Warningf("domain: acme challenge: %s: invalid token %s", r.URL.String(), c.Token)
 			}
 		}
 		// Redirect www to naked domain
@@ -85,7 +85,7 @@ func acmeUserHandler(h http.Handler) http.Handler {
 				go func() {
 					defer srv.RecoveryService.Recover()
 					if err := srv.EmailService.Notify("Get user error", fmt.Sprint(err)); err != nil {
-						srv.logger.Errorf("email notify: %s", err)
+						srv.Logger.Errorf("email notify: %s", err)
 					}
 				}()
 				htmlServerError(w, r, err)
@@ -112,7 +112,7 @@ func acmeUserHandler(h http.Handler) http.Handler {
 					})
 					return
 				}
-				srv.logger.Errorf("acme user: get acme user: %s", err)
+				srv.Logger.Errorf("acme user: get acme user: %s", err)
 				htmlInternalServerErrorHandler(w, r)
 				return
 			}

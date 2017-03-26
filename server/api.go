@@ -38,7 +38,7 @@ func packagesPackageToAPIPackage(p packages.Package, d *packages.Domain) api.Pac
 		Path:        p.Path,
 		VCS:         api.VCS(p.VCS),
 		RepoRoot:    p.RepoRoot,
-		RefType:     p.RefType,
+		RefType:     api.RefType(p.RefType),
 		RefName:     p.RefName,
 		GoSource:    p.GoSource,
 		RedirectURL: p.RedirectURL,
@@ -57,7 +57,7 @@ func jsonAPIRateLimiterHandler(h http.Handler) http.Handler {
 			}
 			limited, result, err := srv.apiRateLimiter.RateLimit(fmt.Sprintf("userID:%s", u.ID), 1)
 			if err != nil {
-				srv.logger.Errorf("api rate limiter: rate limit: %s", err)
+				srv.Logger.Errorf("api rate limiter: rate limit: %s", err)
 				jsonresponse.InternalServerError(w, nil)
 				return
 			}
@@ -72,7 +72,7 @@ func jsonAPIRateLimiterHandler(h http.Handler) http.Handler {
 				}
 			}
 			if limited {
-				srv.logger.Warningf("api rate limiter: blocked %s: retry after %s", u.ID, result.RetryAfter)
+				srv.Logger.Warningf("api rate limiter: blocked %s: retry after %s", u.ID, result.RetryAfter)
 				jsonresponse.BadRequest(w, api.ErrTooManyRequests)
 				return
 			}

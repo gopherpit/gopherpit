@@ -84,7 +84,7 @@ func statusHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func accessLogHandler(h http.Handler) http.Handler {
-	return accessLog.NewHandler(h, srv.accessLogger)
+	return accessLog.NewHandler(h, srv.AccessLogger)
 }
 
 // staticRecoveryHandler is a base hander for other recovery handlers.
@@ -100,7 +100,7 @@ func staticRecoveryHandler(h http.Handler, body string, contentType string) http
 					r.URL,
 					r,
 				)
-				srv.logger.Errorf("%v %v: %v\n%s", r.Method, r.URL.Path, err, debugInfo)
+				srv.Logger.Errorf("%v %v: %v\n%s", r.Method, r.URL.Path, err, debugInfo)
 				go func() {
 					defer srv.RecoveryService.Recover()
 					if err := srv.EmailService.Notify(
@@ -113,7 +113,7 @@ func staticRecoveryHandler(h http.Handler, body string, contentType string) http
 						),
 						debugInfo,
 					); err != nil {
-						srv.logger.Error("panic handler email sending: ", err)
+						srv.Logger.Error("panic handler email sending: ", err)
 					}
 				}()
 				if contentType != "" {
@@ -142,7 +142,7 @@ func htmlRecoveryHandler(h http.Handler) http.Handler {
 					r.URL,
 					r,
 				)
-				srv.logger.Errorf("%v %v: %v\n%s", r.Method, r.URL.Path, err, debugInfo)
+				srv.Logger.Errorf("%v %v: %v\n%s", r.Method, r.URL.Path, err, debugInfo)
 				go func() {
 					defer srv.RecoveryService.Recover()
 					if err := srv.EmailService.Notify(
@@ -155,7 +155,7 @@ func htmlRecoveryHandler(h http.Handler) http.Handler {
 						),
 						debugInfo,
 					); err != nil {
-						srv.logger.Error("panic handler email sending: ", err)
+						srv.Logger.Error("panic handler email sending: ", err)
 					}
 				}()
 				htmlInternalServerErrorHandler(w, r)
@@ -236,7 +236,7 @@ func generateAntiXSRFCookieHandler(h http.Handler) http.Handler {
 func jsonAntiXSRFHandler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := antixsrf.Verify(r); err != nil {
-			srv.logger.Warningf("xsrf %s: %s", r.RequestURI, err)
+			srv.Logger.Warningf("xsrf %s: %s", r.RequestURI, err)
 			jsonresponse.Forbidden(w, nil)
 			return
 		}
@@ -251,7 +251,7 @@ func htmlLoginRequiredHandler(h http.Handler) http.Handler {
 			go func() {
 				defer srv.RecoveryService.Recover()
 				if err := srv.EmailService.Notify("Get user error", fmt.Sprint(err)); err != nil {
-					srv.logger.Errorf("email notify: %s", err)
+					srv.Logger.Errorf("email notify: %s", err)
 				}
 			}()
 			htmlServerError(w, r, err)
@@ -278,7 +278,7 @@ func jsonLoginRequiredHandler(h http.Handler) http.Handler {
 			go func() {
 				defer srv.RecoveryService.Recover()
 				if err := srv.EmailService.Notify("Get user error", fmt.Sprint(err)); err != nil {
-					srv.logger.Errorf("email notify: %s", err)
+					srv.Logger.Errorf("email notify: %s", err)
 				}
 			}()
 			jsonServerError(w, err)
@@ -305,7 +305,7 @@ func htmlLoginAltHandler(h, alt http.Handler) http.Handler {
 			go func() {
 				defer srv.RecoveryService.Recover()
 				if err := srv.EmailService.Notify("Get user error", fmt.Sprint(err)); err != nil {
-					srv.logger.Errorf("email notify: %s", err)
+					srv.Logger.Errorf("email notify: %s", err)
 				}
 			}()
 			htmlServerError(w, r, err)
@@ -329,7 +329,7 @@ func htmlValidatedEmailRequiredHandler(h http.Handler) http.Handler {
 			go func() {
 				defer srv.RecoveryService.Recover()
 				if err := srv.EmailService.Notify("Get user error", fmt.Sprint(err)); err != nil {
-					srv.logger.Errorf("email notify: %s", err)
+					srv.Logger.Errorf("email notify: %s", err)
 				}
 			}()
 			htmlServerError(w, r, err)
@@ -352,7 +352,7 @@ func jsonValidatedEmailRequiredHandler(h http.Handler) http.Handler {
 			go func() {
 				defer srv.RecoveryService.Recover()
 				if err := srv.EmailService.Notify("Get user error", fmt.Sprint(err)); err != nil {
-					srv.logger.Errorf("email notify: %s", err)
+					srv.Logger.Errorf("email notify: %s", err)
 				}
 			}()
 			jsonServerError(w, err)
@@ -427,7 +427,7 @@ func apiKeyAuthHandler(h http.Handler, body, contentType string) http.Handler {
 				return
 			default:
 				err = nil
-				srv.logger.Errorf("api key auth: get key: %s", err)
+				srv.Logger.Errorf("api key auth: get key: %s", err)
 				return
 			}
 
@@ -438,7 +438,7 @@ func apiKeyAuthHandler(h http.Handler, body, contentType string) http.Handler {
 			}
 			ip := net.ParseIP(host)
 			if ip == nil {
-				srv.logger.Warningf("api key auth: key ref %s: unable to parse ip: %s", k.Ref, host)
+				srv.Logger.Warningf("api key auth: key ref %s: unable to parse ip: %s", k.Ref, host)
 				return
 			}
 
@@ -456,7 +456,7 @@ func apiKeyAuthHandler(h http.Handler, body, contentType string) http.Handler {
 						header = strings.TrimSpace(strings.SplitN(header, ",", 2)[0])
 						ip = net.ParseIP(header)
 						if ip == nil {
-							srv.logger.Warningf("api key auth: key ref %s: unable to parse %s header as ip: %s", k.Ref, srv.APIProxyRealIPHeader, header)
+							srv.Logger.Warningf("api key auth: key ref %s: unable to parse %s header as ip: %s", k.Ref, srv.APIProxyRealIPHeader, header)
 							return
 						}
 					}
@@ -471,14 +471,14 @@ func apiKeyAuthHandler(h http.Handler, body, contentType string) http.Handler {
 				}
 			}
 			if !found {
-				srv.logger.Warningf("api key auth: key ref %s: unauthorized network: %s", k.Ref, ip)
+				srv.Logger.Warningf("api key auth: key ref %s: unauthorized network: %s", k.Ref, ip)
 				return
 			}
 
 			entity, err = srv.UserService.UserByID(k.Ref)
 			if err != nil {
 				err = nil
-				srv.logger.Errorf("api key auth: get user by id %s: %s", k.Ref, err)
+				srv.Logger.Errorf("api key auth: get user by id %s: %s", k.Ref, err)
 				return
 			}
 			valid = true

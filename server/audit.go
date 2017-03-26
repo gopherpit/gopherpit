@@ -28,13 +28,13 @@ type auditRecord struct {
 }
 
 func audit(r *http.Request, info interface{}, action, message string) {
-	if srv.auditLogger == nil {
+	if srv.AuditLogger == nil {
 		return
 	}
 	var userID, username, email string
 	u, _, err := getRequestUser(r)
 	if err != nil && err != user.UserNotFound {
-		srv.logger.Errorf("audit: get user: %s", err)
+		srv.Logger.Errorf("audit: get user: %s", err)
 		return
 	}
 	if u != nil {
@@ -53,10 +53,10 @@ func audit(r *http.Request, info interface{}, action, message string) {
 		Message:  message,
 	})
 	if err != nil {
-		srv.logger.Errorf("audit: json encode: %s", err)
+		srv.Logger.Errorf("audit: json encode: %s", err)
 		return
 	}
-	srv.auditLogger.Info(string(record))
+	srv.AuditLogger.Info(string(record))
 }
 
 func auditf(r *http.Request, info interface{}, action, format string, a ...interface{}) {

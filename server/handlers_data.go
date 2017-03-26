@@ -17,7 +17,7 @@ import (
 
 func dataDumpHandler(w http.ResponseWriter, r *http.Request) {
 	start := time.Now()
-	srv.logger.Info("data dump: started")
+	srv.Logger.Info("data dump: started")
 
 	w.Header().Set("Content-Type", "application/octet-stream")
 	w.Header().Set("Content-Disposition", `attachment; filename="`+strings.Join([]string{start.UTC().Format("2006-01-02T15-04-05Z0700"), srv.Name, version()}, "_")+`.tar"`)
@@ -26,22 +26,22 @@ func dataDumpHandler(w http.ResponseWriter, r *http.Request) {
 	tw := tar.NewWriter(w)
 	var length int64
 
-	srv.logger.Info("data dump: dumping salt data")
+	srv.Logger.Info("data dump: dumping salt data")
 	header := &tar.Header{
 		Name: srv.Name + ".salt",
 		Mode: 0640,
 		Size: int64(len(srv.salt)),
 	}
 	if err := tw.WriteHeader(header); err != nil {
-		srv.logger.Errorf("data dump: write salt file header in tar: %s", err)
+		srv.Logger.Errorf("data dump: write salt file header in tar: %s", err)
 		return
 	}
 	n, err := tw.Write(srv.salt)
 	if err != nil {
-		srv.logger.Errorf("data dump: write salt file body in tar: %s", err)
+		srv.Logger.Errorf("data dump: write salt file body in tar: %s", err)
 		return
 	}
-	srv.logger.Infof("data dump: read %d bytes of salt data", n)
+	srv.Logger.Infof("data dump: read %d bytes of salt data", n)
 
 	services := []struct {
 		Name    string
@@ -75,10 +75,10 @@ func dataDumpHandler(w http.ResponseWriter, r *http.Request) {
 
 	for _, service := range services {
 		if u, ok := service.Service.(dataDump.Interface); ok {
-			srv.logger.Infof("data dump: dumping %s service data", service.Name)
+			srv.Logger.Infof("data dump: dumping %s service data", service.Name)
 			dump, err := u.DataDump(nil)
 			if err != nil {
-				srv.logger.Errorf("data dump: read dump file %s: %s", dump.Name, err)
+				srv.Logger.Errorf("data dump: read dump file %s: %s", dump.Name, err)
 				return
 			}
 			if dump != nil {
@@ -91,27 +91,27 @@ func dataDumpHandler(w http.ResponseWriter, r *http.Request) {
 					header.ModTime = *dump.ModTime
 				}
 				if err := tw.WriteHeader(header); err != nil {
-					srv.logger.Errorf("data dump: write file header %s in tar: %s", dump.Name, err)
+					srv.Logger.Errorf("data dump: write file header %s in tar: %s", dump.Name, err)
 					return
 				}
 
 				n, err := io.Copy(tw, dump.Body)
 				defer dump.Body.Close()
 				if err != nil {
-					srv.logger.Errorf("data dump: write file data %s in tar: %s", dump.Name, err)
+					srv.Logger.Errorf("data dump: write file data %s in tar: %s", dump.Name, err)
 					return
 				}
 				length += n
-				srv.logger.Infof("data dump: read %d bytes of %s service data", n, service.Name)
+				srv.Logger.Infof("data dump: read %d bytes of %s service data", n, service.Name)
 			}
 		} else {
-			srv.logger.Infof("data dump: skipping %s service dump", service.Name)
+			srv.Logger.Infof("data dump: skipping %s service dump", service.Name)
 		}
 	}
 
 	if err := tw.Close(); err != nil {
-		srv.logger.Errorf("data dump: closing tar: %s", err)
+		srv.Logger.Errorf("data dump: closing tar: %s", err)
 	}
 
-	srv.logger.Infof("data dump: wrote %d bytes in %s", length, time.Since(start))
+	srv.Logger.Infof("data dump: wrote %d bytes in %s", length, time.Since(start))
 }

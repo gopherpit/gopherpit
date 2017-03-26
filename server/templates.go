@@ -75,7 +75,7 @@ var templates = map[string][]string{
 func assetFunc(str string) string {
 	p, err := srv.assetsServer.HashedPath(str)
 	if err != nil {
-		srv.logger.Errorf("html response: asset func: hashed path: %s", err)
+		srv.Logger.Errorf("html response: asset func: hashed path: %s", err)
 		return str
 	}
 	return p

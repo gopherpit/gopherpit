@@ -25,10 +25,10 @@ func dashboardHandler(w http.ResponseWriter, r *http.Request) {
 		response, err := srv.PackagesService.DomainsByUser(u.ID, token, 0)
 		if err != nil {
 			if err == packages.UserDoesNotExist || err == packages.DomainNotFound {
-				srv.logger.Warningf("dashboard: user domains %s: %s", u.ID, err)
+				srv.Logger.Warningf("dashboard: user domains %s: %s", u.ID, err)
 				break
 			}
-			srv.logger.Errorf("dashboard: user domains %s: %s", u.ID, err)
+			srv.Logger.Errorf("dashboard: user domains %s: %s", u.ID, err)
 			htmlInternalServerErrorHandler(w, r)
 			return
 		}
@@ -60,17 +60,17 @@ func dashboardHandler(w http.ResponseWriter, r *http.Request) {
 		cl, err := srv.PackagesService.ChangelogForDomain(domain.ID, "", changelogLimit)
 		if err != nil {
 			if err == packages.DomainNotFound {
-				srv.logger.Warningf("dashboard: domain changelog %s: %s", domain.ID, err)
+				srv.Logger.Warningf("dashboard: domain changelog %s: %s", domain.ID, err)
 				continue
 			}
-			srv.logger.Errorf("dashboard: domain changelog %s: %s", domain.ID, err)
+			srv.Logger.Errorf("dashboard: domain changelog %s: %s", domain.ID, err)
 			htmlInternalServerErrorHandler(w, r)
 			return
 		}
 		records := make([]changelogRecord, 0, len(cl.Records))
 		for _, record := range cl.Records {
 			if err = updateChangelogRecords(*u, record, &records, &users); err != nil {
-				srv.logger.Errorf("domain: update users map: %s", err)
+				srv.Logger.Errorf("domain: update users map: %s", err)
 				htmlInternalServerErrorHandler(w, r)
 				return
 			}
@@ -142,7 +142,7 @@ func licenseHandler(w http.ResponseWriter, r *http.Request) {
 	respond(w, "License", nil)
 }
 
-func docHandler(w http.ResponseWriter, r *http.Request) {
+func apiDocsHandler(w http.ResponseWriter, r *http.Request) {
 	if !srv.APIEnabled {
 		htmlNotFoundHandler(w, r)
 		return

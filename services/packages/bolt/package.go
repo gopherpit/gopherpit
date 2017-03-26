@@ -11,7 +11,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/url"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 
@@ -26,19 +28,21 @@ var (
 	bucketNameIndexPackageIDDomainID     = []byte("Index_PackageID_DomainID")
 	bucketNameIndexDomainIDPathPackageID = []byte("Index_DomainID_Path_PackageID")
 	bucketNameIndexDisabledPackageIDs    = []byte("Index_Disabled_PackageID_1")
+
+	hostAndPortRegex = regexp.MustCompile(`^([a-z0-9]+[\-a-z0-9\.]*)(?:\:\d+)?$`)
 )
 
 type packageRecord struct {
 	id          string
-	DomainID    string       `json:"domain-id,omitempty"`
-	Path        string       `json:"path,omitempty"`
-	VCS         packages.VCS `json:"vcs,omitempty"`
-	RepoRoot    string       `json:"repo-root,omitempty"`
-	RefType     string       `json:"ref-type,omitempty"`
-	RefName     string       `json:"ref-name,omitempty"`
-	GoSource    string       `json:"go-source,omitempty"`
-	RedirectURL string       `json:"redirect-url,omitempty"`
-	Disabled    bool         `json:"disabled,omitempty"`
+	DomainID    string           `json:"domain-id,omitempty"`
+	Path        string           `json:"path,omitempty"`
+	VCS         packages.VCS     `json:"vcs,omitempty"`
+	RepoRoot    string           `json:"repo-root,omitempty"`
+	RefType     packages.RefType `json:"ref-type,omitempty"`
+	RefName     string           `json:"ref-name,omitempty"`
+	GoSource    string           `json:"go-source,omitempty"`
+	RedirectURL string           `json:"redirect-url,omitempty"`
+	Disabled    bool             `json:"disabled,omitempty"`
 }
 
 func (p packageRecord) export(tx *bolt.Tx) (pkg *packages.Package, err error) {
@@ -132,8 +136,8 @@ func (p *packageRecord) update(tx *bolt.Tx, o *packages.PackageOptions) (changes
 		if p.RefType != *o.RefType {
 			changes = append(changes, packages.Change{
 				Field: "ref-type",
-				From:  stringToStringPtr(p.RefType),
-				To:    stringToStringPtr(*o.RefType),
+				From:  stringToStringPtr(string(p.RefType)),
+				To:    stringToStringPtr(string(*o.RefType)),
 			})
 		}
 		p.RefType = *o.RefType
@@ -235,6 +239,30 @@ func (p *packageRecord) save(tx *bolt.Tx) (err error) {
 		return packages.PackageRepoRootRequired
 	}
 
+	repoRoot, err := url.Parse(p.RepoRoot)
+	if err != nil {
+		return packages.PackageRepoRootInvalid
+	}
+	if repoRoot.Scheme == "" {
+		return packages.PackageRepoRootSchemeRequired
+	}
+	ok := false
+	for _, s := range packages.VCSSchemes[p.VCS] {
+		if repoRoot.Scheme == s {
+			ok = true
+			break
+		}
+	}
+	if !ok {
+		return packages.PackageRepoRootSchemeInvalid
+	}
+	if !hostAndPortRegex.MatchString(repoRoot.Host) {
+		return packages.PackageRepoRootHostInvalid
+	}
+	if p.RefName != "" && (p.VCS != packages.VCSGit || (p.VCS == packages.VCSGit && !(repoRoot.Scheme == "http" || repoRoot.Scheme == "https"))) {
+		return packages.PackageRefChangeRejected
+	}
+
 	// existing package record
 	ep := &packageRecord{}
 	if p.id == "" {
@@ -244,15 +272,6 @@ func (p *packageRecord) save(tx *bolt.Tx) (err error) {
 			return fmt.Errorf("generate unique ID: %s", err)
 		}
 		p.id = id
-		// Address must be unique
-		_, err = getPackageIDByPath(tx, []byte(p.DomainID), []byte(p.Path))
-		switch err {
-		case packages.PackageNotFound:
-		case nil:
-			return packages.PackageAlreadyExists
-		default:
-			return fmt.Errorf("get package id by path: %s", err)
-		}
 	} else {
 		// Check if package with p.ID exists
 		cp, err := getPackageRecord(tx, []byte(p.id))
@@ -262,6 +281,17 @@ func (p *packageRecord) save(tx *bolt.Tx) (err error) {
 		if cp != nil {
 			ep = cp
 		}
+	}
+	// Address must be unique
+	checkID, err := getPackageIDByPath(tx, []byte(p.DomainID), []byte(p.Path))
+	switch err {
+	case packages.PackageNotFound:
+	case nil:
+		if p.id == "" || string(checkID) != p.id {
+			return packages.PackageAlreadyExists
+		}
+	default:
+		return fmt.Errorf("get package id by path: %s", err)
 	}
 
 	id := []byte(p.id)

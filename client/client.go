@@ -19,7 +19,7 @@ object and calling methods on it.
 
 Example:
 
-package main
+    package main
 
     import (
         "fmt"
