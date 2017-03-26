@@ -1,10 +1,18 @@
 # GopherPit
 
+[![Build Status](https://travis-ci.org/gopherpit/gopherpit.svg?branch=master)](https://travis-ci.org/gopherpit/gopherpit)
+
 GopherPit is a tool that allows you to have remote import paths for Go (programming language) packages with custom domains. That way packages are independent of the version control system provider, whether it is GitHub, Bitbucket or a private repository. You can change it whenever you like, and also keep the same import paths. Also, custom domains means better branding of your packages, if you care about it.
 
 For Git HTTP and HTTPS repositories a custom branch or tag can be specified. It allows to have different package paths for different package versions in the same repository that break backward compatibility with master or other branches. This type of Git references change is similar to [https://gopkg.in](gopkg.in) functionality, but it relies on package path configuration rather on versioning convention, and it is available for any Git repository hosting provider with support for HTTP protocol.
 
 This service is meant for on-premises installation. A publicly available web service is hosted on [https://gopherpit.com](https://gopherpit.com) with the same functionalities.
+
+GopherPit provides HTTP API for managing domains and packages. API Documentation is available on [https://gopherpit.com/docs/api](https://gopherpit.com). Go API client is implemented in package:
+
+    go get gopherpit.com/gopherpit/client
+
+and documented using Godoc https://godoc.org/gopherpit.com/gopherpit/client.
 
 ## Installation
 
