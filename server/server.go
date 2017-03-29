@@ -368,20 +368,13 @@ func Serve() error {
 		if err != nil {
 			return fmt.Errorf("listen tls '%v': %s", srv.ListenTLS, err)
 		}
+		ln = httputils.TCPKeepAliveListener{ln.(*net.TCPListener)}
+		ln = tls.NewListener(ln, srv.tlsConfig)
 
 		srv.portTLS = ln.Addr().(*net.TCPAddr).Port
 
-		ln = &httputils.TLSListener{
-			TCPListener: ln.(*net.TCPListener),
-			TLSConfig:   srv.tlsConfig,
-		}
-
 		server := &http.Server{
 			Handler: nilRecoveryHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				if r.TLS == nil {
-					httputils.HTTPToHTTPSRedirectHandler(w, r)
-					return
-				}
 				switch {
 				case strings.HasSuffix(r.URL.Path, "/info/refs"):
 					// Handle git refs info if git reference is set.
@@ -422,6 +415,7 @@ func Serve() error {
 		if err != nil {
 			return fmt.Errorf("listen '%v': %s", srv.Listen, err)
 		}
+		ln = httputils.TCPKeepAliveListener{ln.(*net.TCPListener)}
 
 		srv.port = ln.Addr().(*net.TCPAddr).Port
 
@@ -459,7 +453,6 @@ func Serve() error {
 		}
 
 		server := &http.Server{
-			Addr: srv.Listen,
 			Handler: nilRecoveryHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				switch {
 				case strings.HasSuffix(r.URL.Path, "/info/refs"):
@@ -501,13 +494,10 @@ func Serve() error {
 		if err != nil {
 			return fmt.Errorf("listen internal tls '%v': %s", srv.ListenInternalTLS, err)
 		}
+		ln = httputils.TCPKeepAliveListener{ln.(*net.TCPListener)}
+		ln = tls.NewListener(ln, srv.tlsConfig)
 
 		srv.portInternalTLS = ln.Addr().(*net.TCPAddr).Port
-
-		ln = &httputils.TLSListener{
-			TCPListener: ln.(*net.TCPListener),
-			TLSConfig:   srv.tlsConfig,
-		}
 
 		server := &http.Server{
 			Handler:   nilRecoveryHandler(srv.internalHandler),
@@ -533,11 +523,11 @@ func Serve() error {
 		if err != nil {
 			return fmt.Errorf("listen internal '%v': %s", srv.ListenInternal, err)
 		}
+		ln = httputils.TCPKeepAliveListener{ln.(*net.TCPListener)}
 
 		srv.portInternal = ln.Addr().(*net.TCPAddr).Port
 
 		server := &http.Server{
-			Addr:    srv.ListenInternal,
 			Handler: nilRecoveryHandler(srv.internalHandler),
 		}
 		srv.servers = append(srv.servers, server)
