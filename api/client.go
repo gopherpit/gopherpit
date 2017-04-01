@@ -4,7 +4,7 @@
 // license that can be found in the LICENSE file.
 
 /*
-Package client is a Go client for the GopherPit API.
+Package api contains Go client and types for the GopherPit API.
 
 For more information about the Engine API, see the documentation:
 https://gopherpit.com/docs/api
@@ -25,11 +25,11 @@ Example:
         "fmt"
         "os"
 
-        "gopherpit.com/gopherpit/client"
+        "gopherpit.com/gopherpit/api"
     )
 
     func main() {
-        c := client.NewClient(os.Getenv("GOPHERPIT_TOKEN"))
+        c := api.NewClient(os.Getenv("GOPHERPIT_TOKEN"))
 
         domains, err := c.Domains("", 0)
         if err != nil {
@@ -44,15 +44,13 @@ Example:
 
 To use GopherPit installation on-premises:
 
-    c := client.NewClientWithEndpoint("https://go.example.com/api/v1", "TOKEN")
+    c := api.NewClientWithEndpoint("https://go.example.com/api/v1", "TOKEN")
 
 */
-package client // import "gopherpit.com/gopherpit/client"
+package api
 
 import (
 	apiClient "resenje.org/httputils/client/api"
-
-	"gopherpit.com/gopherpit/api"
 )
 
 var (
@@ -88,8 +86,8 @@ func NewClientWithEndpoint(endpoint, key string) *Client {
 }
 
 // newClientWithAPIClient creates a new Client and injects
-// api.ErrorRegistry in the API Client.
+// errorRegistry in the API Client.
 func newClientWithAPIClient(c apiClient.Client) *Client {
-	c.ErrorRegistry = api.ErrorRegistry
+	c.ErrorRegistry = errorRegistry
 	return &Client{Client: c}
 }

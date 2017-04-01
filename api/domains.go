@@ -3,25 +3,23 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package client
+package api
 
 import (
 	"bytes"
 	"encoding/json"
 	"net/url"
 	"strconv"
-
-	"gopherpit.com/gopherpit/api"
 )
 
 // Domain retrieves a Domain instance.
-func (c Client) Domain(ref string) (d api.Domain, err error) {
+func (c Client) Domain(ref string) (d Domain, err error) {
 	err = c.JSON("GET", "/domains/"+ref, nil, nil, &d)
 	return
 }
 
 // AddDomain creates a new Domain.
-func (c Client) AddDomain(o *api.DomainOptions) (d api.Domain, err error) {
+func (c Client) AddDomain(o *DomainOptions) (d Domain, err error) {
 	body, err := json.Marshal(o)
 	if err != nil {
 		return
@@ -31,7 +29,7 @@ func (c Client) AddDomain(o *api.DomainOptions) (d api.Domain, err error) {
 }
 
 // UpdateDomain updates fields of an existing Domain.
-func (c Client) UpdateDomain(ref string, o *api.DomainOptions) (d api.Domain, err error) {
+func (c Client) UpdateDomain(ref string, o *DomainOptions) (d Domain, err error) {
 	body, err := json.Marshal(o)
 	if err != nil {
 		return
@@ -41,7 +39,7 @@ func (c Client) UpdateDomain(ref string, o *api.DomainOptions) (d api.Domain, er
 }
 
 // DeleteDomain removes a Domain.
-func (c Client) DeleteDomain(ref string) (d api.Domain, err error) {
+func (c Client) DeleteDomain(ref string) (d Domain, err error) {
 	err = c.JSON("DELETE", "/domains/"+ref, nil, nil, &d)
 	return
 }
@@ -49,7 +47,7 @@ func (c Client) DeleteDomain(ref string) (d api.Domain, err error) {
 // Domains retrieves a paginated list of Domains.
 // Values from the previous and next fields in returned page can be provided as
 // startRef argument to get a previous or next page in the listing.
-func (c Client) Domains(startRef string, limit int) (page api.DomainsPage, err error) {
+func (c Client) Domains(startRef string, limit int) (page DomainsPage, err error) {
 	query := url.Values{}
 	if startRef != "" {
 		query.Set("start", startRef)
@@ -62,14 +60,14 @@ func (c Client) Domains(startRef string, limit int) (page api.DomainsPage, err e
 }
 
 // DomainTokens retrieves a list of validation tokens for domain.
-func (c Client) DomainTokens(fqdn string) (tokens api.DomainTokens, err error) {
+func (c Client) DomainTokens(fqdn string) (tokens DomainTokens, err error) {
 	err = c.JSON("GET", "/domains/"+fqdn+"/tokens", nil, nil, &tokens)
 	return
 }
 
 // DomainUsers retrieves a list of user IDs that have write access to
 // domain packages and domain owner user ID.
-func (c Client) DomainUsers(ref string) (users api.DomainUsers, err error) {
+func (c Client) DomainUsers(ref string) (users DomainUsers, err error) {
 	err = c.JSON("GET", "/domains/"+ref+"/users", nil, nil, &users)
 	return
 }

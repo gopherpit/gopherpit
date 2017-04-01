@@ -12,7 +12,6 @@ import (
 	"testing"
 
 	"gopherpit.com/gopherpit/api"
-	"gopherpit.com/gopherpit/client"
 	"gopherpit.com/gopherpit/services/key"
 	"gopherpit.com/gopherpit/services/user"
 )
@@ -24,7 +23,7 @@ func TestAPIAccess(t *testing.T) {
 	defer stopTestServer()
 
 	t.Run("invalid key", func(t *testing.T) {
-		c := client.NewClientWithEndpoint(
+		c := api.NewClientWithEndpoint(
 			"localhost:"+strconv.Itoa(srv.port)+"/api/v1",
 			"INVALIDKEY",
 		)
@@ -35,7 +34,7 @@ func TestAPIAccess(t *testing.T) {
 			t.Errorf("expected %q, got %q", api.ErrUnauthorized, err)
 		}
 
-		c = client.NewClientWithEndpoint(
+		c = api.NewClientWithEndpoint(
 			"localhost:"+strconv.Itoa(srv.port)+"/api/v1",
 			"",
 		)
@@ -74,7 +73,7 @@ func TestAPIAccess(t *testing.T) {
 			t.Fatalf("create key: %s", err)
 		}
 
-		c := client.NewClientWithEndpoint(
+		c := api.NewClientWithEndpoint(
 			"localhost:"+strconv.Itoa(srv.port)+"/api/v1",
 			k.Secret,
 		)
@@ -118,7 +117,7 @@ func TestAPIAccess(t *testing.T) {
 			t.Fatalf("create key: %s", err)
 		}
 
-		c := client.NewClientWithEndpoint(
+		c := api.NewClientWithEndpoint(
 			"localhost:"+strconv.Itoa(srv.port)+"/api/",
 			k.Secret,
 		)
@@ -129,7 +128,7 @@ func TestAPIAccess(t *testing.T) {
 			t.Errorf("expected %q, got %q", api.ErrNotFound, err)
 		}
 
-		c = client.NewClientWithEndpoint(
+		c = api.NewClientWithEndpoint(
 			"localhost:"+strconv.Itoa(srv.port)+"/api/v2/",
 			k.Secret,
 		)
@@ -181,7 +180,7 @@ func TestAPIRateLimit(t *testing.T) {
 		t.Fatalf("create key: %s", err)
 	}
 
-	c := client.NewClientWithEndpoint(
+	c := api.NewClientWithEndpoint(
 		"localhost:"+strconv.Itoa(srv.port)+"/api/v1",
 		k.Secret,
 	)

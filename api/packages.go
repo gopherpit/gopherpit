@@ -3,25 +3,23 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package client
+package api
 
 import (
 	"bytes"
 	"encoding/json"
 	"net/url"
 	"strconv"
-
-	"gopherpit.com/gopherpit/api"
 )
 
 // Package retrieves a Package instance.
-func (c Client) Package(id string) (p api.Package, err error) {
+func (c Client) Package(id string) (p Package, err error) {
 	err = c.JSON("GET", "/packages/"+id, nil, nil, &p)
 	return
 }
 
 // AddPackage creates a new Package.
-func (c Client) AddPackage(o *api.PackageOptions) (p api.Package, err error) {
+func (c Client) AddPackage(o *PackageOptions) (p Package, err error) {
 	body, err := json.Marshal(o)
 	if err != nil {
 		return
@@ -31,7 +29,7 @@ func (c Client) AddPackage(o *api.PackageOptions) (p api.Package, err error) {
 }
 
 // UpdatePackage updates fields of an existing Package.
-func (c Client) UpdatePackage(id string, o *api.PackageOptions) (p api.Package, err error) {
+func (c Client) UpdatePackage(id string, o *PackageOptions) (p Package, err error) {
 	body, err := json.Marshal(o)
 	if err != nil {
 		return
@@ -41,7 +39,7 @@ func (c Client) UpdatePackage(id string, o *api.PackageOptions) (p api.Package, 
 }
 
 // DeletePackage removes a Package.
-func (c Client) DeletePackage(id string) (p api.Package, err error) {
+func (c Client) DeletePackage(id string) (p Package, err error) {
 	err = c.JSON("DELETE", "/packages/"+id, nil, nil, &p)
 	return
 }
@@ -49,7 +47,7 @@ func (c Client) DeletePackage(id string) (p api.Package, err error) {
 // DomainPackages retrieves a paginated list of Packages under a domain.
 // Values from the previous and next fields in returned page can be provided as
 // startRef argument to get a previous or next page in the listing.
-func (c Client) DomainPackages(domainRef, start string, limit int) (page api.PackagesPage, err error) {
+func (c Client) DomainPackages(domainRef, start string, limit int) (page PackagesPage, err error) {
 	query := url.Values{}
 	if start != "" {
 		query.Set("start", start)

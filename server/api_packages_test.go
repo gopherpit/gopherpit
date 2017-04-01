@@ -13,7 +13,6 @@ import (
 	"testing"
 
 	"gopherpit.com/gopherpit/api"
-	"gopherpit.com/gopherpit/client"
 	"gopherpit.com/gopherpit/services/key"
 	"gopherpit.com/gopherpit/services/user"
 )
@@ -24,7 +23,7 @@ func TestPackagesAPI(t *testing.T) {
 	}
 	defer stopTestServer()
 
-	httpClients := map[string]*client.Client{}
+	httpClients := map[string]*api.Client{}
 	users := map[string]*user.User{}
 	for _, username := range []string{"alice", "bob", "chuck"} {
 		t.Run(fmt.Sprintf("create account %s", username), func(t *testing.T) {
@@ -60,7 +59,7 @@ func TestPackagesAPI(t *testing.T) {
 				t.Fatalf("create key: %s", err)
 			}
 
-			httpClients[username] = client.NewClientWithEndpoint(
+			httpClients[username] = api.NewClientWithEndpoint(
 				"localhost:"+strconv.Itoa(srv.port)+"/api/v1",
 				k.Secret,
 			)

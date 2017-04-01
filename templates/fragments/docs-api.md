@@ -6,9 +6,9 @@ This documentation describes the resources that make up the GopherPit API v1.
 
 Go API client is implemented in package:
 
-    go get gopherpit.com/gopherpit/client
+    go get gopherpit.com/gopherpit/api
 
-and documented using Godoc https://godoc.org/gopherpit.com/gopherpit/client.
+and documented using Godoc https://godoc.org/gopherpit.com/gopherpit/api.
 
 
 ## 2. Root endpoint

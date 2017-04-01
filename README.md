@@ -10,9 +10,9 @@ This service is meant for on-premises installation. A publicly available web ser
 
 GopherPit provides HTTP API for managing domains and packages. API Documentation is available on [https://gopherpit.com/docs/api](https://gopherpit.com). Go API client is implemented in package:
 
-    go get gopherpit.com/gopherpit/client
+    go get gopherpit.com/gopherpit/api
 
-and documented using Godoc https://godoc.org/gopherpit.com/gopherpit/client.
+and documented using Godoc https://godoc.org/gopherpit.com/gopherpit/api.
 
 ## Installation
 
