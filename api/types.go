@@ -5,6 +5,8 @@
 
 package api // import "gopherpit.com/gopherpit/api"
 
+import apiClient "resenje.org/httputils/client/api"
+
 // MaxLimit is a default maximum number of elements for paged responses.
 const MaxLimit = 100
 
@@ -108,37 +110,39 @@ type PackagesPage struct {
 	Next     string    `json:"next,omitempty"`
 }
 
+var ErrorRegistry = apiClient.NewMapErrorRegistry(nil, nil)
+
 // Errors that the API can return.
 var (
-	ErrBadRequest                    = NewError(400, "Bad Request")
-	ErrUnauthorized                  = NewError(401, "Unauthorized")
-	ErrForbidden                     = NewError(403, "Forbidden")
-	ErrNotFound                      = NewError(404, "Not Found")
-	ErrTooManyRequests               = NewError(429, "Too Many Requests")
-	ErrInternalServerError           = NewError(500, "Internal Server Error")
-	ErrMaintenance                   = NewError(503, "Maintenance")
-	ErrDomainNotFound                = NewError(1000, "Domain Not Found")
-	ErrDomainAlreadyExists           = NewError(1001, "Domain Already Exists")
-	ErrDomainFQDNRequired            = NewError(1010, "Domain FQDN Required")
-	ErrDomainFQDNInvalid             = NewError(1011, "Domain FQDN Invalid")
-	ErrDomainNotAvailable            = NewError(1012, "Domain Not Available")
-	ErrDomainWithTooManySubdomains   = NewError(1013, "Domain With Too Many Subdomains")
-	ErrDomainNeedsVerification       = NewError(1014, "Domain Needs Verification")
-	ErrUserDoesNotExist              = NewError(1100, "User Does Not Exist")
-	ErrUserAlreadyGranted            = NewError(1101, "User Already Granted")
-	ErrUserNotGranted                = NewError(1102, "User Not Granted")
-	ErrPackageNotFound               = NewError(2000, "Package Not Found")
-	ErrPackageAlreadyExists          = NewError(2001, "Package Already Exists")
-	ErrPackageDomainRequired         = NewError(2010, "Package Domain Required")
-	ErrPackagePathRequired           = NewError(2020, "Package Path Required")
-	ErrPackageVCSRequired            = NewError(2030, "Package VCS Required")
-	ErrPackageRepoRootRequired       = NewError(2040, "Package Repository Root Required")
-	ErrPackageRepoRootInvalid        = NewError(2041, "Package Repository Root Invalid")
-	ErrPackageRepoRootSchemeRequired = NewError(2042, "Package Repository Root Scheme Required")
-	ErrPackageRepoRootSchemeInvalid  = NewError(2043, "Package Repository Root Scheme Invalid")
-	ErrPackageRepoRootHostInvalid    = NewError(2044, "Package Repository Root Host Invalid")
-	ErrPackageRefTypeInvalid         = NewError(2050, "Package Reference Type Invalid")
-	ErrPackageRefNameRequired        = NewError(2060, "Package Reference Name Required")
-	ErrPackageRefChangeRejected      = NewError(2070, "Package Reference Change Rejected")
-	ErrPackageRedirectURLInvalid     = NewError(2080, "Package Redirect URL Invalid")
+	ErrBadRequest                    = ErrorRegistry.MustAddMessageError(400, "Bad Request")
+	ErrUnauthorized                  = ErrorRegistry.MustAddMessageError(401, "Unauthorized")
+	ErrForbidden                     = ErrorRegistry.MustAddMessageError(403, "Forbidden")
+	ErrNotFound                      = ErrorRegistry.MustAddMessageError(404, "Not Found")
+	ErrTooManyRequests               = ErrorRegistry.MustAddMessageError(429, "Too Many Requests")
+	ErrInternalServerError           = ErrorRegistry.MustAddMessageError(500, "Internal Server Error")
+	ErrMaintenance                   = ErrorRegistry.MustAddMessageError(503, "Maintenance")
+	ErrDomainNotFound                = ErrorRegistry.MustAddMessageError(1000, "Domain Not Found")
+	ErrDomainAlreadyExists           = ErrorRegistry.MustAddMessageError(1001, "Domain Already Exists")
+	ErrDomainFQDNRequired            = ErrorRegistry.MustAddMessageError(1010, "Domain FQDN Required")
+	ErrDomainFQDNInvalid             = ErrorRegistry.MustAddMessageError(1011, "Domain FQDN Invalid")
+	ErrDomainNotAvailable            = ErrorRegistry.MustAddMessageError(1012, "Domain Not Available")
+	ErrDomainWithTooManySubdomains   = ErrorRegistry.MustAddMessageError(1013, "Domain With Too Many Subdomains")
+	ErrDomainNeedsVerification       = ErrorRegistry.MustAddMessageError(1014, "Domain Needs Verification")
+	ErrUserDoesNotExist              = ErrorRegistry.MustAddMessageError(1100, "User Does Not Exist")
+	ErrUserAlreadyGranted            = ErrorRegistry.MustAddMessageError(1101, "User Already Granted")
+	ErrUserNotGranted                = ErrorRegistry.MustAddMessageError(1102, "User Not Granted")
+	ErrPackageNotFound               = ErrorRegistry.MustAddMessageError(2000, "Package Not Found")
+	ErrPackageAlreadyExists          = ErrorRegistry.MustAddMessageError(2001, "Package Already Exists")
+	ErrPackageDomainRequired         = ErrorRegistry.MustAddMessageError(2010, "Package Domain Required")
+	ErrPackagePathRequired           = ErrorRegistry.MustAddMessageError(2020, "Package Path Required")
+	ErrPackageVCSRequired            = ErrorRegistry.MustAddMessageError(2030, "Package VCS Required")
+	ErrPackageRepoRootRequired       = ErrorRegistry.MustAddMessageError(2040, "Package Repository Root Required")
+	ErrPackageRepoRootInvalid        = ErrorRegistry.MustAddMessageError(2041, "Package Repository Root Invalid")
+	ErrPackageRepoRootSchemeRequired = ErrorRegistry.MustAddMessageError(2042, "Package Repository Root Scheme Required")
+	ErrPackageRepoRootSchemeInvalid  = ErrorRegistry.MustAddMessageError(2043, "Package Repository Root Scheme Invalid")
+	ErrPackageRepoRootHostInvalid    = ErrorRegistry.MustAddMessageError(2044, "Package Repository Root Host Invalid")
+	ErrPackageRefTypeInvalid         = ErrorRegistry.MustAddMessageError(2050, "Package Reference Type Invalid")
+	ErrPackageRefNameRequired        = ErrorRegistry.MustAddMessageError(2060, "Package Reference Name Required")
+	ErrPackageRefChangeRejected      = ErrorRegistry.MustAddMessageError(2070, "Package Reference Change Rejected")
+	ErrPackageRedirectURLInvalid     = ErrorRegistry.MustAddMessageError(2080, "Package Redirect URL Invalid")
 )

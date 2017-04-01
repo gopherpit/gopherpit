@@ -5,6 +5,8 @@
 
 package notification // import "gopherpit.com/gopherpit/services/notification"
 
+import apiClient "resenje.org/httputils/client/api"
+
 // Email represents an e-mail message.
 type Email struct {
 	From      string   `json:"from"`
@@ -32,7 +34,9 @@ type Service interface {
 	RemoveOptedOutEmail(email string) (err error)
 }
 
+var ErrorRegistry = apiClient.NewMapErrorRegistry(nil, nil)
+
 // Errors that are related to the Notification Service.
 var (
-	EmailAlreadySent = NewError(1000, "email already sent")
+	EmailAlreadySent = ErrorRegistry.MustAddMessageError(1000, "email already sent")
 )

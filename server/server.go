@@ -368,7 +368,7 @@ func Serve() error {
 		if err != nil {
 			return fmt.Errorf("listen tls '%v': %s", srv.ListenTLS, err)
 		}
-		ln = httputils.TCPKeepAliveListener{ln.(*net.TCPListener)}
+		ln = httputils.NewTCPKeepAliveListener(ln.(*net.TCPListener))
 		ln = tls.NewListener(ln, srv.tlsConfig)
 
 		srv.portTLS = ln.Addr().(*net.TCPAddr).Port
@@ -415,7 +415,7 @@ func Serve() error {
 		if err != nil {
 			return fmt.Errorf("listen '%v': %s", srv.Listen, err)
 		}
-		ln = httputils.TCPKeepAliveListener{ln.(*net.TCPListener)}
+		ln = httputils.NewTCPKeepAliveListener(ln.(*net.TCPListener))
 
 		srv.port = ln.Addr().(*net.TCPAddr).Port
 
@@ -494,7 +494,7 @@ func Serve() error {
 		if err != nil {
 			return fmt.Errorf("listen internal tls '%v': %s", srv.ListenInternalTLS, err)
 		}
-		ln = httputils.TCPKeepAliveListener{ln.(*net.TCPListener)}
+		ln = httputils.NewTCPKeepAliveListener(ln.(*net.TCPListener))
 		ln = tls.NewListener(ln, srv.tlsConfig)
 
 		srv.portInternalTLS = ln.Addr().(*net.TCPAddr).Port
@@ -523,7 +523,7 @@ func Serve() error {
 		if err != nil {
 			return fmt.Errorf("listen internal '%v': %s", srv.ListenInternal, err)
 		}
-		ln = httputils.TCPKeepAliveListener{ln.(*net.TCPListener)}
+		ln = httputils.NewTCPKeepAliveListener(ln.(*net.TCPListener))
 
 		srv.portInternal = ln.Addr().(*net.TCPAddr).Port
 

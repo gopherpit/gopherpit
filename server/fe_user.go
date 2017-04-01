@@ -11,7 +11,6 @@ import (
 	"github.com/gorilla/mux"
 
 	"gopherpit.com/gopherpit/services/key"
-	"gopherpit.com/gopherpit/services/user"
 )
 
 func logoutHandler(w http.ResponseWriter, r *http.Request) {
@@ -48,16 +47,11 @@ func emailValidationHandler(w http.ResponseWriter, r *http.Request) {
 
 	u2, err := srv.UserService.ChangeEmail(u.ID, token)
 	if err != nil {
-		if terr, ok := err.(*user.Error); ok {
-			srv.Logger.Warningf("email validation: user %s: change email token %s: %s", u.ID, token, terr)
-			respond(w, "EmailValidation", map[string]interface{}{
-				"Valid": false,
-				"User":  u,
-			})
-			return
-		}
 		srv.Logger.Errorf("email validation: user %s: change email token %s: %s", u.ID, token, err)
-		htmlServerError(w, r, err)
+		respond(w, "EmailValidation", map[string]interface{}{
+			"Valid": false,
+			"User":  u,
+		})
 		return
 	}
 	respond(w, "EmailValidation", map[string]interface{}{

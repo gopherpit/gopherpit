@@ -5,7 +5,11 @@
 
 package certificate
 
-import "time"
+import (
+	"time"
+
+	apiClient "resenje.org/httputils/client/api"
+)
 
 // Service defines functions that Certificate provider must have.
 type Service interface {
@@ -156,14 +160,16 @@ type ACMEChallengeOptions struct {
 	KeyAuth *string `json:"key-auth,omitempty"`
 }
 
+var ErrorRegistry = apiClient.NewMapErrorRegistry(nil, nil)
+
 // Errors that are related to the Certificate Service.
 var (
-	CertificateNotFound   = NewError(1000, "certificate not found")
-	CertificateInvalid    = NewError(1001, "certificate invalid")
-	FQDNMissing           = NewError(1100, "fqdn missing")
-	FQDNInvalid           = NewError(1101, "fqdn invalid")
-	FQDNExists            = NewError(1102, "fqdn exists")
-	ACMEUserNotFound      = NewError(1200, "acme user not found")
-	ACMEUserEmailInvalid  = NewError(1201, "acme user email invalid")
-	ACMEChallengeNotFound = NewError(1300, "acme challenge not found")
+	CertificateNotFound   = ErrorRegistry.MustAddMessageError(1000, "certificate not found")
+	CertificateInvalid    = ErrorRegistry.MustAddMessageError(1001, "certificate invalid")
+	FQDNMissing           = ErrorRegistry.MustAddMessageError(1100, "fqdn missing")
+	FQDNInvalid           = ErrorRegistry.MustAddMessageError(1101, "fqdn invalid")
+	FQDNExists            = ErrorRegistry.MustAddMessageError(1102, "fqdn exists")
+	ACMEUserNotFound      = ErrorRegistry.MustAddMessageError(1200, "acme user not found")
+	ACMEUserEmailInvalid  = ErrorRegistry.MustAddMessageError(1201, "acme user email invalid")
+	ACMEChallengeNotFound = ErrorRegistry.MustAddMessageError(1300, "acme challenge not found")
 )

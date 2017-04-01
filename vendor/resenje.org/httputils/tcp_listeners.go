@@ -15,6 +15,12 @@ type TCPKeepAliveListener struct {
 	*net.TCPListener
 }
 
+// NewTCPKeepAliveListener creates TCPKeepAliveListener
+// from net.TCPListener.
+func NewTCPKeepAliveListener(listener *net.TCPListener) TCPKeepAliveListener {
+	return TCPKeepAliveListener{TCPListener: listener}
+}
+
 // Accept accepts TCP connection and sets TCP keep alive period
 func (ln TCPKeepAliveListener) Accept() (c net.Conn, err error) {
 	tc, err := ln.AcceptTCP()

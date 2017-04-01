@@ -7,6 +7,8 @@ package packages
 
 import (
 	"time"
+
+	apiClient "resenje.org/httputils/client/api"
 )
 
 type Service interface {
@@ -217,25 +219,27 @@ type Changelog struct {
 	Count    int              `json:"count,omitempty"`
 }
 
+var ErrorRegistry = apiClient.NewMapErrorRegistry(nil, nil)
+
 // Errors that are related to the Packages Service.
 var (
-	Forbidden                     = NewError(403, "forbidden")
-	DomainNotFound                = NewError(1000, "domain not found")
-	DomainAlreadyExists           = NewError(1001, "domain already exists")
-	DomainFQDNRequired            = NewError(1010, "domain fqdn required")
-	DomainOwnerUserIDRequired     = NewError(1020, "domain owner user id required")
-	UserDoesNotExist              = NewError(1100, "user does not exist")
-	UserExists                    = NewError(1101, "user exists")
-	PackageNotFound               = NewError(2000, "package not found")
-	PackageAlreadyExists          = NewError(2001, "package already exists")
-	PackageDomainRequired         = NewError(2010, "package domain required")
-	PackagePathRequired           = NewError(2011, "package path required")
-	PackageVCSRequired            = NewError(2012, "package vcs required")
-	PackageRepoRootRequired       = NewError(2040, "package repository root required")
-	PackageRepoRootInvalid        = NewError(2041, "package repository root invalid")
-	PackageRepoRootSchemeRequired = NewError(2042, "package repository root scheme required")
-	PackageRepoRootSchemeInvalid  = NewError(2043, "package repository root scheme invalid")
-	PackageRepoRootHostInvalid    = NewError(2044, "package repository root host invalid")
-	PackageRefChangeRejected      = NewError(2070, "Package Reference Change Rejected")
-	ChangelogRecordNotFound       = NewError(3000, "changelog record not found")
+	Forbidden                     = ErrorRegistry.MustAddMessageError(403, "forbidden")
+	DomainNotFound                = ErrorRegistry.MustAddMessageError(1000, "domain not found")
+	DomainAlreadyExists           = ErrorRegistry.MustAddMessageError(1001, "domain already exists")
+	DomainFQDNRequired            = ErrorRegistry.MustAddMessageError(1010, "domain fqdn required")
+	DomainOwnerUserIDRequired     = ErrorRegistry.MustAddMessageError(1020, "domain owner user id required")
+	UserDoesNotExist              = ErrorRegistry.MustAddMessageError(1100, "user does not exist")
+	UserExists                    = ErrorRegistry.MustAddMessageError(1101, "user exists")
+	PackageNotFound               = ErrorRegistry.MustAddMessageError(2000, "package not found")
+	PackageAlreadyExists          = ErrorRegistry.MustAddMessageError(2001, "package already exists")
+	PackageDomainRequired         = ErrorRegistry.MustAddMessageError(2010, "package domain required")
+	PackagePathRequired           = ErrorRegistry.MustAddMessageError(2011, "package path required")
+	PackageVCSRequired            = ErrorRegistry.MustAddMessageError(2012, "package vcs required")
+	PackageRepoRootRequired       = ErrorRegistry.MustAddMessageError(2040, "package repository root required")
+	PackageRepoRootInvalid        = ErrorRegistry.MustAddMessageError(2041, "package repository root invalid")
+	PackageRepoRootSchemeRequired = ErrorRegistry.MustAddMessageError(2042, "package repository root scheme required")
+	PackageRepoRootSchemeInvalid  = ErrorRegistry.MustAddMessageError(2043, "package repository root scheme invalid")
+	PackageRepoRootHostInvalid    = ErrorRegistry.MustAddMessageError(2044, "package repository root host invalid")
+	PackageRefChangeRejected      = ErrorRegistry.MustAddMessageError(2070, "Package Reference Change Rejected")
+	ChangelogRecordNotFound       = ErrorRegistry.MustAddMessageError(3000, "changelog record not found")
 )

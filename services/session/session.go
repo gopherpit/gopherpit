@@ -5,6 +5,8 @@
 
 package session // import "gopherpit.com/gopherpit/services/session"
 
+import apiClient "resenje.org/httputils/client/api"
+
 // Session holds session ID and values associated.
 type Session struct {
 	// A unique Session ID.
@@ -36,7 +38,9 @@ type Service interface {
 	DeleteSession(id string) error
 }
 
+var ErrorRegistry = apiClient.NewMapErrorRegistry(nil, nil)
+
 var (
 	// SessionNotFound is error if session does not exist.
-	SessionNotFound = NewError(1000, "session not found")
+	SessionNotFound = ErrorRegistry.MustAddMessageError(1000, "session not found")
 )
