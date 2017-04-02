@@ -81,7 +81,7 @@ func acmeUserHandler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if srv.registerACMEUser {
 			u, r, err := getRequestUser(r)
-			if err != nil && err != user.UserNotFound {
+			if err != nil && err != user.ErrUserNotFound {
 				go func() {
 					defer srv.RecoveryService.Recover()
 					if err := srv.EmailService.Notify("Get user error", fmt.Sprint(err)); err != nil {
@@ -94,7 +94,7 @@ func acmeUserHandler(h http.Handler) http.Handler {
 
 			au, err := srv.CertificateService.ACMEUser()
 			if err != nil {
-				if err == certificate.ACMEUserNotFound {
+				if err == certificate.ErrACMEUserNotFound {
 					if r.Header.Get(srv.XSRFCookieName) == "" {
 						antixsrf.Generate(w, r, "/")
 					}

@@ -82,7 +82,7 @@ func (s Service) SendEmail(email notification.Email) (id string, err error) {
 				return err
 			}
 			if e := bucket.Get(idb); e != nil {
-				return notification.EmailAlreadySent
+				return notification.ErrEmailAlreadySent
 			}
 			return bucket.Put(idb, []byte(now.AddDate(0, 0, 21).Format(time.RFC3339)))
 		})

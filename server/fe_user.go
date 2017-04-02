@@ -130,7 +130,7 @@ func apiAccessSettingsHandler(w http.ResponseWriter, r *http.Request) {
 	k, err := srv.KeyService.KeyByRef(u.ID)
 	switch err {
 	case nil:
-	case key.KeyNotFound:
+	case key.ErrKeyNotFound:
 		k = &key.Key{}
 	default:
 		srv.Logger.Errorf("settings api access: %s: get key by ref: %s", u.ID, err)

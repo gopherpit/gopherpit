@@ -188,12 +188,12 @@ func (p *packageRecord) update(tx *bolt.Tx, o *packages.PackageOptions) (changes
 func getPackageRecord(tx *bolt.Tx, id []byte) (p *packageRecord, err error) {
 	bucket := tx.Bucket(bucketNamePackages)
 	if bucket == nil {
-		err = packages.PackageNotFound
+		err = packages.ErrPackageNotFound
 		return
 	}
 	data := bucket.Get(id)
 	if data == nil {
-		err = packages.PackageNotFound
+		err = packages.ErrPackageNotFound
 		return
 	}
 	if err = json.Unmarshal(data, &p); err != nil {
@@ -206,17 +206,17 @@ func getPackageRecord(tx *bolt.Tx, id []byte) (p *packageRecord, err error) {
 func getPackageIDByPath(tx *bolt.Tx, domainID, path []byte) (id []byte, err error) {
 	bucket := tx.Bucket(bucketNameIndexDomainIDPathPackageID)
 	if bucket == nil {
-		err = packages.PackageNotFound
+		err = packages.ErrPackageNotFound
 		return
 	}
 	bucket = bucket.Bucket(domainID)
 	if bucket == nil {
-		err = packages.PackageNotFound
+		err = packages.ErrPackageNotFound
 		return
 	}
 	id = bucket.Get(path)
 	if id == nil {
-		err = packages.PackageNotFound
+		err = packages.ErrPackageNotFound
 		return
 	}
 	return
@@ -227,24 +227,24 @@ func (p *packageRecord) save(tx *bolt.Tx) (err error) {
 	p.RepoRoot = strings.TrimSpace(p.RepoRoot)
 	// Required fields
 	if p.DomainID == "" {
-		return packages.PackageDomainRequired
+		return packages.ErrPackageDomainRequired
 	}
 	if p.Path == "" {
-		return packages.PackagePathRequired
+		return packages.ErrPackagePathRequired
 	}
 	if p.VCS == "" {
-		return packages.PackageVCSRequired
+		return packages.ErrPackageVCSRequired
 	}
 	if p.RepoRoot == "" {
-		return packages.PackageRepoRootRequired
+		return packages.ErrPackageRepoRootRequired
 	}
 
 	repoRoot, err := url.Parse(p.RepoRoot)
 	if err != nil {
-		return packages.PackageRepoRootInvalid
+		return packages.ErrPackageRepoRootInvalid
 	}
 	if repoRoot.Scheme == "" {
-		return packages.PackageRepoRootSchemeRequired
+		return packages.ErrPackageRepoRootSchemeRequired
 	}
 	ok := false
 	for _, s := range packages.VCSSchemes[p.VCS] {
@@ -254,13 +254,13 @@ func (p *packageRecord) save(tx *bolt.Tx) (err error) {
 		}
 	}
 	if !ok {
-		return packages.PackageRepoRootSchemeInvalid
+		return packages.ErrPackageRepoRootSchemeInvalid
 	}
 	if !hostAndPortRegex.MatchString(repoRoot.Host) {
-		return packages.PackageRepoRootHostInvalid
+		return packages.ErrPackageRepoRootHostInvalid
 	}
 	if p.RefName != "" && (p.VCS != packages.VCSGit || (p.VCS == packages.VCSGit && !(repoRoot.Scheme == "http" || repoRoot.Scheme == "https"))) {
-		return packages.PackageRefChangeRejected
+		return packages.ErrPackageRefChangeRejected
 	}
 
 	// existing package record
@@ -285,10 +285,10 @@ func (p *packageRecord) save(tx *bolt.Tx) (err error) {
 	// Address must be unique
 	checkID, err := getPackageIDByPath(tx, []byte(p.DomainID), []byte(p.Path))
 	switch err {
-	case packages.PackageNotFound:
+	case packages.ErrPackageNotFound:
 	case nil:
 		if p.id == "" || string(checkID) != p.id {
-			return packages.PackageAlreadyExists
+			return packages.ErrPackageAlreadyExists
 		}
 	default:
 		return fmt.Errorf("get package id by path: %s", err)

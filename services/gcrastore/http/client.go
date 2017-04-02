@@ -13,19 +13,18 @@ import (
 	"resenje.org/httputils/client/api"
 )
 
-// Service is HTTP implementation of gcrastore.Service.
-type Service struct {
-	// Client provides HTTP request making functionality.
-	Client *apiClient.Client
+// Client is HTTP implementation of gcrastore.Service.
+type Client struct {
+	*apiClient.Client
 }
 
-// NewService initializes a new Service with optional API Client.
+// NewClient initializes a new Client with optional API Client.
 // If API Client is nil a default apiClient is used.
-func NewService(c *apiClient.Client) *Service {
+func NewClient(c *apiClient.Client) *Client {
 	if c == nil {
 		c = &apiClient.Client{}
 	}
-	return &Service{Client: c}
+	return &Client{Client: c}
 }
 
 // GetWithTimeResponse holds information that is returned by GetWithTime
@@ -37,9 +36,9 @@ type GetWithTimeResponse struct {
 
 // GetWithTime retrieves value and store time by making a HTTP GET request
 // to {Client.Endpoint}/keys/{key}.
-func (s Service) GetWithTime(key string) (value int64, storeTime time.Time, err error) {
+func (c Client) GetWithTime(key string) (value int64, storeTime time.Time, err error) {
 	response := &GetWithTimeResponse{}
-	err = s.Client.JSON("GET", "/keys/"+key, nil, nil, response)
+	err = c.JSON("GET", "/keys/"+key, nil, nil, response)
 	value = response.Value
 	storeTime = response.StoreTime
 	return
@@ -60,7 +59,7 @@ type SetIfNotExistsWithTTLRequest struct {
 
 // SetIfNotExistsWithTTL sends value and TTL by making a HTTP POST request
 // to {Client.Endpoint}/keys/{key}.
-func (s Service) SetIfNotExistsWithTTL(key string, value int64, ttl time.Duration) (isSet bool, err error) {
+func (c Client) SetIfNotExistsWithTTL(key string, value int64, ttl time.Duration) (isSet bool, err error) {
 	body, err := json.Marshal(SetIfNotExistsWithTTLRequest{
 		Value: value,
 		TTL:   ttl,
@@ -69,7 +68,7 @@ func (s Service) SetIfNotExistsWithTTL(key string, value int64, ttl time.Duratio
 		return
 	}
 	response := &IsSetResponse{}
-	err = s.Client.JSON("POST", "/keys/"+key, nil, bytes.NewReader(body), response)
+	err = c.JSON("POST", "/keys/"+key, nil, bytes.NewReader(body), response)
 	isSet = response.IsSet
 	return
 }
@@ -84,7 +83,7 @@ type CompareAndSwapWithTTLRequest struct {
 
 // CompareAndSwapWithTTL sends old and new value and TTL by making a HTTP PUT request
 // to {Client.Endpoint}/keys/{key}.
-func (s Service) CompareAndSwapWithTTL(key string, old, new int64, ttl time.Duration) (isSet bool, err error) {
+func (c Client) CompareAndSwapWithTTL(key string, old, new int64, ttl time.Duration) (isSet bool, err error) {
 	body, err := json.Marshal(CompareAndSwapWithTTLRequest{
 		Old: old,
 		New: new,
@@ -94,7 +93,7 @@ func (s Service) CompareAndSwapWithTTL(key string, old, new int64, ttl time.Dura
 		return
 	}
 	response := &IsSetResponse{}
-	err = s.Client.JSON("PUT", "/keys/"+key, nil, bytes.NewReader(body), response)
+	err = c.JSON("PUT", "/keys/"+key, nil, bytes.NewReader(body), response)
 	isSet = response.IsSet
 	return
 }

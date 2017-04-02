@@ -110,7 +110,7 @@ func (d *domainRecord) update(o *packages.DomainOptions) (changes packages.Chang
 
 func getDomainRecord(tx *bolt.Tx, id []byte) (d *domainRecord, err error) {
 	d, err = getDomainRecordByID(tx, id)
-	if err == packages.DomainNotFound {
+	if err == packages.ErrDomainNotFound {
 		d, err = getDomainRecordByFQDN(tx, id)
 	}
 	return
@@ -119,12 +119,12 @@ func getDomainRecord(tx *bolt.Tx, id []byte) (d *domainRecord, err error) {
 func getDomainRecordByID(tx *bolt.Tx, id []byte) (d *domainRecord, err error) {
 	bucket := tx.Bucket(bucketNameDomains)
 	if bucket == nil {
-		err = packages.DomainNotFound
+		err = packages.ErrDomainNotFound
 		return
 	}
 	data := bucket.Get(id)
 	if data == nil {
-		err = packages.DomainNotFound
+		err = packages.ErrDomainNotFound
 		return
 	}
 	if err = json.Unmarshal(data, &d); err != nil {
@@ -137,13 +137,13 @@ func getDomainRecordByID(tx *bolt.Tx, id []byte) (d *domainRecord, err error) {
 func getDomainRecordByFQDN(tx *bolt.Tx, fqdn []byte) (d *domainRecord, err error) {
 	bucket := tx.Bucket(bucketNameIndexFQDNDomainID)
 	if bucket == nil {
-		err = packages.DomainNotFound
+		err = packages.ErrDomainNotFound
 		return
 	}
 
 	id := bucket.Get(fqdn)
 	if id == nil {
-		err = packages.DomainNotFound
+		err = packages.ErrDomainNotFound
 		return
 	}
 
@@ -162,12 +162,12 @@ func isDomainDisabled(tx *bolt.Tx, id []byte) (disabled bool, err error) {
 func getDomainIDByFQDN(tx *bolt.Tx, fqdn []byte) (id []byte, err error) {
 	bucket := tx.Bucket(bucketNameIndexFQDNDomainID)
 	if bucket == nil {
-		err = packages.DomainNotFound
+		err = packages.ErrDomainNotFound
 		return
 	}
 	id = bucket.Get(fqdn)
 	if id == nil {
-		err = packages.DomainNotFound
+		err = packages.ErrDomainNotFound
 		return
 	}
 	return
@@ -177,11 +177,11 @@ func (d *domainRecord) save(tx *bolt.Tx) (err error) {
 	// Fields validation
 	d.FQDN = strings.TrimSpace(strings.ToLower(d.FQDN))
 	if d.FQDN == "" {
-		return packages.DomainFQDNRequired
+		return packages.ErrDomainFQDNRequired
 	}
 
 	if d.OwnerUserID == "" {
-		return packages.DomainOwnerUserIDRequired
+		return packages.ErrDomainOwnerUserIDRequired
 	}
 
 	fqdn := []byte(d.FQDN)
@@ -212,10 +212,10 @@ func (d *domainRecord) save(tx *bolt.Tx) (err error) {
 	if d.FQDN != "" {
 		ci, err := getDomainIDByFQDN(tx, fqdn)
 		switch err {
-		case packages.DomainNotFound:
+		case packages.ErrDomainNotFound:
 		case nil:
 			if !bytes.Equal(ci, id) {
-				return packages.DomainAlreadyExists
+				return packages.ErrDomainAlreadyExists
 			}
 		default:
 			return fmt.Errorf("get domain id by fqdn: %s", err)
@@ -480,7 +480,7 @@ func (d domainRecord) addUser(tx *bolt.Tx, userID []byte, checkExists bool) (err
 		return
 	}
 	if checkExists && bucket.Get(userID) != nil {
-		err = packages.UserExists
+		err = packages.ErrUserExists
 		return
 	}
 	if err = bucket.Put(userID, flagBytes); err != nil {
@@ -503,16 +503,16 @@ func (d domainRecord) addUser(tx *bolt.Tx, userID []byte, checkExists bool) (err
 func (d domainRecord) removeUser(tx *bolt.Tx, userID []byte) (err error) {
 	bucket := tx.Bucket(bucketNameIndexDomainIDUserIDs)
 	if bucket == nil {
-		err = packages.UserDoesNotExist
+		err = packages.ErrUserDoesNotExist
 		return
 	}
 	bucket = bucket.Bucket([]byte(d.id))
 	if bucket == nil {
-		err = packages.UserDoesNotExist
+		err = packages.ErrUserDoesNotExist
 		return
 	}
 	if bucket.Get(userID) == nil {
-		err = packages.UserDoesNotExist
+		err = packages.ErrUserDoesNotExist
 		return
 	}
 	if err = bucket.Delete(userID); err != nil {

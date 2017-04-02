@@ -33,7 +33,7 @@ func audit(r *http.Request, info interface{}, action, message string) {
 	}
 	var userID, username, email string
 	u, _, err := getRequestUser(r)
-	if err != nil && err != user.UserNotFound {
+	if err != nil && err != user.ErrUserNotFound {
 		srv.Logger.Errorf("audit: get user: %s", err)
 		return
 	}

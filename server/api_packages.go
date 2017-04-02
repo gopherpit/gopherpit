@@ -31,7 +31,7 @@ func packageAPIHandler(w http.ResponseWriter, r *http.Request) {
 
 	p, err := srv.PackagesService.Package(id)
 	if err != nil {
-		if err == packages.PackageNotFound {
+		if err == packages.ErrPackageNotFound {
 			srv.Logger.Warningf("package api: package %s: %s", id, err)
 			jsonresponse.BadRequest(w, api.ErrPackageNotFound)
 			return
@@ -46,11 +46,11 @@ func packageAPIHandler(w http.ResponseWriter, r *http.Request) {
 	for {
 		response, err := srv.PackagesService.DomainsByUser(u.ID, token, 0)
 		if err != nil {
-			if err == packages.UserDoesNotExist {
+			if err == packages.ErrUserDoesNotExist {
 				srv.Logger.Warningf("package api: domains by user %s: %s", u.ID, err)
 				break
 			}
-			if err == packages.DomainNotFound {
+			if err == packages.ErrDomainNotFound {
 				srv.Logger.Warningf("package api: domains by user %s: %s", u.ID, err)
 				break
 			}
@@ -227,55 +227,55 @@ func updatePackageAPIHandler(w http.ResponseWriter, r *http.Request) {
 		p, err = srv.PackagesService.UpdatePackage(id, o, u.ID)
 	}
 	switch err {
-	case packages.Forbidden:
+	case packages.ErrForbidden:
 		warningf("add/update package: %s", err)
 		jsonresponse.Forbidden(w, nil)
 		return
-	case packages.DomainNotFound:
+	case packages.ErrDomainNotFound:
 		warningf("add/update package: %s", err)
 		jsonresponse.BadRequest(w, api.ErrDomainNotFound)
 		return
-	case packages.PackageNotFound:
+	case packages.ErrPackageNotFound:
 		warningf("add/update package: %s", err)
 		jsonresponse.BadRequest(w, api.ErrPackageNotFound)
 		return
-	case packages.PackageDomainRequired:
+	case packages.ErrPackageDomainRequired:
 		warningf("add/update package: %s", err)
 		jsonresponse.BadRequest(w, api.ErrPackageDomainRequired)
 		return
-	case packages.PackagePathRequired:
+	case packages.ErrPackagePathRequired:
 		warningf("add/update package: %s", err)
 		jsonresponse.BadRequest(w, api.ErrPackagePathRequired)
 		return
-	case packages.PackageVCSRequired:
+	case packages.ErrPackageVCSRequired:
 		warningf("add/update package: %s", err)
 		jsonresponse.BadRequest(w, api.ErrPackageVCSRequired)
 		return
-	case packages.PackageRepoRootRequired:
+	case packages.ErrPackageRepoRootRequired:
 		warningf("add/update package: %s", err)
 		jsonresponse.BadRequest(w, api.ErrPackageRepoRootRequired)
 		return
-	case packages.PackageRepoRootInvalid:
+	case packages.ErrPackageRepoRootInvalid:
 		warningf("add/update package: %s", err)
 		jsonresponse.BadRequest(w, api.ErrPackageRepoRootInvalid)
 		return
-	case packages.PackageRepoRootSchemeRequired:
+	case packages.ErrPackageRepoRootSchemeRequired:
 		warningf("add/update package: %s", err)
 		jsonresponse.BadRequest(w, api.ErrPackageRepoRootSchemeRequired)
 		return
-	case packages.PackageRepoRootSchemeInvalid:
+	case packages.ErrPackageRepoRootSchemeInvalid:
 		warningf("add/update package: %s", err)
 		jsonresponse.BadRequest(w, api.ErrPackageRepoRootSchemeInvalid)
 		return
-	case packages.PackageRepoRootHostInvalid:
+	case packages.ErrPackageRepoRootHostInvalid:
 		warningf("add/update package: %s", err)
 		jsonresponse.BadRequest(w, api.ErrPackageRepoRootHostInvalid)
 		return
-	case packages.PackageAlreadyExists:
+	case packages.ErrPackageAlreadyExists:
 		warningf("add/update package: %s", err)
 		jsonresponse.BadRequest(w, api.ErrPackageAlreadyExists)
 		return
-	case packages.PackageRefChangeRejected:
+	case packages.ErrPackageRefChangeRejected:
 		warningf("add/update package: %s", err)
 		jsonresponse.BadRequest(w, api.ErrPackageRefChangeRejected)
 		return
@@ -306,11 +306,11 @@ func deletePackageAPIHandler(w http.ResponseWriter, r *http.Request) {
 	// Delete package checks permissions.
 	p, err := srv.PackagesService.DeletePackage(id, u.ID)
 	switch err {
-	case packages.Forbidden:
+	case packages.ErrForbidden:
 		srv.Logger.Warningf("package delete api: user %s: delete package %s: %s", u.ID, id, err)
 		jsonresponse.Forbidden(w, nil)
 		return
-	case packages.PackageNotFound:
+	case packages.ErrPackageNotFound:
 		srv.Logger.Warningf("package delete api: user %s: delete package %s: %s", u.ID, id, err)
 		jsonresponse.BadRequest(w, api.ErrPackageNotFound)
 		return
@@ -350,12 +350,12 @@ func domainPackagesAPIHandler(w http.ResponseWriter, r *http.Request) {
 
 	pkgs, err := srv.PackagesService.PackagesByDomain(id, start, limit)
 	if err != nil {
-		if err == packages.DomainNotFound {
+		if err == packages.ErrDomainNotFound {
 			srv.Logger.Warningf("domain packages api: packages by domain %s: %s", id, err)
 			jsonresponse.BadRequest(w, api.ErrDomainNotFound)
 			return
 		}
-		if err == packages.PackageNotFound {
+		if err == packages.ErrPackageNotFound {
 			srv.Logger.Warningf("domain packages api: packages by domain %s: %s", id, err)
 			jsonresponse.BadRequest(w, api.ErrPackageNotFound)
 			return
@@ -370,11 +370,11 @@ func domainPackagesAPIHandler(w http.ResponseWriter, r *http.Request) {
 	for {
 		response, err := srv.PackagesService.DomainsByUser(u.ID, token, 0)
 		if err != nil {
-			if err == packages.UserDoesNotExist {
+			if err == packages.ErrUserDoesNotExist {
 				srv.Logger.Warningf("domain packages api: user domains %s: %s", u.ID, err)
 				break
 			}
-			if err == packages.DomainNotFound {
+			if err == packages.ErrDomainNotFound {
 				srv.Logger.Warningf("domain packages api: user domains %s: %s", u.ID, err)
 				break
 			}

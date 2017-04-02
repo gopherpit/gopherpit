@@ -43,7 +43,7 @@ func certificateFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 
 	domain, err := srv.PackagesService.Domain(id)
 	switch err {
-	case packages.DomainNotFound:
+	case packages.ErrDomainNotFound:
 		jsonresponse.BadRequest(w, httputils.NewError("Unknown domain."))
 		return
 	case nil:
@@ -136,7 +136,7 @@ func domainFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 		domain, err = srv.PackagesService.Domain(id)
 		if err != nil {
 			switch err {
-			case packages.DomainNotFound:
+			case packages.ErrDomainNotFound:
 				jsonresponse.BadRequest(w, httputils.NewError("Unknown domain."))
 				return
 			case nil:
@@ -194,7 +194,7 @@ func domainFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 
 			domain, err = srv.PackagesService.Domain(fqdn)
 			if err != nil {
-				if err != packages.DomainNotFound {
+				if err != packages.ErrDomainNotFound {
 					srv.Logger.Errorf("domain fe api: domain %s: %s", fqdn, err)
 					jsonServerError(w, err)
 					return
@@ -262,16 +262,16 @@ func domainFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	if err != nil {
 		switch err {
-		case packages.DomainFQDNRequired:
+		case packages.ErrDomainFQDNRequired:
 			jsonresponse.BadRequest(w, httputils.NewFieldError("fqdn", "Domain fully qualified domain name is required."))
 			return
-		case packages.DomainOwnerUserIDRequired:
+		case packages.ErrDomainOwnerUserIDRequired:
 			jsonresponse.BadRequest(w, httputils.NewError("Domain user is required."))
 			return
-		case packages.DomainNotFound:
+		case packages.ErrDomainNotFound:
 			jsonresponse.BadRequest(w, httputils.NewFieldError("fqdn", "Unknown domain."))
 			return
-		case packages.DomainAlreadyExists:
+		case packages.ErrDomainAlreadyExists:
 			jsonresponse.BadRequest(w, httputils.NewFieldError("fqdn", "Domain is already registered."))
 			return
 		case nil:
@@ -332,7 +332,7 @@ func domainDeleteFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 	deletedDomain, err := srv.PackagesService.DeleteDomain(id, u.ID)
 	if err != nil {
 		switch err {
-		case packages.DomainNotFound:
+		case packages.ErrDomainNotFound:
 			jsonresponse.BadRequest(w, httputils.NewError("Unknown domain."))
 			return
 		case nil:
@@ -381,7 +381,7 @@ func domainUserGrantFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 
 	grantUser, err := srv.UserService.User(request.ID)
 	if err != nil {
-		if err == user.UserNotFound {
+		if err == user.ErrUserNotFound {
 			srv.Logger.Warningf("domain user grant fe api: user %s: %s", request.ID, err)
 			jsonresponse.BadRequest(w, httputils.NewFieldError("id", "Unknown user."))
 			return
@@ -392,13 +392,13 @@ func domainUserGrantFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	err = srv.PackagesService.AddUserToDomain(domainID, grantUser.ID, u.ID)
 	switch err {
-	case packages.DomainNotFound:
+	case packages.ErrDomainNotFound:
 		jsonresponse.BadRequest(w, httputils.NewError("Unknown domain."))
 		return
-	case packages.UserExists:
+	case packages.ErrUserExists:
 		jsonresponse.BadRequest(w, httputils.NewFieldError("id", "This user is already granted."))
 		return
-	case packages.Forbidden:
+	case packages.ErrForbidden:
 		jsonresponse.BadRequest(w, httputils.NewError("You do not have permission to revoke user."))
 		return
 	case nil:
@@ -440,7 +440,7 @@ func domainUserRevokeFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 
 	revokeUser, err := srv.UserService.User(request.ID)
 	if err != nil {
-		if err == user.UserNotFound {
+		if err == user.ErrUserNotFound {
 			srv.Logger.Warningf("domain user revoke fe api: user %s: %s", request.ID, err)
 			jsonresponse.BadRequest(w, httputils.NewFieldError("id", "Unknown user."))
 			return
@@ -451,13 +451,13 @@ func domainUserRevokeFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	err = srv.PackagesService.RemoveUserFromDomain(domainID, revokeUser.ID, u.ID)
 	switch err {
-	case packages.DomainNotFound:
+	case packages.ErrDomainNotFound:
 		jsonresponse.BadRequest(w, httputils.NewError("Unknown domain."))
 		return
-	case packages.UserDoesNotExist:
+	case packages.ErrUserDoesNotExist:
 		jsonresponse.BadRequest(w, httputils.NewFieldError("id", "This user is not granted."))
 		return
-	case packages.Forbidden:
+	case packages.ErrForbidden:
 		jsonresponse.BadRequest(w, httputils.NewError("You do not have permission to revoke user."))
 		return
 	case nil:
@@ -500,7 +500,7 @@ func domainOwnerChangeFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 	domain, err := srv.PackagesService.Domain(domainID)
 	if err != nil {
 		switch err {
-		case packages.DomainNotFound:
+		case packages.ErrDomainNotFound:
 			jsonresponse.BadRequest(w, httputils.NewError("Unknown domain."))
 			return
 		case nil:
@@ -523,7 +523,7 @@ func domainOwnerChangeFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 
 	owner, err := srv.UserService.User(request.ID)
 	if err != nil {
-		if err == user.UserNotFound {
+		if err == user.ErrUserNotFound {
 			srv.Logger.Warningf("domain owner change fe api: user %s: %s", request.ID, err)
 			jsonresponse.BadRequest(w, httputils.NewFieldError("id", "Unknown user."))
 			return
@@ -536,7 +536,7 @@ func domainOwnerChangeFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 		OwnerUserID: &owner.ID,
 	}, u.ID)
 	switch err {
-	case packages.DomainNotFound:
+	case packages.ErrDomainNotFound:
 		jsonresponse.BadRequest(w, httputils.NewError("Unknown domain."))
 		return
 	case nil:
@@ -689,43 +689,43 @@ func packageFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 		}, u.ID)
 	}
 	switch err {
-	case packages.Forbidden:
+	case packages.ErrForbidden:
 		jsonresponse.BadRequest(w, httputils.NewError("You do not have permission to add packages to this domain."))
 		return
-	case packages.DomainNotFound:
+	case packages.ErrDomainNotFound:
 		jsonresponse.BadRequest(w, httputils.NewError("Unknown domain."))
 		return
-	case packages.PackageNotFound:
+	case packages.ErrPackageNotFound:
 		jsonresponse.BadRequest(w, httputils.NewError("Unknown package."))
 		return
-	case packages.PackageDomainRequired:
+	case packages.ErrPackageDomainRequired:
 		jsonresponse.BadRequest(w, httputils.NewError("Domain is required."))
 		return
-	case packages.PackagePathRequired:
+	case packages.ErrPackagePathRequired:
 		jsonresponse.BadRequest(w, httputils.NewFieldError("path", "Path is required."))
 		return
-	case packages.PackageVCSRequired:
+	case packages.ErrPackageVCSRequired:
 		jsonresponse.BadRequest(w, httputils.NewFieldError("vcs", "VCS is required."))
 		return
-	case packages.PackageRepoRootRequired:
+	case packages.ErrPackageRepoRootRequired:
 		jsonresponse.BadRequest(w, httputils.NewFieldError("repoRoot", "Repository is required."))
 		return
-	case packages.PackageRepoRootInvalid:
+	case packages.ErrPackageRepoRootInvalid:
 		jsonresponse.BadRequest(w, httputils.NewFieldError("repoRoot", "Repository is invalid."))
 		return
-	case packages.PackageRepoRootSchemeRequired:
+	case packages.ErrPackageRepoRootSchemeRequired:
 		jsonresponse.BadRequest(w, httputils.NewFieldError("repoRoot", "Repository URL scheme is required."))
 		return
-	case packages.PackageRepoRootSchemeInvalid:
+	case packages.ErrPackageRepoRootSchemeInvalid:
 		jsonresponse.BadRequest(w, httputils.NewFieldError("repoRoot", "Repository URL scheme is invalid."))
 		return
-	case packages.PackageRepoRootHostInvalid:
+	case packages.ErrPackageRepoRootHostInvalid:
 		jsonresponse.BadRequest(w, httputils.NewFieldError("repoRoot", "Repository URL host is invalid."))
 		return
-	case packages.PackageRefChangeRejected:
+	case packages.ErrPackageRefChangeRejected:
 		jsonresponse.BadRequest(w, httputils.NewFieldError("refName", "Reference change is allowed only for Git HTTP and HTTPS repositeries."))
 		return
-	case packages.PackageAlreadyExists:
+	case packages.ErrPackageAlreadyExists:
 		jsonresponse.BadRequest(w, httputils.NewFieldError("path", "Package already exists."))
 		return
 	case nil:
@@ -755,13 +755,13 @@ func packageDeleteFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 	// Delete package checks permissions.
 	p, err := srv.PackagesService.DeletePackage(id, u.ID)
 	switch err {
-	case packages.Forbidden:
+	case packages.ErrForbidden:
 		jsonresponse.BadRequest(w, httputils.NewError("You do not have permission to add packages to this domain."))
 		return
-	case packages.DomainNotFound:
+	case packages.ErrDomainNotFound:
 		jsonresponse.BadRequest(w, httputils.NewError("Unknown domain."))
 		return
-	case packages.PackageNotFound:
+	case packages.ErrPackageNotFound:
 		jsonresponse.BadRequest(w, httputils.NewError("Unknown package."))
 		return
 	case nil:

@@ -79,12 +79,12 @@ func (t *certificateRecord) update(o *certificate.Options, expirationTime *time.
 func getCertificateRecord(tx *bolt.Tx, fqdn []byte) (t *certificateRecord, err error) {
 	bucket := tx.Bucket(bucketNameCertificates)
 	if bucket == nil {
-		err = certificate.CertificateNotFound
+		err = certificate.ErrCertificateNotFound
 		return
 	}
 	data := bucket.Get(fqdn)
 	if data == nil {
-		err = certificate.CertificateNotFound
+		err = certificate.ErrCertificateNotFound
 		return
 	}
 	if err = json.Unmarshal(data, &t); err != nil {
@@ -115,12 +115,12 @@ func (t certificateInfo) export() *certificate.Info {
 func getCertificateInfo(tx *bolt.Tx, fqdn []byte) (t *certificateInfo, err error) {
 	bucket := tx.Bucket(bucketNameCertificates)
 	if bucket == nil {
-		err = certificate.CertificateNotFound
+		err = certificate.ErrCertificateNotFound
 		return
 	}
 	data := bucket.Get(fqdn)
 	if data == nil {
-		err = certificate.CertificateNotFound
+		err = certificate.ErrCertificateNotFound
 		return
 	}
 	if err = json.Unmarshal(data, &t); err != nil {
@@ -134,13 +134,13 @@ func (t *certificateRecord) save(tx *bolt.Tx) (err error) {
 	t.fqdn = strings.ToLower(strings.TrimSpace(t.fqdn))
 	// Required fields
 	if t.fqdn == "" {
-		return certificate.FQDNMissing
+		return certificate.ErrFQDNMissing
 	}
 
 	// existing certificate record
 	et := certificateRecord{}
 	ct, err := getCertificateRecord(tx, []byte(t.fqdn))
-	if err != nil && err != certificate.CertificateNotFound {
+	if err != nil && err != certificate.ErrCertificateNotFound {
 		return fmt.Errorf("certificate record save get certificate record %s: %s", t.fqdn, err)
 	}
 	if ct != nil {

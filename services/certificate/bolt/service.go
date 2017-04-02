@@ -148,7 +148,7 @@ func (s Service) UpdateCertificate(fqdn string, o *certificate.Options) (c *cert
 			c, err := x509.ParseCertificate(cert)
 			if err != nil {
 				s.Logger.Warningf("update certificate: %s: x509 parse certificate: %s", fqdn, err)
-				return nil, certificate.CertificateInvalid
+				return nil, certificate.ErrCertificateInvalid
 			}
 			for _, name := range c.DNSNames {
 				if strings.HasPrefix(name, "*.") {
@@ -166,7 +166,7 @@ func (s Service) UpdateCertificate(fqdn string, o *certificate.Options) (c *cert
 		}
 		if expirationTime == nil {
 			s.Logger.Warningf("update certificate: %s: expiration time not found for dns name", fqdn)
-			return nil, certificate.CertificateInvalid
+			return nil, certificate.ErrCertificateInvalid
 		}
 	}
 
@@ -174,7 +174,7 @@ func (s Service) UpdateCertificate(fqdn string, o *certificate.Options) (c *cert
 	if err = s.DB.Update(func(tx *bolt.Tx) (err error) {
 		r, err = getCertificateRecord(tx, []byte(fqdn))
 		switch err {
-		case certificate.CertificateNotFound:
+		case certificate.ErrCertificateNotFound:
 			r = &certificateRecord{
 				fqdn: fqdn,
 			}
@@ -243,7 +243,7 @@ func (s Service) ACMEUser() (u *certificate.ACMEUser, err error) {
 func (s Service) RegisterACMEUser(directoryURL, email string) (u *certificate.ACMEUser, err error) {
 	if email != "" {
 		if !emailRegex.MatchString(email) {
-			err = certificate.ACMEUserEmailInvalid
+			err = certificate.ErrACMEUserEmailInvalid
 			return
 		}
 	}
@@ -274,7 +274,7 @@ func (s Service) UpdateACMEChallenge(fqdn string, o *certificate.ACMEChallengeOp
 	if err = s.DB.Update(func(tx *bolt.Tx) (err error) {
 		r, err = getACMEChallengeRecord(tx, []byte(fqdn))
 		switch err {
-		case certificate.ACMEChallengeNotFound:
+		case certificate.ErrACMEChallengeNotFound:
 			r = &acmeChallengeRecord{
 				fqdn: fqdn,
 			}

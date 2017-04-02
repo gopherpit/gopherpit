@@ -271,7 +271,7 @@ func Configure(o Options) (err error) {
 		// Get certificate for this ServerName
 		c, err := srv.certificateCache.Certificate(clientHello.ServerName)
 		switch err {
-		case certificateCache.ErrCertificateNotFound, certificate.CertificateNotFound:
+		case certificateCache.ErrCertificateNotFound, certificate.ErrCertificateNotFound:
 			// If ServerName is the same as configured domain or it's www subdomain
 			// and tls listener is on https port 443, try to obtain the certificate.
 			if strings.HasSuffix(srv.ListenTLS, ":443") && (clientHello.ServerName == srv.Domain || clientHello.ServerName == "www."+srv.Domain) {

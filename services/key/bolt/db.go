@@ -51,12 +51,12 @@ func (r *keyRecord) update(o *key.Options) {
 func getKeyRecordBySecret(tx *bolt.Tx, secret []byte) (r *keyRecord, err error) {
 	bucket := tx.Bucket(bucketNameKeys)
 	if bucket == nil {
-		err = key.KeyNotFound
+		err = key.ErrKeyNotFound
 		return
 	}
 	data := bucket.Get(secret)
 	if data == nil {
-		err = key.KeyNotFound
+		err = key.ErrKeyNotFound
 		return
 	}
 	if err = json.Unmarshal(data, &r); err != nil {
@@ -69,12 +69,12 @@ func getKeyRecordBySecret(tx *bolt.Tx, secret []byte) (r *keyRecord, err error) 
 func getKeyRecordByRef(tx *bolt.Tx, ref []byte) (r *keyRecord, err error) {
 	bucket := tx.Bucket(bucketNameIndexRefSecret)
 	if bucket == nil {
-		err = key.KeyNotFound
+		err = key.ErrKeyNotFound
 		return
 	}
 	secret := bucket.Get(ref)
 	if secret == nil {
-		err = key.KeyNotFound
+		err = key.ErrKeyNotFound
 		return
 	}
 	return getKeyRecordBySecret(tx, secret)
@@ -83,7 +83,7 @@ func getKeyRecordByRef(tx *bolt.Tx, ref []byte) (r *keyRecord, err error) {
 func (r *keyRecord) save(tx *bolt.Tx, secret string) (err error) {
 	// Required fields
 	if r.Ref == "" {
-		return key.KeyRefRequired
+		return key.ErrKeyRefRequired
 	}
 
 	// existing key record

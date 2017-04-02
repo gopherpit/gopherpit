@@ -27,7 +27,7 @@ func registerACMEUserFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	au, err := srv.CertificateService.ACMEUser()
-	if err != nil && err != certificate.ACMEUserNotFound {
+	if err != nil && err != certificate.ErrACMEUserNotFound {
 		srv.Logger.Warningf("register acme user fe api: acme user: %s", err)
 		jsonServerError(w, err)
 		return
@@ -67,7 +67,7 @@ func registerACMEUserFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 
 	au, err = srv.CertificateService.RegisterACMEUser(directoryURL, request.Email)
 	if err != nil {
-		if err == certificate.ACMEUserEmailInvalid {
+		if err == certificate.ErrACMEUserEmailInvalid {
 			errors.AddFieldError("email", "E-mail address is invalid.")
 			jsonresponse.BadRequest(w, errors)
 			return

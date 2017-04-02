@@ -27,7 +27,7 @@ func (g *CertificateGetter) Certificate(fqdn string) (c *certificate.Certificate
 			FQDN: fqdn,
 		}, nil
 	case "missing.gopherpit.com":
-		return nil, certificate.CertificateNotFound
+		return nil, certificate.ErrCertificateNotFound
 	case "error.gopherpit.com":
 		return nil, errMock
 	case "nil.gopherpit.com":
@@ -108,8 +108,8 @@ func TestCacheForMissingCertificate(t *testing.T) {
 	cache := NewCache(getter, time.Minute, time.Second)
 
 	_, err := cache.Certificate("missing.gopherpit.com")
-	if err != certificate.CertificateNotFound {
-		t.Fatalf("get missing certificate first time: expected error %v, got %v", certificate.CertificateNotFound, err)
+	if err != certificate.ErrCertificateNotFound {
+		t.Fatalf("get missing certificate first time: expected error %v, got %v", certificate.ErrCertificateNotFound, err)
 	}
 	_, err = cache.Certificate("missing.gopherpit.com")
 	if err != ErrCertificateNotFound {
@@ -125,13 +125,13 @@ func TestCacheExpirationForMissingCertificate(t *testing.T) {
 	cache := NewCache(getter, time.Second, time.Second)
 
 	_, err := cache.Certificate("missing.gopherpit.com")
-	if err != certificate.CertificateNotFound {
-		t.Fatalf("get missing certificate first time: expected error %v, got %v", certificate.CertificateNotFound, err)
+	if err != certificate.ErrCertificateNotFound {
+		t.Fatalf("get missing certificate first time: expected error %v, got %v", certificate.ErrCertificateNotFound, err)
 	}
 	time.Sleep(time.Second)
 	_, err = cache.Certificate("missing.gopherpit.com")
-	if err != certificate.CertificateNotFound {
-		t.Fatalf("get missing certificate second time: expected error %v, got %v", certificate.CertificateNotFound, err)
+	if err != certificate.ErrCertificateNotFound {
+		t.Fatalf("get missing certificate second time: expected error %v, got %v", certificate.ErrCertificateNotFound, err)
 	}
 	if getter.getCount != 2 {
 		t.Errorf("cache for missing certificate made %d requests to certificate.Getter instead of 2", getter.getCount)

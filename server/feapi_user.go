@@ -48,12 +48,12 @@ func authLoginFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	response, err := srv.UserService.Authenticate(request.Username, request.Password)
-	if err == user.UserNotFound {
+	if err == user.ErrUserNotFound {
 		srv.Logger.Debugf("auth login fe api: authenticate: unknown user: %s", request.Username)
 		jsonresponse.Unauthorized(w, nil)
 		return
 	}
-	if err == user.Unauthorized {
+	if err == user.ErrUnauthorized {
 		srv.Logger.Debugf("auth login fe api: authenticate: unauthorized: %s", request.Username)
 		jsonresponse.Unauthorized(w, nil)
 		return
@@ -129,7 +129,7 @@ func passwordResetTokenFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	u, err := srv.UserService.User(request.Username)
-	if err == user.UserNotFound {
+	if err == user.ErrUserNotFound {
 		srv.Logger.Debugf("password reset token fe api: user: unknown user: %s", request.Username)
 		errors.AddFieldError("username", "User not found.")
 		jsonresponse.BadRequest(w, errors)
@@ -156,7 +156,7 @@ func passwordResetTokenFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 
 	token, err := srv.UserService.RequestPasswordReset(u.ID)
 	if err != nil {
-		if err == user.UserNotFound {
+		if err == user.ErrUserNotFound {
 			srv.Logger.Warningf("password reset token fe api: request password reset: user not found: %s", u.ID)
 			errors.AddFieldError("username", "User's e-mail is opted-out.")
 			jsonresponse.BadRequest(w, errors)
@@ -221,19 +221,19 @@ func passwordResetFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 
 	err := srv.UserService.ResetPassword(request.Token, request.Password)
 	if err != nil {
-		if err == user.PasswordResetTokenExpired {
+		if err == user.ErrPasswordResetTokenExpired {
 			srv.Logger.Warningf("password reset fe api: user token %s: %s", request.Token, err)
 			errors.AddError("Password reset token has exprired.")
 			jsonresponse.BadRequest(w, errors)
 			return
 		}
-		if err == user.PasswordResetTokenNotFound {
+		if err == user.ErrPasswordResetTokenNotFound {
 			srv.Logger.Warningf("password reset fe api: user token %s: %s", request.Token, err)
 			errors.AddError("Password reset token is invalid.")
 			jsonresponse.BadRequest(w, errors)
 			return
 		}
-		if err == user.PasswordUsed {
+		if err == user.ErrPasswordUsed {
 			srv.Logger.Warningf("password reset fe api: user token %s: %s", request.Token, err)
 			errors.AddFieldError("password1", "This password has been used in the recent past.")
 			jsonresponse.BadRequest(w, errors)
@@ -281,19 +281,19 @@ func userFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 		Username: &request.Username,
 	})
 	if err != nil {
-		if err == user.UsernameExists {
+		if err == user.ErrUsernameExists {
 			srv.Logger.Warningf("user fe api: user ID %s: %s", u.ID, err)
 			errors.AddFieldError("username", "This username is already taken.")
 			jsonresponse.BadRequest(w, errors)
 			return
 		}
-		if err == user.UsernameInvalid {
+		if err == user.ErrUsernameInvalid {
 			srv.Logger.Warningf("user fe api: user ID %s: %s", u.ID, err)
 			errors.AddFieldError("username", "This username is invalid.")
 			jsonresponse.BadRequest(w, errors)
 			return
 		}
-		if err == user.UsernameMissing {
+		if err == user.ErrUsernameMissing {
 			srv.Logger.Warningf("user fe api: user ID %s: %s", u.ID, err)
 			errors.AddFieldError("username", "Username is required.")
 			jsonresponse.BadRequest(w, errors)
@@ -344,7 +344,7 @@ func userEmailFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 
 	token, err := srv.UserService.RequestEmailChange(u.ID, request.Email, time.Now().Add(60*24*time.Hour))
 	if err != nil {
-		if err == user.EmailChangeEmailNotAvaliable {
+		if err == user.ErrEmailChangeEmailNotAvaliable {
 			srv.Logger.Debugf("user email fe api: request email change: email %s is not available %s", request.Email, u.ID)
 			errors.AddFieldError("email", "This e-mail address is not available.")
 			jsonresponse.BadRequest(w, errors)
@@ -449,13 +449,13 @@ func userPasswordFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	_, err = srv.UserService.Authenticate(u.Email, request.Password)
-	if err == user.Unauthorized {
+	if err == user.ErrUnauthorized {
 		srv.Logger.Debugf("user password fe api: invalid password %s %s", u.ID, u.Email)
 		errors.AddFieldError("password", "Invalid current password.")
 		jsonresponse.BadRequest(w, errors)
 		return
 	}
-	if err != nil && err != user.UserNotFound {
+	if err != nil && err != user.ErrUserNotFound {
 		srv.Logger.Errorf("user password fe api: authenticate %s %s: %s", u.ID, u.Email, err)
 		jsonServerError(w, err)
 		return
@@ -501,20 +501,20 @@ func userDeleteFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	_, err = srv.UserService.Authenticate(u.Email, request.Password)
-	if err == user.Unauthorized {
+	if err == user.ErrUnauthorized {
 		srv.Logger.Debugf("user delete fe api: invalid password %s %s", u.ID, u.Email)
 		errors.AddFieldError("password", "Invalid password.")
 		jsonresponse.BadRequest(w, errors)
 		return
 	}
-	if err != nil && err != user.UserNotFound {
+	if err != nil && err != user.ErrUserNotFound {
 		srv.Logger.Errorf("user delete api user: authenticate %s %s: %s", u.ID, u.Email, err)
 		jsonServerError(w, err)
 		return
 	}
 
 	domains, err := srv.PackagesService.DomainsByOwner(u.ID, "", 1)
-	if err != nil && err != packages.UserDoesNotExist {
+	if err != nil && err != packages.ErrUserDoesNotExist {
 		srv.Logger.Errorf("user delete fe api: domains by owner: %s", err)
 		jsonServerError(w, err)
 		return
@@ -605,7 +605,7 @@ func registrationFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 			switch err {
 			case nil:
 				errors.AddFieldError("email", "Account with this e-mail address exists.")
-			case user.UserNotFound:
+			case user.ErrUserNotFound:
 			default:
 				srv.Logger.Errorf("registration fe api: get user by email: %s", err)
 				jsonServerError(w, err)
@@ -618,7 +618,7 @@ func registrationFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 		switch err {
 		case nil:
 			errors.AddFieldError("username", "This username is taken.")
-		case user.UserNotFound:
+		case user.ErrUserNotFound:
 		default:
 			srv.Logger.Errorf("registration fe api: get user by username: %s", err)
 			jsonServerError(w, err)
@@ -656,13 +656,13 @@ func registrationFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 		Disabled:         &disabled,
 	}, request.Password, time.Now().Add(30*24*time.Hour))
 	switch err {
-	case user.UsernameExists:
+	case user.ErrUsernameExists:
 		errors.AddFieldError("username", "This username is taken.")
-	case user.UsernameInvalid:
+	case user.ErrUsernameInvalid:
 		errors.AddFieldError("username", "This username is not valid.")
-	case user.EmailExists:
+	case user.ErrEmailExists:
 		errors.AddFieldError("email", "Account with this e-mail address exists.")
-	case user.EmailInvalid:
+	case user.ErrEmailInvalid:
 		errors.AddFieldError("email", "E-mail address is not valid.")
 	case nil:
 	default:

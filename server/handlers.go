@@ -247,7 +247,7 @@ func jsonAntiXSRFHandler(h http.Handler) http.Handler {
 func htmlLoginRequiredHandler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		u, r, err := getRequestUser(r)
-		if err != nil && err != user.UserNotFound {
+		if err != nil && err != user.ErrUserNotFound {
 			go func() {
 				defer srv.RecoveryService.Recover()
 				if err := srv.EmailService.Notify("Get user error", fmt.Sprint(err)); err != nil {
@@ -274,7 +274,7 @@ func htmlLoginRequiredHandler(h http.Handler) http.Handler {
 func jsonLoginRequiredHandler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		u, r, err := getRequestUser(r)
-		if err != nil && err != user.UserNotFound {
+		if err != nil && err != user.ErrUserNotFound {
 			go func() {
 				defer srv.RecoveryService.Recover()
 				if err := srv.EmailService.Notify("Get user error", fmt.Sprint(err)); err != nil {
@@ -301,7 +301,7 @@ func jsonLoginRequiredHandler(h http.Handler) http.Handler {
 func htmlLoginAltHandler(h, alt http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		u, r, err := getRequestUser(r)
-		if err != nil && err != user.UserNotFound {
+		if err != nil && err != user.ErrUserNotFound {
 			go func() {
 				defer srv.RecoveryService.Recover()
 				if err := srv.EmailService.Notify("Get user error", fmt.Sprint(err)); err != nil {
@@ -348,7 +348,7 @@ func htmlValidatedEmailRequiredHandler(h http.Handler) http.Handler {
 func jsonValidatedEmailRequiredHandler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		u, r, err := getRequestUser(r)
-		if err != nil && err != user.UserNotFound {
+		if err != nil && err != user.ErrUserNotFound {
 			go func() {
 				defer srv.RecoveryService.Recover()
 				if err := srv.EmailService.Notify("Get user error", fmt.Sprint(err)); err != nil {
@@ -422,7 +422,7 @@ func apiKeyAuthHandler(h http.Handler, body, contentType string) http.Handler {
 			k, err := srv.KeyService.KeyBySecret(field1)
 			switch err {
 			case nil:
-			case key.KeyNotFound:
+			case key.ErrKeyNotFound:
 				err = nil
 				return
 			default:

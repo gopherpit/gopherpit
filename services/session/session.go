@@ -4,8 +4,7 @@
 // license that can be found in the LICENSE file.
 
 package session // import "gopherpit.com/gopherpit/services/session"
-
-import apiClient "resenje.org/httputils/client/api"
+import "errors"
 
 // Session holds session ID and values associated.
 type Session struct {
@@ -38,9 +37,7 @@ type Service interface {
 	DeleteSession(id string) error
 }
 
-var ErrorRegistry = apiClient.NewMapErrorRegistry(nil, nil)
-
 var (
-	// SessionNotFound is error if session does not exist.
-	SessionNotFound = ErrorRegistry.MustAddMessageError(1000, "session not found")
+	// ErrSessionNotFound is error if session does not exist.
+	ErrSessionNotFound = errors.New("session not found")
 )

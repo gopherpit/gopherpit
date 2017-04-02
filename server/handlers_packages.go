@@ -65,7 +65,7 @@ func packageResolverHandler(w http.ResponseWriter, r *http.Request) {
 	path := domain + r.URL.Path
 	resolution, err := srv.PackagesService.ResolvePackage(path)
 	if err != nil {
-		if err == packages.DomainNotFound || err == packages.PackageNotFound {
+		if err == packages.ErrDomainNotFound || err == packages.ErrPackageNotFound {
 			code = http.StatusNotFound
 			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 			w.WriteHeader(code)
@@ -154,7 +154,7 @@ func packageGitUploadPackHandler(w http.ResponseWriter, r *http.Request) (notFou
 	path := domain + strings.TrimSuffix(r.URL.Path, "/git-upload-pack")
 	resolution, err := srv.PackagesService.ResolvePackage(path)
 	if err != nil {
-		if err == packages.DomainNotFound || err == packages.PackageNotFound {
+		if err == packages.ErrDomainNotFound || err == packages.ErrPackageNotFound {
 			notFound = true
 			return
 		}
@@ -258,7 +258,7 @@ func packageGitInfoRefsHandler(w http.ResponseWriter, r *http.Request) (notFound
 	path := domain + strings.TrimSuffix(r.URL.Path, "/info/refs")
 	resolution, err := srv.PackagesService.ResolvePackage(path)
 	if err != nil {
-		if err == packages.DomainNotFound || err == packages.PackageNotFound {
+		if err == packages.ErrDomainNotFound || err == packages.ErrPackageNotFound {
 			notFound = true
 			return
 		}

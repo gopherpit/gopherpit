@@ -37,7 +37,7 @@ func domainAPIHandler(w http.ResponseWriter, r *http.Request) {
 	domain, err := srv.PackagesService.Domain(id)
 	if err != nil {
 		switch err {
-		case packages.DomainNotFound:
+		case packages.ErrDomainNotFound:
 			srv.Logger.Warningf("domain api: domain %s: %s", id, err)
 			jsonresponse.BadRequest(w, api.ErrDomainNotFound)
 			return
@@ -53,7 +53,7 @@ func domainAPIHandler(w http.ResponseWriter, r *http.Request) {
 	if !found {
 		domainUsers, err := srv.PackagesService.DomainUsers(id)
 		if err != nil {
-			if err == packages.DomainNotFound {
+			if err == packages.ErrDomainNotFound {
 				srv.Logger.Warningf("domain api: domain users %s: %s", id, err)
 				jsonresponse.BadRequest(w, api.ErrDomainNotFound)
 				return
@@ -179,7 +179,7 @@ func updateDomainAPIHandler(w http.ResponseWriter, r *http.Request) {
 		domain, err = srv.PackagesService.Domain(id)
 		if err != nil {
 			switch err {
-			case packages.DomainNotFound:
+			case packages.ErrDomainNotFound:
 				warningf("get domain: %s", err)
 				jsonresponse.BadRequest(w, api.ErrDomainNotFound)
 				return
@@ -242,7 +242,7 @@ func updateDomainAPIHandler(w http.ResponseWriter, r *http.Request) {
 
 			domain, err = srv.PackagesService.Domain(fqdn)
 			if err != nil {
-				if err != packages.DomainNotFound {
+				if err != packages.ErrDomainNotFound {
 					errorf("get domain: %s: %s", fqdn, err)
 					jsonresponse.InternalServerError(w, nil)
 					return
@@ -286,7 +286,7 @@ func updateDomainAPIHandler(w http.ResponseWriter, r *http.Request) {
 	if request.OwnerUserID != nil {
 		owner, err := srv.UserService.User(*request.OwnerUserID)
 		if err != nil {
-			if err == user.UserNotFound {
+			if err == user.ErrUserNotFound {
 				warningf("get owner user: %s: %s", *request.OwnerUserID, err)
 				jsonresponse.BadRequest(w, api.ErrUserDoesNotExist)
 				return
@@ -322,19 +322,19 @@ func updateDomainAPIHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	if err != nil {
 		switch err {
-		case packages.DomainFQDNRequired:
+		case packages.ErrDomainFQDNRequired:
 			warningf("add/update domain: %s: %s", fqdn, err)
 			jsonresponse.BadRequest(w, api.ErrDomainFQDNRequired)
 			return
-		case packages.DomainNotFound:
+		case packages.ErrDomainNotFound:
 			warningf("add/update domain: %s: %s", fqdn, err)
 			jsonresponse.BadRequest(w, api.ErrDomainNotFound)
 			return
-		case packages.Forbidden:
+		case packages.ErrForbidden:
 			warningf("add/update domain: %s: %s", fqdn, err)
 			jsonresponse.Forbidden(w, api.ErrForbidden)
 			return
-		case packages.DomainAlreadyExists:
+		case packages.ErrDomainAlreadyExists:
 			warningf("add/update domain: %s: %s", fqdn, err)
 			jsonresponse.BadRequest(w, api.ErrDomainAlreadyExists)
 			return
@@ -396,11 +396,11 @@ func deleteDomainAPIHandler(w http.ResponseWriter, r *http.Request) {
 	domain, err := srv.PackagesService.DeleteDomain(id, u.ID)
 	if err != nil {
 		switch err {
-		case packages.DomainNotFound:
+		case packages.ErrDomainNotFound:
 			srv.Logger.Warningf("delete domain api: delete domain %s: %s", id, err)
 			jsonresponse.BadRequest(w, api.ErrDomainNotFound)
 			return
-		case packages.Forbidden:
+		case packages.ErrForbidden:
 			srv.Logger.Warningf("delete domain api: delete domain %s: %s", id, err)
 			jsonresponse.Forbidden(w, api.ErrForbidden)
 			return
@@ -436,11 +436,11 @@ func domainsAPIHandler(w http.ResponseWriter, r *http.Request) {
 	domains, err := srv.PackagesService.DomainsByUser(u.ID, startRef, limit)
 	if err != nil {
 		switch err {
-		case packages.DomainNotFound:
+		case packages.ErrDomainNotFound:
 			srv.Logger.Warningf("domains api: domains by user %s: start ref %q: %s", u.ID, startRef, err)
 			jsonresponse.BadRequest(w, api.ErrDomainNotFound)
 			return
-		case nil, packages.UserDoesNotExist:
+		case nil, packages.ErrUserDoesNotExist:
 		default:
 			srv.Logger.Errorf("domains api: domains by user %s: start ref %q: %s", u.ID, startRef, err)
 			jsonresponse.InternalServerError(w, nil)
@@ -473,7 +473,7 @@ func domainUsersAPIHandler(w http.ResponseWriter, r *http.Request) {
 
 	domain, err := srv.PackagesService.Domain(id)
 	if err != nil {
-		if err == packages.DomainNotFound {
+		if err == packages.ErrDomainNotFound {
 			srv.Logger.Warningf("domain users api: domain %s: %s", id, err)
 			jsonresponse.BadRequest(w, api.ErrDomainNotFound)
 			return
@@ -492,7 +492,7 @@ func domainUsersAPIHandler(w http.ResponseWriter, r *http.Request) {
 	users, err := srv.PackagesService.DomainUsers(id)
 	if err != nil {
 		switch err {
-		case packages.DomainNotFound:
+		case packages.ErrDomainNotFound:
 			srv.Logger.Warningf("domain users api: domain users %s: %s", id, err)
 			jsonresponse.BadRequest(w, api.ErrDomainNotFound)
 			return
@@ -522,7 +522,7 @@ func grantDomainUserAPIHandler(w http.ResponseWriter, r *http.Request) {
 
 	grantUser, err := srv.UserService.User(userID)
 	if err != nil {
-		if err == user.UserNotFound {
+		if err == user.ErrUserNotFound {
 			srv.Logger.Warningf("domain user grant api: user %s: domain %s: get user %s: %s", u.ID, domainID, userID, err)
 			jsonresponse.BadRequest(w, api.ErrUserDoesNotExist)
 			return
@@ -533,13 +533,13 @@ func grantDomainUserAPIHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	err = srv.PackagesService.AddUserToDomain(domainID, grantUser.ID, u.ID)
 	switch err {
-	case packages.DomainNotFound:
+	case packages.ErrDomainNotFound:
 		srv.Logger.Warningf("domain user grant api: user %s: add user %s to domain %s: %s", u.ID, userID, domainID, err)
 		jsonresponse.BadRequest(w, api.ErrDomainNotFound)
-	case packages.UserExists:
+	case packages.ErrUserExists:
 		srv.Logger.Warningf("domain user grant api: user %s: add user %s to domain %s: %s", u.ID, userID, domainID, err)
 		jsonresponse.BadRequest(w, api.ErrUserAlreadyGranted)
-	case packages.Forbidden:
+	case packages.ErrForbidden:
 		srv.Logger.Warningf("domain user grant api: user %s: add user %s to domain %s: %s", u.ID, userID, domainID, err)
 		jsonresponse.Forbidden(w, nil)
 	case nil:
@@ -562,7 +562,7 @@ func revokeDomainUserAPIHandler(w http.ResponseWriter, r *http.Request) {
 
 	revokeUser, err := srv.UserService.User(userID)
 	if err != nil {
-		if err == user.UserNotFound {
+		if err == user.ErrUserNotFound {
 			srv.Logger.Warningf("domain user revoke api: user %s: domain %s: get user %s: %s", u.ID, domainID, userID, err)
 			jsonresponse.BadRequest(w, api.ErrUserDoesNotExist)
 			return
@@ -573,13 +573,13 @@ func revokeDomainUserAPIHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	err = srv.PackagesService.RemoveUserFromDomain(domainID, revokeUser.ID, u.ID)
 	switch err {
-	case packages.DomainNotFound:
+	case packages.ErrDomainNotFound:
 		srv.Logger.Warningf("domain user revoke api: user %s: add user %s to domain %s: %s", u.ID, userID, domainID, err)
 		jsonresponse.BadRequest(w, api.ErrDomainNotFound)
-	case packages.UserDoesNotExist:
+	case packages.ErrUserDoesNotExist:
 		srv.Logger.Warningf("domain user revoke api: user %s: add user %s to domain %s: %s", u.ID, userID, domainID, err)
 		jsonresponse.BadRequest(w, api.ErrUserNotGranted)
-	case packages.Forbidden:
+	case packages.ErrForbidden:
 		srv.Logger.Warningf("domain user revoke api: user %s: add user %s to domain %s: %s", u.ID, userID, domainID, err)
 		jsonresponse.Forbidden(w, nil)
 	case nil:

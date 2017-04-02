@@ -24,7 +24,7 @@ func dashboardHandler(w http.ResponseWriter, r *http.Request) {
 	for {
 		response, err := srv.PackagesService.DomainsByUser(u.ID, token, 0)
 		if err != nil {
-			if err == packages.UserDoesNotExist || err == packages.DomainNotFound {
+			if err == packages.ErrUserDoesNotExist || err == packages.ErrDomainNotFound {
 				srv.Logger.Warningf("dashboard: user domains %s: %s", u.ID, err)
 				break
 			}
@@ -59,7 +59,7 @@ func dashboardHandler(w http.ResponseWriter, r *http.Request) {
 	for _, domain := range domains {
 		cl, err := srv.PackagesService.ChangelogForDomain(domain.ID, "", changelogLimit)
 		if err != nil {
-			if err == packages.DomainNotFound {
+			if err == packages.ErrDomainNotFound {
 				srv.Logger.Warningf("dashboard: domain changelog %s: %s", domain.ID, err)
 				continue
 			}

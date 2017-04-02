@@ -142,7 +142,7 @@ func apiNetworksFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 		AuthorizedNetworks: &authorizedNetworks,
 	})
 	if err != nil {
-		if err == key.KeyNotFound {
+		if err == key.ErrKeyNotFound {
 			srv.Logger.Warningf("api networks fe api: update key %s: %s", u.ID, err)
 			jsonresponse.NotFound(w, jsonresponse.NewMessage("API key not found"))
 			return

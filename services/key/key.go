@@ -6,9 +6,8 @@
 package key
 
 import (
+	"errors"
 	"net"
-
-	apiClient "resenje.org/httputils/client/api"
 )
 
 type Service interface {
@@ -40,11 +39,9 @@ type KeysPage struct {
 	Count    int    `json:"count,omitempty"`
 }
 
-var ErrorRegistry = apiClient.NewMapErrorRegistry(nil, nil)
-
 // Errors that are related to the Key Service.
 var (
-	KeyNotFound         = ErrorRegistry.MustAddMessageError(1000, "key not found")
-	KeyRefAlreadyExists = ErrorRegistry.MustAddMessageError(1001, "key reference already exists")
-	KeyRefRequired      = ErrorRegistry.MustAddMessageError(1002, "key reference required")
+	ErrKeyNotFound         = errors.New("key not found")
+	ErrKeyRefAlreadyExists = errors.New("key reference already exists")
+	ErrKeyRefRequired      = errors.New("key reference required")
 )

@@ -82,7 +82,7 @@ func getSession(r *http.Request) (ses *session.Session, rr *http.Request, err er
 	}
 
 	ses, err = srv.SessionService.Session(cookie.Value)
-	if err == session.SessionNotFound {
+	if err == session.ErrSessionNotFound {
 		ses, err = nil, nil
 	}
 	return

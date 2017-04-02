@@ -14,21 +14,19 @@ import (
 	"gopherpit.com/gopherpit/services/notification"
 )
 
-// Service implements gopherpit.com/gopherpit/services/notification.Service
+// Client implements gopherpit.com/gopherpit/services/notification.Service
 // interface.
-type Service struct {
-	// Client provides HTTP request making functionality.
-	Client *apiClient.Client
+type Client struct {
+	*apiClient.Client
 }
 
-// NewService creates a new Service and injects notification.ErrorRegistry
-// in the API Client.
-func NewService(c *apiClient.Client) *Service {
+// NewClient creates a new Client.
+func NewClient(c *apiClient.Client) *Client {
 	if c == nil {
 		c = &apiClient.Client{}
 	}
-	c.ErrorRegistry = notification.ErrorRegistry
-	return &Service{Client: c}
+	c.ErrorRegistry = errorRegistry
+	return &Client{Client: c}
 }
 
 // SendEmailResponse is expected structure of JSON-encoded response
@@ -39,13 +37,14 @@ type SendEmailResponse struct {
 
 // SendEmail sends an e-mail message and returns it's ID. Expected response
 // body is a JSON-encoded instance of SendEmailResponse.
-func (s Service) SendEmail(email notification.Email) (id string, err error) {
+func (c Client) SendEmail(email notification.Email) (id string, err error) {
 	body, err := json.Marshal(email)
 	if err != nil {
 		return
 	}
 	response := &SendEmailResponse{}
-	err = s.Client.JSON("POST", "/email", nil, bytes.NewReader(body), response)
+	err = c.JSON("POST", "/email", nil, bytes.NewReader(body), response)
+	err = getServiceError(err)
 	id = response.ID
 	return
 }
@@ -59,19 +58,20 @@ type IsEmailOptedOutResponse struct {
 // IsEmailOptedOut returns true or false if e-mail address is marked not to
 // send any e-mail messages to. Expected response body is a JSON-encoded
 // instance of IsEmailOptedOutResponse.
-func (s Service) IsEmailOptedOut(email string) (yes bool, err error) {
+func (c Client) IsEmailOptedOut(email string) (yes bool, err error) {
 	response := &IsEmailOptedOutResponse{}
-	err = s.Client.JSON("GET", "/email/opt-out/"+email, nil, nil, response)
+	err = c.JSON("GET", "/email/opt-out/"+email, nil, nil, response)
+	err = getServiceError(err)
 	yes = response.Yes
 	return
 }
 
 // OptOutEmail marks an e-mail address not to send any e-mail messages to.
-func (s Service) OptOutEmail(email string) error {
-	return s.Client.JSON("POST", "/email/opt-out/"+email, nil, nil, nil)
+func (c Client) OptOutEmail(email string) error {
+	return c.JSON("POST", "/email/opt-out/"+email, nil, nil, nil)
 }
 
 // RemoveOptedOutEmail removes an opt-out mark previosulu set by OptOutEmail.
-func (s Service) RemoveOptedOutEmail(email string) error {
-	return s.Client.JSON("DELETE", "/email/opt-out/"+email, nil, nil, nil)
+func (c Client) RemoveOptedOutEmail(email string) error {
+	return c.JSON("DELETE", "/email/opt-out/"+email, nil, nil, nil)
 }

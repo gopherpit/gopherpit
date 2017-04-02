@@ -80,7 +80,7 @@ func (cc Cache) Certificate(name string) (c *tls.Certificate, err error) {
 		cc.nameToCertificate[name] = tlsCertificate{
 			TTL: time.Now().Add(cc.ttlNoCert),
 		}
-		if err == certificate.CertificateNotFound {
+		if err == certificate.ErrCertificateNotFound {
 			return
 		}
 		err = fmt.Errorf("certificate: %s: %s", name, err)

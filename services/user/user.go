@@ -6,9 +6,8 @@
 package user // import "gopherpit.com/gopherpit/services/user"
 
 import (
+	"errors"
 	"time"
-
-	apiClient "resenje.org/httputils/client/api"
 )
 
 // User holds user account related data.
@@ -133,24 +132,22 @@ type Authenticator interface {
 	Authenticate(ref, password string) (u *User, err error)
 }
 
-var ErrorRegistry = apiClient.NewMapErrorRegistry(nil, nil)
-
-// Errors that are related to the User Services.
+// Errors that are related to the User Service.
 var (
-	Unauthorized                 = ErrorRegistry.MustAddMessageError(401, "unauthorized")
-	UserNotFound                 = ErrorRegistry.MustAddMessageError(1000, "user not found")
-	SaltNotFound                 = ErrorRegistry.MustAddMessageError(1001, "salt not found")
-	PasswordUsed                 = ErrorRegistry.MustAddMessageError(1002, "password already used")
-	UsernameMissing              = ErrorRegistry.MustAddMessageError(1100, "username missing")
-	UsernameInvalid              = ErrorRegistry.MustAddMessageError(1101, "username invalid")
-	UsernameExists               = ErrorRegistry.MustAddMessageError(1102, "username exists")
-	EmailMissing                 = ErrorRegistry.MustAddMessageError(1200, "email missing")
-	EmailInvalid                 = ErrorRegistry.MustAddMessageError(1201, "email invalid")
-	EmailExists                  = ErrorRegistry.MustAddMessageError(1202, "email exists")
-	EmailChangeEmailNotAvaliable = ErrorRegistry.MustAddMessageError(1300, "email not available for change")
-	EmailValidateTokenNotFound   = ErrorRegistry.MustAddMessageError(1301, "email validation token not found")
-	EmailValidateTokenInvalid    = ErrorRegistry.MustAddMessageError(1302, "email validation token invalid")
-	EmailValidateTokenExpired    = ErrorRegistry.MustAddMessageError(1303, "email validation token expired")
-	PasswordResetTokenNotFound   = ErrorRegistry.MustAddMessageError(1400, "password reset token not found")
-	PasswordResetTokenExpired    = ErrorRegistry.MustAddMessageError(1401, "password reset token expired")
+	ErrUnauthorized                 = errors.New("unauthorized")
+	ErrUserNotFound                 = errors.New("user not found")
+	ErrSaltNotFound                 = errors.New("salt not found")
+	ErrPasswordUsed                 = errors.New("password already used")
+	ErrUsernameMissing              = errors.New("username missing")
+	ErrUsernameInvalid              = errors.New("username invalid")
+	ErrUsernameExists               = errors.New("username exists")
+	ErrEmailMissing                 = errors.New("email missing")
+	ErrEmailInvalid                 = errors.New("email invalid")
+	ErrEmailExists                  = errors.New("email exists")
+	ErrEmailChangeEmailNotAvaliable = errors.New("email not available for change")
+	ErrEmailValidateTokenNotFound   = errors.New("email validation token not found")
+	ErrEmailValidateTokenInvalid    = errors.New("email validation token invalid")
+	ErrEmailValidateTokenExpired    = errors.New("email validation token expired")
+	ErrPasswordResetTokenNotFound   = errors.New("password reset token not found")
+	ErrPasswordResetTokenExpired    = errors.New("password reset token expired")
 )

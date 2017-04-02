@@ -80,9 +80,9 @@ func (s Service) CreateKey(ref string, o *key.Options) (k *key.Key, err error) {
 	if err := s.DB.Update(func(tx *bolt.Tx) (err error) {
 		_, err = getKeyRecordByRef(tx, []byte(ref))
 		switch err {
-		case key.KeyNotFound:
+		case key.ErrKeyNotFound:
 		case nil:
-			return key.KeyRefAlreadyExists
+			return key.ErrKeyRefAlreadyExists
 		default:
 			return err
 		}

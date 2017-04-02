@@ -313,7 +313,7 @@ func (s Service) Authenticate(ref, password string) (u *user.User, err error) {
 		u = r.export()
 		ok, err := authenticate(tx, []byte(r.id), []byte(password), salt)
 		if !ok {
-			return user.Unauthorized
+			return user.ErrUnauthorized
 		}
 		return
 	})

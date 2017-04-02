@@ -342,7 +342,7 @@ COPYRIGHT
 		if servicesOptions.SessionOptions != nil {
 			c.HTTPClient = httpClient.New(servicesOptions.SessionOptions)
 		}
-		sessionService = httpSession.NewService(c)
+		sessionService = httpSession.NewClient(c)
 	} else {
 		db, err := boltSession.NewDB(filepath.Join(gopherpitOptions.StorageDir, "session.db"), gopherpitOptions.StorageFileMode.FileMode(), nil)
 		if err != nil {
@@ -368,7 +368,7 @@ COPYRIGHT
 		if servicesOptions.UserOptions != nil {
 			c.HTTPClient = httpClient.New(servicesOptions.UserOptions)
 		}
-		userService = httpUser.NewService(c)
+		userService = httpUser.NewClient(c)
 	} else {
 		db, err := boltUser.NewDB(filepath.Join(gopherpitOptions.StorageDir, "user.db"), gopherpitOptions.StorageFileMode.FileMode(), nil)
 		if err != nil {
@@ -416,7 +416,7 @@ COPYRIGHT
 		if servicesOptions.NotificationOptions != nil {
 			c.HTTPClient = httpClient.New(servicesOptions.NotificationOptions)
 		}
-		notificationService = httpNotification.NewService(c)
+		notificationService = httpNotification.NewClient(c)
 	} else {
 		db, err := boltNotification.NewDB(filepath.Join(gopherpitOptions.StorageDir, "notification.db"), gopherpitOptions.StorageFileMode.FileMode(), nil)
 		if err != nil {
@@ -445,7 +445,7 @@ COPYRIGHT
 		if servicesOptions.CertificateOptions != nil {
 			c.HTTPClient = httpClient.New(servicesOptions.CertificateOptions)
 		}
-		certificateService = httpCertificate.NewService(c)
+		certificateService = httpCertificate.NewClient(c)
 	} else {
 		db, err := boltCertificate.NewDB(filepath.Join(gopherpitOptions.StorageDir, "certificate.db"), gopherpitOptions.StorageFileMode.FileMode(), nil)
 		if err != nil {
@@ -471,7 +471,7 @@ COPYRIGHT
 		if servicesOptions.PackagesOptions != nil {
 			c.HTTPClient = httpClient.New(servicesOptions.PackagesOptions)
 		}
-		packagesService = httpPackages.NewService(c)
+		packagesService = httpPackages.NewClient(c)
 	} else {
 		db, err := boltPackages.NewDB(filepath.Join(gopherpitOptions.StorageDir, "packages.db"), gopherpitOptions.StorageFileMode.FileMode(), nil)
 		if err != nil {
@@ -499,7 +499,7 @@ COPYRIGHT
 		if servicesOptions.KeyOptions != nil {
 			c.HTTPClient = httpClient.New(servicesOptions.KeyOptions)
 		}
-		keyService = httpKey.NewService(c)
+		keyService = httpKey.NewClient(c)
 	} else {
 		db, err := boltKey.NewDB(filepath.Join(gopherpitOptions.StorageDir, "key.db"), gopherpitOptions.StorageFileMode.FileMode(), nil)
 		if err != nil {
@@ -521,7 +521,7 @@ COPYRIGHT
 		if servicesOptions.GCRAStoreOptions != nil {
 			c.HTTPClient = httpClient.New(servicesOptions.GCRAStoreOptions)
 		}
-		gcraStoreService = httpGCRAStore.NewService(c)
+		gcraStoreService = httpGCRAStore.NewClient(c)
 	} else {
 		gcraStoreService, err = memstore.New(65536)
 		if err != nil {
