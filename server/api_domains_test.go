@@ -115,7 +115,7 @@ func TestDomainsAPI(t *testing.T) {
 				t.Errorf("expected %q, got %q", fqdn, domain.FQDN)
 			}
 			if domain.Disabled != true {
-				t.Errorf("expected %v, got %q", true, domain.Disabled)
+				t.Errorf("expected %v, got %v", true, domain.Disabled)
 			}
 		})
 		t.Run("with different owner", func(t *testing.T) {
@@ -149,7 +149,7 @@ func TestDomainsAPI(t *testing.T) {
 				t.Errorf("expected %q, got %q", fqdn, domain.FQDN)
 			}
 			if domain.CertificateIgnore != true {
-				t.Errorf("expected %v, got %q", true, domain.CertificateIgnore)
+				t.Errorf("expected %v, got %v", true, domain.CertificateIgnore)
 			}
 		})
 		t.Run("domain already exists", func(t *testing.T) {
@@ -291,7 +291,7 @@ func TestDomainsAPI(t *testing.T) {
 				t.Errorf("expected %q, got %q", fqdn, domain.FQDN)
 			}
 			if domain.Disabled != true {
-				t.Errorf("expected %v, got %q", true, domain.Disabled)
+				t.Errorf("expected %v, got %v", true, domain.Disabled)
 			}
 		})
 		t.Run("ignore certificate localhost", func(t *testing.T) {
@@ -306,7 +306,7 @@ func TestDomainsAPI(t *testing.T) {
 				t.Errorf("expected %q, got %q", fqdn, domain.FQDN)
 			}
 			if domain.CertificateIgnore != true {
-				t.Errorf("expected %v, got %q", true, domain.CertificateIgnore)
+				t.Errorf("expected %v, got %v", true, domain.CertificateIgnore)
 			}
 		})
 		t.Run("grant and revoke user", func(t *testing.T) {
