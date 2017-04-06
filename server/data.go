@@ -9,6 +9,7 @@ import (
 	"archive/tar"
 	"io"
 	"net/http"
+	"reflect"
 	"strings"
 	"time"
 
@@ -43,39 +44,15 @@ func dataDumpHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	srv.Logger.Infof("data dump: read %d bytes of salt data", n)
 
-	services := []struct {
-		Name    string
-		Service interface{}
-	}{
-		{
-			Name:    "certificate",
-			Service: srv.CertificateService,
-		},
-		{
-			Name:    "key",
-			Service: srv.KeyService,
-		},
-		{
-			Name:    "notification",
-			Service: srv.NotificationService,
-		},
-		{
-			Name:    "packages",
-			Service: srv.PackagesService,
-		},
-		{
-			Name:    "session",
-			Service: srv.SessionService,
-		},
-		{
-			Name:    "user",
-			Service: srv.UserService,
-		},
-	}
+	s := reflect.ValueOf(srv.Options)
 
-	for _, service := range services {
-		if u, ok := service.Service.(dataDump.Interface); ok {
-			srv.Logger.Infof("data dump: dumping %s service data", service.Name)
+	for i := 0; i < s.NumField(); i++ {
+		if !s.Field(i).CanInterface() {
+			continue
+		}
+		if u, ok := s.Field(i).Interface().(dataDump.Interface); ok {
+			name := s.Type().Field(i).Name
+			srv.Logger.Infof("data dump: dumping %s service data", name)
 			dump, err := u.DataDump(nil)
 			if err != nil {
 				srv.Logger.Errorf("data dump: read dump file %s: %s", dump.Name, err)
@@ -102,10 +79,8 @@ func dataDumpHandler(w http.ResponseWriter, r *http.Request) {
 					return
 				}
 				length += n
-				srv.Logger.Infof("data dump: read %d bytes of %s service data", n, service.Name)
+				srv.Logger.Infof("data dump: read %d bytes of %s service data", n, name)
 			}
-		} else {
-			srv.Logger.Infof("data dump: skipping %s service dump", service.Name)
 		}
 	}
 
