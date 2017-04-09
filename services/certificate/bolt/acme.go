@@ -130,7 +130,7 @@ func (s *Service) acmeUser() (u *acmeUser, err error) {
 	_, err = os.Stat(filename)
 	if err != nil {
 		if os.IsNotExist(err) {
-			err = certificate.ACMEUserNotFound
+			err = certificate.ErrACMEUserNotFound
 			return
 		}
 		return
@@ -194,12 +194,12 @@ func loadPEMCertificates(pemBlock []byte) ([][]byte, error) {
 			break
 		}
 		if derBlock.Type != "CERTIFICATE" {
-			return nil, certificate.CertificateInvalid
+			return nil, certificate.ErrCertificateInvalid
 		}
 		certs = append(certs, derBlock.Bytes)
 	}
 	if len(certs) == 0 {
-		return nil, certificate.CertificateInvalid
+		return nil, certificate.ErrCertificateInvalid
 	}
 	return certs, nil
 }

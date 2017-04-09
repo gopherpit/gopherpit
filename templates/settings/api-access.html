@@ -1,0 +1,217 @@
+[[/*
+  Copyright (c) 2017, Janoš Guljaš <janos@resenje.org>
+  All rights reserved.
+  Use of this source code is governed by a BSD-style
+  license that can be found in the LICENSE file.
+*/]]
+
+
+[[ define "title" ]]Settings - API access - GopherPit[[ end ]]
+
+[[ define "hero-class" ]]is-dark is-bold[[ end ]]
+
+[[ define "script" ]]
+<script>
+  var cidrv4 = /^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/([0-9]|[1-2][0-9]|3[0-2]))$/;
+  var cidrv6 = /^s*((([0-9A-Fa-f]{1,4}:){7}([0-9A-Fa-f]{1,4}|:))|(([0-9A-Fa-f]{1,4}:){6}(:[0-9A-Fa-f]{1,4}|((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3})|:))|(([0-9A-Fa-f]{1,4}:){5}(((:[0-9A-Fa-f]{1,4}){1,2})|:((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3})|:))|(([0-9A-Fa-f]{1,4}:){4}(((:[0-9A-Fa-f]{1,4}){1,3})|((:[0-9A-Fa-f]{1,4})?:((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){3}(((:[0-9A-Fa-f]{1,4}){1,4})|((:[0-9A-Fa-f]{1,4}){0,2}:((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){2}(((:[0-9A-Fa-f]{1,4}){1,5})|((:[0-9A-Fa-f]{1,4}){0,3}:((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){1}(((:[0-9A-Fa-f]{1,4}){1,6})|((:[0-9A-Fa-f]{1,4}){0,4}:((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3}))|:))|(:(((:[0-9A-Fa-f]{1,4}){1,7})|((:[0-9A-Fa-f]{1,4}){0,5}:((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3}))|:)))(%.+)?s*(\/([0-9]|[1-9][0-9]|1[0-1][0-9]|12[0-8]))?$/;
+  var allIPv4 = '0.0.0.0/0';
+  var allIPv6 = '::/0';
+
+  new Vue({
+    el: "#api",
+    data: {
+      secret: "[[ .Key.Secret ]]",
+      keyForm: {
+        fields: {},
+        errors: [],
+        fieldErrors: {},
+        isLoading: false
+      },
+      regenerateForm: {
+        fields: {},
+        errors: [],
+        fieldErrors: {},
+        isLoading: false
+      },
+      networksForm: {
+        new: "",
+        fields: {
+          authorized_networks: [
+            [[- range $i, $network := .Key.AuthorizedNetworks -]]
+              [[ if ne $i 0 ]],[[ end ]]"[[ $network.String ]]"
+            [[- end -]]
+          ]
+        },
+        errors: [],
+        fieldErrors: {},
+        isLoading: false
+      },
+    },
+    methods: {
+      enableApi: _.throttle(function() {
+        var app = this;
+        httpPost(app.keyForm, '/i/api/key', function(response) {
+          if (response.data != undefined) {
+            app.secret = response.data.secret;
+            app.networksForm.fields.authorized_networks = response.data.authorized_networks || []
+          };
+        })
+      }, 500),
+      disableApi: _.throttle(function() {
+        var app = this;
+        httpDelete(app.keyForm, '/i/api/key', function(response) {
+          app.secret = "";
+          app.networksForm.fields.authorized_networks = []
+        })
+      }, 500),
+      regenerateSecret: _.throttle(function() {
+        var app = this;
+        httpPost(app.regenerateForm, '/i/api/secret', function(response) {
+          app.secret = response.data.secret
+        })
+      }, 500),
+      saveNetworks: _.throttle(function() {
+        var app = this;
+        httpPost(app.networksForm, '/i/api/networks', function(response) {
+          app.networksForm.fields.authorized_networks = response.data.authorized_networks || []
+        })
+      }, 500),
+      addNetwork: _.throttle(function(value) {
+        if (!value) {
+          value = this.networksForm.new && this.networksForm.new.trim();
+          if (!value) {
+            return
+          }
+        };
+        if (this.networkExistsOrInvalid(value)) {
+          return
+        }
+        this.networksForm.fields.authorized_networks.push(value);
+        this.networksForm.new = '';
+        this.saveNetworks()
+      }, 500),
+      removeNetwork: _.throttle(function(network) {
+        var app = this;
+        app.networksForm.fields.authorized_networks.splice(app.networksForm.fields.authorized_networks.indexOf(network), 1);
+        this.saveNetworks()
+      }, 500),
+      addIPv4Networks: function() {
+        this.addNetwork(allIPv4)
+      },
+      addIPv6Networks: function() {
+        this.addNetwork(allIPv6)
+      },
+      formatCIDR: function(cidr) {
+        if (cidr == allIPv4) {
+          return 'All IPv4 addresses'
+        };
+        if (cidr == allIPv6) {
+          return 'All IPv6 addresses'
+        }
+        return cidr
+      },
+      networkExists: function(network) {
+        return _.includes(this.networksForm.fields.authorized_networks, network)
+      },
+      networkExistsOrInvalid: function(network) {
+        if (this.networkExists(network)) {
+          return true
+        };
+        if (cidrv4.test(network)) {
+          return false
+        }
+        if (cidrv6.test(network)) {
+          return false
+        }
+        return true
+      }
+    }
+  })
+</script>
+[[ end ]]
+
+[[ define "hero" ]]
+<div class="hero-body has-text-centered">
+  <div class="container">
+    <h1 class="title">
+      Settings
+    </h1>
+    <h2 class="subtitle">
+      API access
+    </h2>
+  </div>
+</div>
+[[ end ]]
+
+[[ define "main" ]]
+<div class="column is-8 is-offset-2">
+  <div class="columns">
+    <div class="column is-one-quarter">
+      <aside class="menu">
+        <p class="menu-label">
+          Settings
+        </p>
+        <ul class="menu-list">
+          <li><a href="/settings">Basic information</a></li>
+          [[ if .APIEnabled ]]
+          <li><a class="is-active" href="/settings/api">API access</a></li>
+          [[ end ]]
+          <li><a href="/settings/email">E-mail address</a></li>
+          <li><a href="/settings/notifications">Notifications</a></li>
+          <li><a href="/settings/password">Password</a></li>
+          <li><a href="/settings/delete-account">Delete account</a></li>
+        </ul>
+      </aside>
+    </div>
+    <div class="column content" id="api">
+      <h2 class="title">Personal Access Token</h2>
+      <p>Check our <a href="/docs/api">API documentation</a>.</p>
+      <div class="notification is-danger" v-for="err in keyForm.errors" v-cloak v-html="err"></div>
+      <div class="notification is-danger" v-for="err in regenerateForm.errors" v-cloak v-html="err"></div>
+      <div v-if="secret" v-cloak>
+        <article class="message is-dark">
+          <div class="message-body">
+            Your API key:
+            <strong v-text="secret"></strong>
+            <button class="button is-small pull-right" title="Regenerate token" v-on:click="regenerateSecret" v-bind:class="{'is-loading': regenerateForm.isLoading}">
+              <span class="icon is-small">
+                <i class="fa fa-refresh"></i>
+              </span>
+            </button>
+          </div>
+        </article>
+        <button type="button" class="button is-primary" v-on:click="disableApi" v-bind:class="{'is-loading': keyForm.isLoading}">Disable API access for your account</button>
+      </div>
+      <div v-else v-cloak>
+        <button type="button" class="button is-primary" v-on:click="enableApi" v-bind:class="{'is-loading': keyForm.isLoading}">Enable API access for your account</button>
+      </div>
+      <div v-if="secret" v-cloak>
+        <span></span>
+        <h2 class="title">Access Control</h2>
+        <p>The following subnets are allowed to use this API key.</p>
+        <div class="notification is-warning" v-if="networksForm.fields.authorized_networks.length == 0 && networksForm.errors.length == 0" v-cloak>Please, add authorized subnets bellow.</div>
+        <div class="notification is-danger" v-for="err in networksForm.errors" v-cloak v-html="err"></div>
+        <table>
+          <tr v-for="n in networksForm.fields.authorized_networks">
+            <td class="is-middle">
+              <code v-text="formatCIDR(n)"></code>
+              <span class="control help is-danger" v-for="err in networksForm.fieldErrors['authorized_network_'+n]" v-cloak v-html="err"></span>
+            </td>
+            <td><button type="button" class="button is-primary" v-on:click="removeNetwork(n)" v-bind:class="{'is-disabled': networksForm.isLoading}">Remove</button></td>
+          </tr>
+          <tr>
+            <td><input class="input" type="text" placeholder="IP/Mask" v-model="networksForm.new" v-on:keyup.enter="addNetwork(networksForm.new)" v-bind:class="{'is-disabled': networksForm.isLoading}"></td>
+            <td><button type="button" class="button is-primary" v-on:click="addNetwork(networksForm.new)" v-bind:class="{'is-disabled': !networksForm.new || networkExistsOrInvalid(networksForm.new) || networksForm.isLoading}">Add</button></td>
+          </tr>
+          <tr>
+            <td colspan="2">
+              <button type="button" class="button is-primary" v-on:click="addIPv4Networks" v-bind:class="{'is-disabled': networksForm.isLoading}" v-if="!networkExists(allIPv4)" v-cloak>Allow All IPv4</button>
+              <button type="button" class="button is-primary" v-on:click="addIPv6Networks" v-bind:class="{'is-disabled': networksForm.isLoading}" v-if="!networkExists(allIPv6)" v-cloak>Allow All IPv6</button>
+            </td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+[[ end ]]

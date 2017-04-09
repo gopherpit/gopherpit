@@ -43,7 +43,7 @@ func (s Service) PeriodicCleanup() (err error) {
 							return err
 						}
 						if emailValidation.ExpirationTime.IsZero() {
-							if _, err := getUserRecordByID(tx, []byte(emailValidation.UserID)); err == user.UserNotFound {
+							if _, err := getUserRecordByID(tx, []byte(emailValidation.UserID)); err == user.ErrUserNotFound {
 								if err := bucket.Delete(k); err != nil {
 									return err
 								}

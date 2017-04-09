@@ -6,6 +6,7 @@
 package boltPackages
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -122,6 +123,10 @@ func (s Service) UpdateDomain(ref string, o *packages.DomainOptions, byUserID st
 		if err != nil {
 			return
 		}
+		if !r.isOwner(byUserID) {
+			err = packages.ErrForbidden
+			return
+		}
 		crd = chagelogRecordData{
 			domainID: r.id,
 			fqdn:     r.FQDN,
@@ -147,6 +152,10 @@ func (s Service) DeleteDomain(ref, byUserID string) (d *packages.Domain, err err
 	if err = s.DB.Update(func(tx *bolt.Tx) (err error) {
 		r, err = getDomainRecord(tx, []byte(ref))
 		if err != nil {
+			return
+		}
+		if !r.isOwner(byUserID) {
+			err = packages.ErrForbidden
 			return
 		}
 		return r.delete(tx)
@@ -202,7 +211,10 @@ func (s Service) AddUserToDomain(ref, userID, byUserID string) (err error) {
 			return
 		}
 		if !d.isOwner(byUserID) {
-			err = packages.Forbidden
+			err = packages.ErrForbidden
+			return
+		} else if byUserID == userID {
+			err = packages.ErrUserExists
 			return
 		}
 		err = d.addUser(tx, []byte(userID), true)
@@ -236,7 +248,7 @@ func (s Service) RemoveUserFromDomain(ref, userID, byUserID string) (err error) 
 			return
 		}
 		if !d.isOwner(byUserID) {
-			err = packages.Forbidden
+			err = packages.ErrForbidden
 			return
 		}
 		err = d.removeUser(tx, []byte(userID))
@@ -284,6 +296,9 @@ func (s Service) Domains(startRef string, limit int) (page packages.DomainsPage,
 			k, v = c.First()
 		} else {
 			k, v = c.Seek(start)
+			if !bytes.Equal(start, k) {
+				return packages.ErrDomainNotFound
+			}
 			var prev, p []byte
 			for i := 0; i < limit; i++ {
 				p, _ = c.Prev()
@@ -341,7 +356,7 @@ func (s Service) domainsByUser(userID, startRef string, limit int, bucket []byte
 		}
 		bucket = bucket.Bucket([]byte(userID))
 		if bucket == nil {
-			return packages.UserDoesNotExist
+			return packages.ErrUserDoesNotExist
 		}
 		c := bucket.Cursor()
 		var k, v []byte
@@ -349,6 +364,9 @@ func (s Service) domainsByUser(userID, startRef string, limit int, bucket []byte
 			k, v = c.First()
 		} else {
 			k, v = c.Seek(start)
+			if !bytes.Equal(start, k) {
+				return packages.ErrDomainNotFound
+			}
 			var prev, p []byte
 			for i := 0; i < limit; i++ {
 				p, _ = c.Prev()
@@ -395,7 +413,7 @@ func (s Service) Package(id string) (p *packages.Package, err error) {
 
 func (s Service) AddPackage(o *packages.PackageOptions, byUserID string) (p *packages.Package, err error) {
 	if o.Domain == nil {
-		err = packages.PackageDomainRequired
+		err = packages.ErrPackageDomainRequired
 		return
 	}
 
@@ -407,7 +425,7 @@ func (s Service) AddPackage(o *packages.PackageOptions, byUserID string) (p *pac
 			return err
 		}
 		if !d.isUser(tx, byUserID) {
-			return packages.Forbidden
+			return packages.ErrForbidden
 		}
 		crd = chagelogRecordData{
 			userID: byUserID,
@@ -452,7 +470,7 @@ func (s Service) UpdatePackage(id string, o *packages.PackageOptions, byUserID s
 			return err
 		}
 		if !d.isUser(tx, byUserID) {
-			return packages.Forbidden
+			return packages.ErrForbidden
 		}
 		crd = chagelogRecordData{
 			userID: byUserID,
@@ -461,6 +479,17 @@ func (s Service) UpdatePackage(id string, o *packages.PackageOptions, byUserID s
 		crd.changes, err = r.update(tx, o)
 		if err != nil {
 			return err
+		}
+		// validate domain access after package update
+		if r.DomainID == "" {
+			return packages.ErrPackageDomainRequired
+		}
+		d, err = getDomainRecordByID(tx, []byte(r.DomainID))
+		if err != nil {
+			return err
+		}
+		if !d.isUser(tx, byUserID) {
+			return packages.ErrForbidden
 		}
 		if err = r.save(tx); err != nil {
 			return
@@ -493,7 +522,7 @@ func (s Service) DeletePackage(id string, byUserID string) (p *packages.Package,
 			return err
 		}
 		if !d.isUser(tx, byUserID) {
-			err = packages.Forbidden
+			err = packages.ErrForbidden
 			return
 		}
 		if err = r.delete(tx); err != nil {
@@ -550,6 +579,9 @@ func (s Service) PackagesByDomain(domainRef, startName string, limit int) (page 
 			k, v = c.First()
 		} else {
 			k, v = c.Seek(start)
+			if !bytes.Equal(start, k) {
+				return packages.ErrPackageNotFound
+			}
 			var prev, p []byte
 			for i := 0; i < limit; i++ {
 				p, _ = c.Prev()
@@ -602,7 +634,7 @@ func (s Service) ResolvePackage(path string) (resolution *packages.PackageResolu
 		for i := len(parts); i > 0; i-- {
 			path = strings.Join(parts[:i], "/")
 			packageID, err = getPackageIDByPath(tx, domainID, []byte(path))
-			if err == packages.PackageNotFound {
+			if err == packages.ErrPackageNotFound {
 				continue
 			}
 			break
@@ -645,7 +677,7 @@ func (s Service) ChangelogRecord(domainRef, id string) (record *packages.Changel
 	c, err := s.Changelog.GetConnection(t)
 	switch err {
 	case timed.ErrUnknownDB:
-		err = packages.ChangelogRecordNotFound
+		err = packages.ErrChangelogRecordNotFound
 		return
 	case nil:
 		break
@@ -657,7 +689,7 @@ func (s Service) ChangelogRecord(domainRef, id string) (record *packages.Changel
 	if err = c.DB.View(func(tx *bolt.Tx) (err error) {
 		d := []byte(domainRef)
 		r, err = getChangelogRecord(tx, d, []byte(id))
-		if err == packages.DomainNotFound {
+		if err == packages.ErrDomainNotFound {
 			d, err = getDomainIDByFQDN(tx, d)
 			if err != nil {
 				return
@@ -686,7 +718,7 @@ func (s Service) DeleteChangelogRecord(domainRef, id string) (record *packages.C
 	c, err := s.Changelog.GetConnection(t)
 	switch err {
 	case timed.ErrUnknownDB:
-		err = packages.ChangelogRecordNotFound
+		err = packages.ErrChangelogRecordNotFound
 		return
 	case nil:
 		break
@@ -698,7 +730,7 @@ func (s Service) DeleteChangelogRecord(domainRef, id string) (record *packages.C
 	if err = c.DB.Update(func(tx *bolt.Tx) (err error) {
 		d := []byte(domainRef)
 		r, err = getChangelogRecord(tx, d, []byte(id))
-		if err == packages.DomainNotFound {
+		if err == packages.ErrDomainNotFound {
 			d, err = getDomainIDByFQDN(tx, d)
 			if err != nil {
 				return
@@ -801,7 +833,7 @@ func (s Service) ChangelogForDomain(domainRef, start string, limit int) (page pa
 		switch err {
 		case timed.ErrUnknownDB:
 			// unable to get any database in the past
-			err = packages.ChangelogRecordNotFound
+			err = packages.ErrChangelogRecordNotFound
 			return
 		case nil:
 			// there is no error
@@ -843,6 +875,9 @@ func (s Service) ChangelogForDomain(domainRef, start string, limit int) (page pa
 		} else {
 			// go to the start record
 			k, v = c.Seek([]byte(start))
+			if !bytes.Equal([]byte(start), k) {
+				return packages.ErrChangelogRecordNotFound
+			}
 			if k == nil {
 				// if the record at the exact time does not exist
 				// find the previous

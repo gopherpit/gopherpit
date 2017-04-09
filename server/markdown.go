@@ -7,14 +7,17 @@ package server
 
 import (
 	"html/template"
-	"regexp"
 
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/russross/blackfriday"
 )
 
-var htmlSanitizer = bluemonday.UGCPolicy().AllowAttrs("class").Matching(regexp.MustCompile("^language-[a-zA-Z0-9]+$")).OnElements("code")
+var htmlSanitizer = bluemonday.UGCPolicy().AllowAttrs("class").Globally()
 
 func markdown(md []byte) template.HTML {
+	return template.HTML(blackfriday.MarkdownCommon(md))
+}
+
+func markdownSanitized(md []byte) template.HTML {
 	return template.HTML(htmlSanitizer.SanitizeBytes(blackfriday.MarkdownCommon(md)))
 }

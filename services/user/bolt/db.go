@@ -37,6 +37,7 @@ var (
 	bucketNameEmailValidations   = []byte("Email_Validations")
 	bucketNamePasswordResets     = []byte("Password_Resets")
 	emailRegex                   = regexp.MustCompile(`^[^@]+@[^@]+\.[^@]+$`)
+	usernameRegex                = regexp.MustCompile(`^[\pL\pN]`)
 )
 
 type userRecord struct {
@@ -81,12 +82,12 @@ func getUserID(tx *bolt.Tx, ref []byte) (id []byte, err error) {
 	if emailRegex.Match(ref) {
 		bucket := tx.Bucket(bucketNameIndexUsersEmail)
 		if bucket == nil {
-			err = user.UserNotFound
+			err = user.ErrUserNotFound
 			return
 		}
 		id = bucket.Get(bytes.ToLower(ref))
 		if id == nil {
-			err = user.UserNotFound
+			err = user.ErrUserNotFound
 		}
 		return
 	}
@@ -106,11 +107,11 @@ func getUserID(tx *bolt.Tx, ref []byte) (id []byte, err error) {
 	// to skip new IDs that match existing usernames.
 	bucket = tx.Bucket(bucketNameUsers)
 	if bucket == nil {
-		err = user.UserNotFound
+		err = user.ErrUserNotFound
 		return
 	}
 	if data := bucket.Get(ref); data == nil {
-		err = user.UserNotFound
+		err = user.ErrUserNotFound
 		return
 	}
 	id = ref
@@ -120,12 +121,12 @@ func getUserID(tx *bolt.Tx, ref []byte) (id []byte, err error) {
 func getUserSalt(tx *bolt.Tx, id []byte) (salt []byte, err error) {
 	bucket := tx.Bucket(bucketNameSalts)
 	if bucket == nil {
-		err = user.SaltNotFound
+		err = user.ErrSaltNotFound
 		return
 	}
 	salt = bucket.Get(id)
 	if salt == nil {
-		err = user.SaltNotFound
+		err = user.ErrSaltNotFound
 		return
 	}
 	return
@@ -144,7 +145,7 @@ func getUserRecord(tx *bolt.Tx, ref []byte) (r *userRecord, err error) {
 		return getUserRecordByEmail(tx, ref)
 	}
 	r, err = getUserRecordByUsername(tx, ref)
-	if err != user.UserNotFound {
+	if err != user.ErrUserNotFound {
 		return
 	}
 	return getUserRecordByID(tx, ref)
@@ -153,12 +154,12 @@ func getUserRecord(tx *bolt.Tx, ref []byte) (r *userRecord, err error) {
 func getUserRecordByID(tx *bolt.Tx, id []byte) (r *userRecord, err error) {
 	bucket := tx.Bucket(bucketNameUsers)
 	if bucket == nil {
-		err = user.UserNotFound
+		err = user.ErrUserNotFound
 		return
 	}
 	data := bucket.Get(id)
 	if data == nil {
-		err = user.UserNotFound
+		err = user.ErrUserNotFound
 		return
 	}
 	if err = json.Unmarshal(data, &r); err != nil {
@@ -172,12 +173,12 @@ func getUserRecordByEmail(tx *bolt.Tx, email []byte) (u *userRecord, err error) 
 	email = bytes.ToLower(email)
 	bucket := tx.Bucket(bucketNameIndexUsersEmail)
 	if bucket == nil {
-		err = user.UserNotFound
+		err = user.ErrUserNotFound
 		return
 	}
 	id := bucket.Get(email)
 	if id == nil {
-		err = user.UserNotFound
+		err = user.ErrUserNotFound
 		return
 	}
 	return getUserRecordByID(tx, id)
@@ -187,12 +188,12 @@ func getUserRecordByUsername(tx *bolt.Tx, username []byte) (u *userRecord, err e
 	username = bytes.TrimSpace(username)
 	bucket := tx.Bucket(bucketNameIndexUsersUsername)
 	if bucket == nil {
-		err = user.UserNotFound
+		err = user.ErrUserNotFound
 		return
 	}
 	id := bucket.Get(username)
 	if id == nil {
-		err = user.UserNotFound
+		err = user.ErrUserNotFound
 		return
 	}
 	return getUserRecordByID(tx, id)
@@ -257,26 +258,29 @@ func (r *userRecord) save(tx *bolt.Tx, usernameRequired bool) (err error) {
 	// Required fields
 	r.Email = strings.TrimSpace(strings.ToLower(r.Email))
 	if r.Email == "" {
-		return user.EmailMissing
+		return user.ErrEmailMissing
 	}
 	if !emailRegex.MatchString(r.Email) {
-		return user.EmailInvalid
+		return user.ErrEmailInvalid
 	}
 	r.Username = strings.TrimSpace(r.Username)
 	if r.Username != "" {
 		// Username can not be in email format.
 		if emailRegex.MatchString(r.Username) {
-			return user.UsernameInvalid
+			return user.ErrUsernameInvalid
+		}
+		if !usernameRegex.MatchString(r.Username) {
+			return user.ErrUsernameInvalid
 		}
 		// Username can not be the same as existing ID.
 		if bucket := tx.Bucket(bucketNameIndexUsersUsername); bucket != nil {
 			data := bucket.Get([]byte(r.Username))
 			if data != nil && string(data) != r.id {
-				return user.UsernameExists
+				return user.ErrUsernameExists
 			}
 		}
 	} else if usernameRequired {
-		return user.UsernameMissing
+		return user.ErrUsernameMissing
 	}
 
 	// existing user record
@@ -295,7 +299,7 @@ func (r *userRecord) save(tx *bolt.Tx, usernameRequired bool) (err error) {
 				return fmt.Errorf("user record save email exists: %s", err)
 			}
 			if exists {
-				return user.EmailExists
+				return user.ErrEmailExists
 			}
 		}
 	} else {
@@ -359,7 +363,7 @@ func (r *userRecord) save(tx *bolt.Tx, usernameRequired bool) (err error) {
 	}
 
 	// Generate Salt if it is missing.
-	if _, err := getUserSalt(tx, byteID); err == user.SaltNotFound {
+	if _, err := getUserSalt(tx, byteID); err == user.ErrSaltNotFound {
 		salt := make([]byte, 50)
 		_, err := rand.Read(salt)
 		if err != nil {
@@ -451,7 +455,7 @@ func setPassword(tx *bolt.Tx, id, password, salt []byte, noReuseMonths int) (err
 		c := bucket.Cursor()
 		for k, v := c.Seek([]byte(time.Now().UTC().AddDate(0, -noReuseMonths, 0).Format(keyTimeFormat))); k != nil; k, v = c.Next() {
 			if bytes.Equal(v, hash) {
-				return user.PasswordUsed
+				return user.ErrPasswordUsed
 			}
 		}
 	}
@@ -508,14 +512,14 @@ func resetPassword(tx *bolt.Tx, token, password []byte, noReuseMonths int) (err 
 	}
 	data := bucket.Get(token)
 	if len(data) == 0 {
-		return user.PasswordResetTokenNotFound
+		return user.ErrPasswordResetTokenNotFound
 	}
 	v := passwordResetRecord{}
 	if err = json.Unmarshal(data, &v); err != nil {
 		return
 	}
 	if time.Now().After(v.ExpirationTime) {
-		return user.PasswordResetTokenExpired
+		return user.ErrPasswordResetTokenExpired
 	}
 	salt, err := getUserSalt(tx, []byte(v.UserID))
 	if err != nil {
@@ -537,10 +541,10 @@ func requestEmailChange(tx *bolt.Tx, id string, email string, validationExpirati
 	switch err {
 	case nil:
 		if r != nil && r.id != id {
-			err = user.EmailChangeEmailNotAvaliable
+			err = user.ErrEmailChangeEmailNotAvaliable
 			return
 		}
-	case user.UserNotFound:
+	case user.ErrUserNotFound:
 		err = nil
 	default:
 		return
@@ -561,7 +565,7 @@ func requestEmailChange(tx *bolt.Tx, id string, email string, validationExpirati
 					return fmt.Errorf("bucket(%s).Delete(%s) %s", bucketNameEmailValidations, k, err)
 				}
 			} else {
-				return user.EmailChangeEmailNotAvaliable
+				return user.ErrEmailChangeEmailNotAvaliable
 			}
 		}
 		return nil
@@ -614,17 +618,17 @@ func (r *userRecord) changeEmail(tx *bolt.Tx, token string) (err error) {
 	}
 	data := bucket.Get([]byte(token))
 	if len(data) == 0 {
-		return user.EmailValidateTokenNotFound
+		return user.ErrEmailValidateTokenNotFound
 	}
 	v := emailValidationRecord{}
 	if err = json.Unmarshal(data, &v); err != nil {
 		return
 	}
 	if r.id != v.UserID {
-		return user.EmailValidateTokenInvalid
+		return user.ErrEmailValidateTokenInvalid
 	}
 	if !v.ExpirationTime.IsZero() && time.Now().After(v.ExpirationTime) {
-		return user.EmailValidateTokenExpired
+		return user.ErrEmailValidateTokenExpired
 	}
 	if err = bucket.Delete([]byte(token)); err != nil {
 		return

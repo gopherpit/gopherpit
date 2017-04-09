@@ -57,12 +57,12 @@ func getSessionRecord(tx *bolt.Tx, id []byte) (s *sessionRecord, err error) {
 	}
 	bucket := tx.Bucket(bucketNameSessions)
 	if bucket == nil {
-		err = session.SessionNotFound
+		err = session.ErrSessionNotFound
 		return
 	}
 	data := bucket.Get(id)
 	if data == nil {
-		err = session.SessionNotFound
+		err = session.ErrSessionNotFound
 		return
 	}
 	if err = json.Unmarshal(data, &s); err != nil {
@@ -111,7 +111,7 @@ func delete(id []byte, tx *bolt.Tx) (err error) {
 		return
 	}
 	if v := bucket.Get(id); v == nil {
-		return session.SessionNotFound
+		return session.ErrSessionNotFound
 	}
 	if err := bucket.Delete(id); err != nil {
 		return err

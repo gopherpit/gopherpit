@@ -40,15 +40,13 @@
   </div>
 </div>
 <div class="hero-foot">
-  <div class="tabs is-boxed">
-    <div class="container">
-      <ul>
-        <li><a href="/domain/[[ .Domain.FQDN ]]">Packages</a></li>
-        <li class="is-active"><a href="/domain/[[ .Domain.FQDN ]]/team">Team</a></li>
-        <li><a href="/domain/[[ .Domain.FQDN ]]/settings">Settings</a></li>
-        <li><a href="/domain/[[ .Domain.FQDN ]]/changelog">Changelog</a></li>
-      </ul>
-    </div>
+  <div class="tabs is-centered is-boxed">
+    <ul>
+      <li><a href="/domain/[[ .Domain.FQDN ]]">Packages</a></li>
+      <li class="is-active"><a href="/domain/[[ .Domain.FQDN ]]/team">Team</a></li>
+      <li><a href="/domain/[[ .Domain.FQDN ]]/settings">Settings</a></li>
+      <li><a href="/domain/[[ .Domain.FQDN ]]/changelog">Changelog</a></li>
+    </ul>
   </div>
 </div>
 [[ end ]]
@@ -76,24 +74,28 @@
       <div class="notification is-danger" v-for="err in errors" v-cloak v-html="err"></div>
       <p class="content">You can transfer complete domain ownership to another user by e-mail, username or ID.</p>
       <label class="label">User e-mail, username or ID</label>
-      <p class="control">
-        <input class="input" type="text" v-model="fields.id" autofocus>
-        <p class="control help is-danger" v-for="err in fieldErrors.id" v-cloak v-html="err"></p>
-      </p>
-      <p class="control">
-        <nav class="level">
-          <div class="level-left">
-          </div>
-          <div class="level-right">
-            <div class="level-item">
-              <p class="control">
-                <a class="ui button" href="/domain/[[ .Domain.FQDN ]]/team">Cancel</a> 
-                <button type="submit" class="button is-primary" v-bind:class="{'is-loading': isLoading}">Yes, change owner!</button>
-              </p>
+      <div class="field">
+        <p class="control">
+          <input class="input" type="text" v-model="fields.id" v-bind:class="{'is-danger': fieldErrors.id}" autofocus>
+        </p>
+        <p class="help is-danger" v-for="err in fieldErrors.id" v-cloak v-html="err"></p>
+      </div>
+      <div class="field">
+        <p class="control">
+          <nav class="level">
+            <div class="level-left">
             </div>
-          </div>
-        </nav>
-      </p>
+            <div class="level-right">
+              <div class="level-item">
+                <p class="control">
+                  <a class="ui button" href="/domain/[[ .Domain.FQDN ]]/team">Cancel</a> 
+                  <button type="submit" class="button is-primary" v-bind:class="{'is-loading': isLoading}">Yes, change owner!</button>
+                </p>
+              </div>
+            </div>
+          </nav>
+        </p>
+      </div>
     </form>
   </div>
 </div>

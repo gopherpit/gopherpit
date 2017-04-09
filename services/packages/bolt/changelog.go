@@ -106,17 +106,17 @@ func getChangelogRecord(tx *bolt.Tx, domainID, id []byte) (r *changelogRecord, e
 	}
 	bucket := tx.Bucket(bucketNameChangelogDomainID)
 	if bucket == nil {
-		err = packages.ChangelogRecordNotFound
+		err = packages.ErrChangelogRecordNotFound
 		return
 	}
 	bucket = bucket.Bucket(domainID)
 	if bucket == nil {
-		err = packages.DomainNotFound
+		err = packages.ErrDomainNotFound
 		return
 	}
 	data := bucket.Get(id)
 	if data == nil {
-		err = packages.ChangelogRecordNotFound
+		err = packages.ErrChangelogRecordNotFound
 		return
 	}
 	if err = json.Unmarshal(data, &r); err != nil {

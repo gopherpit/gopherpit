@@ -5,7 +5,10 @@
 
 package packages
 
-import "time"
+import (
+	"errors"
+	"time"
+)
 
 type Service interface {
 	DomainService
@@ -85,9 +88,18 @@ var (
 	VCSSubversion VCS = "svn"
 )
 
+var VCSSchemes = map[VCS][]string{
+	VCSGit:        {"https", "http", "git", "git+ssh", "ssh"},
+	VCSMercurial:  {"https", "http", "ssh"},
+	VCSBazaar:     {"https", "http", "bzr", "bzr+ssh"},
+	VCSSubversion: {"https", "http", "svn", "svn+ssh"},
+}
+
+type RefType string
+
 const (
-	RefTypeBranch = "branch"
-	RefTypeTag    = "tag"
+	RefTypeBranch RefType = "branch"
+	RefTypeTag    RefType = "tag"
 )
 
 // Package hods data that represents Go package location
@@ -99,7 +111,7 @@ type Package struct {
 	Path        string  `json:"path"`
 	VCS         VCS     `json:"vcs"`
 	RepoRoot    string  `json:"repo-root"`
-	RefType     string  `json:"ref-type"`
+	RefType     RefType `json:"ref-type"`
 	RefName     string  `json:"ref-name"`
 	GoSource    string  `json:"go-source,omitempty"`
 	RedirectURL string  `json:"redirect-url,omitempty"`
@@ -111,15 +123,15 @@ func (p Package) ImportPrefix() string {
 }
 
 type PackageOptions struct {
-	Domain      *string `json:"domain,omitempty"`
-	Path        *string `json:"path,omitempty"`
-	VCS         *VCS    `json:"vcs,omitempty"`
-	RepoRoot    *string `json:"repo-root,omitempty"`
-	RefType     *string `json:"ref-type"`
-	RefName     *string `json:"ref-name"`
-	GoSource    *string `json:"go-source,omitempty"`
-	RedirectURL *string `json:"redirect-url,omitempty"`
-	Disabled    *bool   `json:"disabled,omitempty"`
+	Domain      *string  `json:"domain,omitempty"`
+	Path        *string  `json:"path,omitempty"`
+	VCS         *VCS     `json:"vcs,omitempty"`
+	RepoRoot    *string  `json:"repo-root,omitempty"`
+	RefType     *RefType `json:"ref-type"`
+	RefName     *string  `json:"ref-name"`
+	GoSource    *string  `json:"go-source,omitempty"`
+	RedirectURL *string  `json:"redirect-url,omitempty"`
+	Disabled    *bool    `json:"disabled,omitempty"`
 }
 
 type Packages []Package
@@ -133,14 +145,14 @@ type PackagesPage struct {
 }
 
 type PackageResolution struct {
-	ImportPrefix string `json:"import-prefix"`
-	VCS          VCS    `json:"vcs"`
-	RepoRoot     string `json:"repo-root"`
-	RefType      string `json:"ref-type"`
-	RefName      string `json:"ref-name"`
-	GoSource     string `json:"go-source,omitempty"`
-	RedirectURL  string `json:"redirect-url,omitempty"`
-	Disabled     bool   `json:"disabled,omitempty"`
+	ImportPrefix string  `json:"import-prefix"`
+	VCS          VCS     `json:"vcs"`
+	RepoRoot     string  `json:"repo-root"`
+	RefType      RefType `json:"ref-type"`
+	RefName      string  `json:"ref-name"`
+	GoSource     string  `json:"go-source,omitempty"`
+	RedirectURL  string  `json:"redirect-url,omitempty"`
+	Disabled     bool    `json:"disabled,omitempty"`
 }
 
 type Action string
@@ -208,18 +220,23 @@ type Changelog struct {
 
 // Errors that are related to the Packages Service.
 var (
-	Forbidden                 = NewError(403, "forbidden")
-	DomainNotFound            = NewError(1000, "domain not found")
-	DomainAlreadyExists       = NewError(1001, "domain already exists")
-	DomainFQDNRequired        = NewError(1010, "domain fqdn required")
-	DomainOwnerUserIDRequired = NewError(1020, "domain owner user id required")
-	UserDoesNotExist          = NewError(1100, "user does not exist")
-	UserExists                = NewError(1101, "user exists")
-	PackageNotFound           = NewError(2000, "package not found")
-	PackageAlreadyExists      = NewError(2001, "package already exists")
-	PackageDomainRequired     = NewError(2010, "package domain required")
-	PackagePathRequired       = NewError(2011, "package path required")
-	PackageVCSRequired        = NewError(2012, "package vcs required")
-	PackageRepoRootRequired   = NewError(2013, "package repo rut required")
-	ChangelogRecordNotFound   = NewError(3000, "changelog record not found")
+	ErrForbidden                     = errors.New("forbidden")
+	ErrDomainNotFound                = errors.New("domain not found")
+	ErrDomainAlreadyExists           = errors.New("domain already exists")
+	ErrDomainFQDNRequired            = errors.New("domain fqdn required")
+	ErrDomainOwnerUserIDRequired     = errors.New("domain owner user id required")
+	ErrUserDoesNotExist              = errors.New("user does not exist")
+	ErrUserExists                    = errors.New("user exists")
+	ErrPackageNotFound               = errors.New("package not found")
+	ErrPackageAlreadyExists          = errors.New("package already exists")
+	ErrPackageDomainRequired         = errors.New("package domain required")
+	ErrPackagePathRequired           = errors.New("package path required")
+	ErrPackageVCSRequired            = errors.New("package vcs required")
+	ErrPackageRepoRootRequired       = errors.New("package repository root required")
+	ErrPackageRepoRootInvalid        = errors.New("package repository root invalid")
+	ErrPackageRepoRootSchemeRequired = errors.New("package repository root scheme required")
+	ErrPackageRepoRootSchemeInvalid  = errors.New("package repository root scheme invalid")
+	ErrPackageRepoRootHostInvalid    = errors.New("package repository root host invalid")
+	ErrPackageRefChangeRejected      = errors.New("Package Reference Change Rejected")
+	ErrChangelogRecordNotFound       = errors.New("changelog record not found")
 )

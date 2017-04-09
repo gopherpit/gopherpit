@@ -9,10 +9,14 @@ package apiClient
 // If the error is based on HTTP response status, message is status text
 // and code status code.
 type Error struct {
-	Message string
-	Code    int
+	// Message is a text that describes an error.
+	Message string `json:"message"`
+	// Code is a number that identifies error.
+	// It allows error identification when serialization is involved.
+	Code int `json:"code"`
 }
 
+// Error returns a Message value.
 func (e *Error) Error() string {
 	return e.Message
 }

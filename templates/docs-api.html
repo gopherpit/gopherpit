@@ -1,0 +1,24 @@
+[[/*
+  Copyright (c) 2017, Janoš Guljaš <janos@resenje.org>
+  All rights reserved.
+  Use of this source code is governed by a BSD-style
+  license that can be found in the LICENSE file.
+*/]]
+
+
+[[ define "style" ]]
+<link rel="stylesheet" href="[[ "highlight.min.css" | asset ]]">
+[[ end ]]
+
+[[ define "script" ]]
+<script src="[[ "highlight.min.js" | asset ]]"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+[[ end ]]
+
+[[ define "main" ]]
+<div class="content has-text-left column is-8 is-offset-2 card">
+  <div class="card-content">
+    [[ fragment "docs-api" ]]
+  </div>
+</div>
+[[ end ]]

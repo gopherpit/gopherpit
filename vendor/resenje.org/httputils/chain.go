@@ -24,7 +24,7 @@ func FinalHandler(h http.Handler) func(http.Handler) http.Handler {
 	}
 }
 
-// FinalHandler is a helper function to wrap the last function with signature
+// FinalHandlerFunc is a helper function to wrap the last function with signature
 // func(w http.ResponseWriter, r *http.Request) in the ChainHandlers function.
 func FinalHandlerFunc(h func(w http.ResponseWriter, r *http.Request)) func(http.Handler) http.Handler {
 	return func(_ http.Handler) http.Handler {

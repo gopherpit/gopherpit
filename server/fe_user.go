@@ -10,121 +10,147 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"gopherpit.com/gopherpit/services/user"
+	"gopherpit.com/gopherpit/services/key"
 )
 
-func (s Server) logoutHandler(w http.ResponseWriter, r *http.Request) {
-	r, err := s.logout(w, r)
+func logoutHandler(w http.ResponseWriter, r *http.Request) {
+	r, err := logout(w, r)
 	if err != nil {
-		s.logger.Errorf("logout: %s", err)
-		s.htmlServerError(w, r, err)
+		srv.Logger.Errorf("logout: %s", err)
+		htmlServerError(w, r, err)
 		return
 	}
 	http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 }
 
-func (s Server) registrationHandler(w http.ResponseWriter, r *http.Request) {
-	s.respond(w, "Registration", nil)
+func registrationHandler(w http.ResponseWriter, r *http.Request) {
+	respond(w, "Registration", nil)
 }
 
-func (s Server) passwordResetHandler(w http.ResponseWriter, r *http.Request) {
-	s.respond(w, "PasswordReset", map[string]interface{}{
+func passwordResetHandler(w http.ResponseWriter, r *http.Request) {
+	respond(w, "PasswordReset", map[string]interface{}{
 		"Token": mux.Vars(r)["token"],
 	})
 }
 
-func (s Server) passwordResetTokenHandler(w http.ResponseWriter, r *http.Request) {
-	s.respond(w, "PasswordResetToken", nil)
+func passwordResetTokenHandler(w http.ResponseWriter, r *http.Request) {
+	respond(w, "PasswordResetToken", nil)
 }
 
-func (s Server) emailValidationHandler(w http.ResponseWriter, r *http.Request) {
-	u, r, err := s.user(r)
+func emailValidationHandler(w http.ResponseWriter, r *http.Request) {
+	u, r, err := getRequestUser(r)
 	if err != nil {
 		panic(err)
 	}
 	vars := mux.Vars(r)
 	token := vars["token"]
 
-	u2, err := s.UserService.ChangeEmail(u.ID, token)
+	u2, err := srv.UserService.ChangeEmail(u.ID, token)
 	if err != nil {
-		if terr, ok := err.(*user.Error); ok {
-			s.logger.Warningf("email validation: user %s: change email token %s: %s", u.ID, token, terr)
-			s.respond(w, "EmailValidation", map[string]interface{}{
-				"Valid": false,
-				"User":  u,
-			})
-			return
-		}
-		s.logger.Errorf("email validation: user %s: change email token %s: %s", u.ID, token, err)
-		s.htmlServerError(w, r, err)
+		srv.Logger.Errorf("email validation: user %s: change email token %s: %s", u.ID, token, err)
+		respond(w, "EmailValidation", map[string]interface{}{
+			"Valid": false,
+			"User":  u,
+		})
 		return
 	}
-	s.respond(w, "EmailValidation", map[string]interface{}{
+	respond(w, "EmailValidation", map[string]interface{}{
 		"Valid": !u2.EmailUnvalidated,
 		"User":  u2,
 	})
 }
 
-func (s Server) settingsHandler(w http.ResponseWriter, r *http.Request) {
-	u, r, err := s.user(r)
+func settingsHandler(w http.ResponseWriter, r *http.Request) {
+	u, r, err := getRequestUser(r)
 	if err != nil {
 		panic(err)
 	}
-	s.respond(w, "Settings", map[string]interface{}{
-		"User": u,
+	respond(w, "Settings", map[string]interface{}{
+		"User":       u,
+		"APIEnabled": srv.APIEnabled,
 	})
 }
 
-func (s Server) settingsEmailHandler(w http.ResponseWriter, r *http.Request) {
-	u, r, err := s.user(r)
+func settingsEmailHandler(w http.ResponseWriter, r *http.Request) {
+	u, r, err := getRequestUser(r)
 	if err != nil {
 		panic(err)
 	}
-	optedOut, err := s.NotificationService.IsEmailOptedOut(u.Email)
+	optedOut, err := srv.NotificationService.IsEmailOptedOut(u.Email)
 	if err != nil {
-		s.logger.Errorf("settings email: %s: is email opted out api: %s", u.Email, err)
-		s.htmlServerError(w, r, err)
+		srv.Logger.Errorf("settings email: %s: is email opted out api: %s", u.Email, err)
+		htmlServerError(w, r, err)
 		return
 	}
-	s.respond(w, "SettingsEmail", map[string]interface{}{
-		"User":     u,
-		"OptedOut": optedOut,
+	respond(w, "SettingsEmail", map[string]interface{}{
+		"User":       u,
+		"OptedOut":   optedOut,
+		"APIEnabled": srv.APIEnabled,
 	})
 }
 
-func (s Server) settingsNotificationsHandler(w http.ResponseWriter, r *http.Request) {
-	u, r, err := s.user(r)
+func settingsNotificationsHandler(w http.ResponseWriter, r *http.Request) {
+	u, r, err := getRequestUser(r)
 	if err != nil {
 		panic(err)
 	}
-	optedOut, err := s.NotificationService.IsEmailOptedOut(u.Email)
+	optedOut, err := srv.NotificationService.IsEmailOptedOut(u.Email)
 	if err != nil {
-		s.logger.Errorf("settings notifications: %s: is email opted out api: %s", u.Email, err)
-		s.htmlServerError(w, r, err)
+		srv.Logger.Errorf("settings notifications: %s: is email opted out api: %s", u.Email, err)
+		htmlServerError(w, r, err)
 		return
 	}
-	s.respond(w, "SettingsNotifications", map[string]interface{}{
-		"User":     u,
-		"OptedOut": optedOut,
+	respond(w, "SettingsNotifications", map[string]interface{}{
+		"User":       u,
+		"OptedOut":   optedOut,
+		"APIEnabled": srv.APIEnabled,
 	})
 }
 
-func (s Server) settingsPasswordHandler(w http.ResponseWriter, r *http.Request) {
-	u, r, err := s.user(r)
+func settingsPasswordHandler(w http.ResponseWriter, r *http.Request) {
+	u, r, err := getRequestUser(r)
 	if err != nil {
 		panic(err)
 	}
-	s.respond(w, "SettingsPassword", map[string]interface{}{
-		"User": u,
+	respond(w, "SettingsPassword", map[string]interface{}{
+		"User":       u,
+		"APIEnabled": srv.APIEnabled,
 	})
 }
 
-func (s Server) settingsDeleteAccountHandler(w http.ResponseWriter, r *http.Request) {
-	u, r, err := s.user(r)
+func apiAccessSettingsHandler(w http.ResponseWriter, r *http.Request) {
+	if !srv.APIEnabled {
+		htmlNotFoundHandler(w, r)
+		return
+	}
+	u, r, err := getRequestUser(r)
 	if err != nil {
 		panic(err)
 	}
-	s.respond(w, "SettingsDeleteAccount", map[string]interface{}{
-		"User": u,
+	k, err := srv.KeyService.KeyByRef(u.ID)
+	switch err {
+	case nil:
+	case key.ErrKeyNotFound:
+		k = &key.Key{}
+	default:
+		srv.Logger.Errorf("settings api access: %s: get key by ref: %s", u.ID, err)
+		htmlServerError(w, r, err)
+		return
+	}
+	respond(w, "SettingsAPIAccess", map[string]interface{}{
+		"User":       u,
+		"Key":        k,
+		"APIEnabled": srv.APIEnabled,
+	})
+}
+
+func settingsDeleteAccountHandler(w http.ResponseWriter, r *http.Request) {
+	u, r, err := getRequestUser(r)
+	if err != nil {
+		panic(err)
+	}
+	respond(w, "SettingsDeleteAccount", map[string]interface{}{
+		"User":       u,
+		"APIEnabled": srv.APIEnabled,
 	})
 }

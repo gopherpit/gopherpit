@@ -5,7 +5,10 @@
 
 package certificate
 
-import "time"
+import (
+	"errors"
+	"time"
+)
 
 // Service defines functions that Certificate provider must have.
 type Service interface {
@@ -158,12 +161,12 @@ type ACMEChallengeOptions struct {
 
 // Errors that are related to the Certificate Service.
 var (
-	CertificateNotFound   = NewError(1000, "certificate not found")
-	CertificateInvalid    = NewError(1001, "certificate invalid")
-	FQDNMissing           = NewError(1100, "fqdn missing")
-	FQDNInvalid           = NewError(1101, "fqdn invalid")
-	FQDNExists            = NewError(1102, "fqdn exists")
-	ACMEUserNotFound      = NewError(1200, "acme user not found")
-	ACMEUserEmailInvalid  = NewError(1201, "acme user email invalid")
-	ACMEChallengeNotFound = NewError(1300, "acme challenge not found")
+	ErrCertificateNotFound   = errors.New("certificate not found")
+	ErrCertificateInvalid    = errors.New("certificate invalid")
+	ErrFQDNMissing           = errors.New("fqdn missing")
+	ErrFQDNInvalid           = errors.New("fqdn invalid")
+	ErrFQDNExists            = errors.New("fqdn exists")
+	ErrACMEUserNotFound      = errors.New("acme user not found")
+	ErrACMEUserEmailInvalid  = errors.New("acme user email invalid")
+	ErrACMEChallengeNotFound = errors.New("acme challenge not found")
 )

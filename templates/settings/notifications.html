@@ -68,6 +68,9 @@
         </p>
         <ul class="menu-list">
           <li><a href="/settings">Basic information</a></li>
+          [[ if .APIEnabled ]]
+          <li><a href="/settings/api">API access</a></li>
+          [[ end ]]
           <li><a href="/settings/email">E-mail address</a></li>
           <li><a class="is-active" href="/settings/notifications">Notifications</a></li>
           <li><a href="/settings/password">Password</a></li>
@@ -85,22 +88,28 @@
       </div>
       <form method="post" v-on:submit.prevent="submit" v-bind:class="{'is-disabled': isLoading}" v-if="!isDone">
         <div class="notification is-danger" v-for="err in errors" v-cloak v-html="err"></div>
-        <label class="checkbox" v-cloak>
-          <input type="checkbox" v-model="fields['notifications-enabled']">
-            {{ notificationsEnabledLabel() }}
-          </label>
-        <p class="control help is-danger" v-for="err in fieldErrors['notifications-enabled']" v-cloak v-html="err"></p>
-        <p class="control">
-          <nav class="level">
-            <div class="level-left">
-            </div>
-            <div class="level-right">
-              <div class="level-item">
-                <button type="submit" class="button is-primary" v-bind:class="{'is-loading': isLoading}">Save</button>
+        <div class="field">
+          <p class="control">
+            <label class="checkbox" v-cloak>
+            <input type="checkbox" v-model="fields['notifications-enabled']">
+              {{ notificationsEnabledLabel() }}
+            </label>
+          </p>
+          <p class="help is-danger" v-for="err in fieldErrors['notifications-enabled']" v-cloak v-html="err"></p>
+        </div>
+        <div class="field">
+          <p class="control">
+            <nav class="level">
+              <div class="level-left">
               </div>
-            </div>
-          </nav>
-        </p>
+              <div class="level-right">
+                <div class="level-item">
+                  <button type="submit" class="button is-primary" v-bind:class="{'is-loading': isLoading}">Save</button>
+                </div>
+              </div>
+            </nav>
+          </p>
+        </div>
       </form>
       [[ end ]]
     </div>

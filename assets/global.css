@@ -1,17 +1,17 @@
+html, .section {
+    background-color: #f5f7fa!important;
+}
+
 .icon.is-small {
   vertical-align: baseline!important;
 }
 
-p.control.help {
-  margin-top: -8px;
-}
-
-p.help {
-  margin-bottom: 12px;
-}
-
 span.button {
   cursor: default;
+}
+
+.field .field {
+  margin-bottom: 0;
 }
 
 [v-cloak] { display:none; }
@@ -48,4 +48,44 @@ span.button {
     0% {transform: scale(1);}
     50% {transform: scale(1.1);}
     100% {transform: scale(1);}
+}
+
+.is-middle {
+  vertical-align: middle!important;
+}
+
+.content pre:not(:last-child) {
+  margin-bottom: 1em;
+}
+
+.content pre {
+  background-color: transparent;
+}
+
+.content pre code {
+  color: inherit;
+  border-radius: 3px;
+  padding-left: 10px;
+  background-color: #f5f7fa;
+}
+
+.content p + ul {
+  margin-top: -0.5em;
+  margin-left: 0.5em;
+  margin-right: 0.5em;
+  list-style: none;
+}
+
+.content p + ul li:before {
+  content: "•";
+  padding-right: 8px;
+  color: #e4e9f1;
+}
+
+.content p + ul > li+li {
+  margin-top: 0;
+}
+
+pre + pre {
+  margin-top: -1em;
 }

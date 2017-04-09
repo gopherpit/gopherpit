@@ -1,0 +1,66 @@
+[[/*
+  Copyright (c) 2016, Janoš Guljaš <janos@resenje.org>
+  All rights reserved.
+  Use of this source code is governed by a BSD-style
+  license that can be found in the LICENSE file.
+*/]]
+
+
+[[ define "base-script" ]]
+<script>
+  new Vue({
+    el: "#header",
+    data: {
+      isActive: false
+    }
+  })
+</script>
+[[ end ]]
+
+[[ define "body" ]]
+<section class="hero [[ block "hero-class" . ]]is-light[[ end ]]">
+  <div class="hero-head" id="header">
+    <header class="nav">
+      <div class="container">
+        <div class="nav-left">
+          <a class="nav-item is-brand" href="/">
+            [[ block "brand" . ]]<img src="[[ "gopherpit-header-dark.png" | asset ]]" alt="GopherPit">[[ end ]]
+          </a>
+        </div>
+        <span class="nav-toggle" v-on:click="isActive = !isActive" v-bind:class="{'is-active': isActive}">
+          <span></span>
+          <span></span>
+          <span></span>
+        </span>
+        <div class="nav-right nav-menu" v-bind:class="{'is-active': isActive}">
+          <a class="nav-item" href="/login">Login</a>
+          <span class="nav-item">
+            <a class="button" href="/registration">
+              <span class="icon">
+                <i class="fa fa-plus-circle"></i>
+              </span>
+              <span>Register</span>
+            </a>
+          </span>
+        </div>
+      </div>
+    </header>
+  </div>
+</section>
+
+<section class="main section">
+  <div class="container">
+    [[ block "main" . ]][[ end ]]
+  </div>
+</section>
+
+<section class="section">
+  <nav class="tabs is-centered">
+    <ul>
+      <li><a href="/">Home</a></li>
+      <li><a href="/contact">Contact</a></li>
+      <li><a href="/about">Copyright</a></li>
+    </ul>
+  </nav>
+</section>
+[[ end ]]

@@ -22,6 +22,8 @@ var templates = map[string][]string{
 	"AboutPrivate":          {"base.html", "app.html", "about.html"},
 	"License":               {"base.html", "cover.html", "license.html"},
 	"LicensePrivate":        {"base.html", "app.html", "license.html"},
+	"Doc":                   {"base.html", "public.html", "docs-api.html"},
+	"DocPrivate":            {"base.html", "app.html", "docs-api.html"},
 	"Contact":               {"base.html", "cover.html", "contact.html"},
 	"ContactPrivate":        {"base.html", "app.html", "contact.html"},
 	"PublicEmailSettings":   {"base.html", "cover.html", "pubilc-email-settings.html"},
@@ -34,6 +36,7 @@ var templates = map[string][]string{
 	"SettingsEmail":         {"base.html", "app.html", "settings/email.html"},
 	"SettingsNotifications": {"base.html", "app.html", "settings/notifications.html"},
 	"SettingsPassword":      {"base.html", "app.html", "settings/password.html"},
+	"SettingsAPIAccess":     {"base.html", "app.html", "settings/api-access.html"},
 	"SettingsDeleteAccount": {"base.html", "app.html", "settings/delete-account.html"},
 	// Certificates
 	"RegisterACMEUser":        {"base.html", "cover.html", "register-acme-user.html"},
@@ -69,10 +72,10 @@ var templates = map[string][]string{
 	"ServiceUnavailablePrivate":    {"base.html", "app.html", "error-private.html", "error/service-unavailable.html"},
 }
 
-func (s Server) assetFunc(str string) string {
-	p, err := s.assetsServer.HashedPath(str)
+func assetFunc(str string) string {
+	p, err := srv.assetsServer.HashedPath(str)
 	if err != nil {
-		s.logger.Errorf("html response: asset func: hashed path: %s", err)
+		srv.Logger.Errorf("html response: asset func: hashed path: %s", err)
 		return str
 	}
 	return p

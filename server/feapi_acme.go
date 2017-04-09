@@ -20,15 +20,15 @@ type registerACMEUserRequest struct {
 	Directory string `json:"directory"`
 }
 
-func (s Server) registerACMEUserFEAPIHandler(w http.ResponseWriter, r *http.Request) {
-	u, r, err := s.user(r)
+func registerACMEUserFEAPIHandler(w http.ResponseWriter, r *http.Request) {
+	u, r, err := getRequestUser(r)
 	if err != nil {
 		panic(err)
 	}
 
-	au, err := s.CertificateService.ACMEUser()
-	if err != nil && err != certificate.ACMEUserNotFound {
-		s.logger.Warningf("register acme user fe api: acme user: %s", err)
+	au, err := srv.CertificateService.ACMEUser()
+	if err != nil && err != certificate.ErrACMEUserNotFound {
+		srv.Logger.Warningf("register acme user fe api: acme user: %s", err)
 		jsonServerError(w, err)
 		return
 	}
@@ -40,7 +40,7 @@ func (s Server) registerACMEUserFEAPIHandler(w http.ResponseWriter, r *http.Requ
 	request := registerACMEUserRequest{}
 	errors := httputils.FormErrors{}
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		s.logger.Warningf("register acme user fe api: request decode %s %s: %s", u.ID, u.Email, err)
+		srv.Logger.Warningf("register acme user fe api: request decode %s %s: %s", u.ID, u.Email, err)
 		errors.AddError("Invalid data.")
 		jsonresponse.BadRequest(w, errors)
 		return
@@ -49,14 +49,14 @@ func (s Server) registerACMEUserFEAPIHandler(w http.ResponseWriter, r *http.Requ
 	var directoryURL string
 	switch request.Directory {
 	case "":
-		s.logger.Warningf("register acme user fe api: directory empty")
+		srv.Logger.Warningf("register acme user fe api: directory empty")
 		errors.AddFieldError("directory", "Directory is required.")
 	case "production":
-		directoryURL = s.ACMEDirectoryURL
+		directoryURL = srv.ACMEDirectoryURL
 	case "staging":
-		directoryURL = s.ACMEDirectoryURLStaging
+		directoryURL = srv.ACMEDirectoryURLStaging
 	default:
-		s.logger.Warningf("register acme user fe api: directory invalid: %s", request.Directory)
+		srv.Logger.Warningf("register acme user fe api: directory invalid: %s", request.Directory)
 		errors.AddFieldError("directory", "Directory is not valid.")
 	}
 
@@ -65,21 +65,21 @@ func (s Server) registerACMEUserFEAPIHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	au, err = s.CertificateService.RegisterACMEUser(directoryURL, request.Email)
+	au, err = srv.CertificateService.RegisterACMEUser(directoryURL, request.Email)
 	if err != nil {
-		if err == certificate.ACMEUserEmailInvalid {
+		if err == certificate.ErrACMEUserEmailInvalid {
 			errors.AddFieldError("email", "E-mail address is invalid.")
 			jsonresponse.BadRequest(w, errors)
 			return
 		}
-		s.logger.Warningf("register acme user fe api: register acme user: %s", err)
+		srv.Logger.Warningf("register acme user fe api: register acme user: %s", err)
 		jsonServerError(w, err)
 		return
 	}
 
-	s.logger.Infof("register acme user fe api: success %d %s", au.ID, au.Email)
+	srv.Logger.Infof("register acme user fe api: success %d %s", au.ID, au.Email)
 
-	s.auditf(r, nil, "register acme user", "%d: %s", au.ID, au.Email)
+	auditf(r, nil, "register acme user", "%d: %s", au.ID, au.Email)
 
 	jsonresponse.OK(w, nil)
 }

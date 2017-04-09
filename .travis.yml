@@ -1,0 +1,13 @@
+language: go
+
+go:
+  - 1.8
+
+install:
+  - go get -v gopherpit.com/gopherpit
+
+before_script:
+  - cd "$(go env GOPATH)/src/gopherpit.com/gopherpit" && make vet
+
+script:
+  - cd "$(go env GOPATH)/src/gopherpit.com/gopherpit" && make test

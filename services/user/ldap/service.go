@@ -94,7 +94,7 @@ func (s *Service) Authenticate(ref, password string) (u *user.User, err error) {
 	}
 	u, err = s.User(ref)
 	switch err {
-	case user.UserNotFound:
+	case user.ErrUserNotFound:
 		if emailRegex.MatchString(ref) {
 			u = &user.User{
 				Email: ref,

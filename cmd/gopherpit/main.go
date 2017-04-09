@@ -21,6 +21,8 @@ import (
 	"syscall"
 	"time"
 
+	"gopkg.in/throttled/throttled.v2/store/memstore"
+
 	"resenje.org/daemon"
 	"resenje.org/email"
 	"resenje.org/httputils/client/api"
@@ -34,6 +36,11 @@ import (
 	"gopherpit.com/gopherpit/services/certificate"
 	"gopherpit.com/gopherpit/services/certificate/bolt"
 	"gopherpit.com/gopherpit/services/certificate/http"
+	"gopherpit.com/gopherpit/services/gcrastore"
+	"gopherpit.com/gopherpit/services/gcrastore/http"
+	"gopherpit.com/gopherpit/services/key"
+	"gopherpit.com/gopherpit/services/key/bolt"
+	"gopherpit.com/gopherpit/services/key/http"
 	"gopherpit.com/gopherpit/services/notification"
 	"gopherpit.com/gopherpit/services/notification/bolt"
 	"gopherpit.com/gopherpit/services/notification/http"
@@ -125,6 +132,7 @@ COPYRIGHT
 
 	// Initialize configurations with default values.
 	gopherpitOptions := config.NewGopherPitOptions()
+	apiOptions := config.NewAPIOptions()
 	loggingOptions := config.NewLoggingOptions()
 	emailOptions := config.NewEmailOptions()
 	ldapOptions := config.NewLDAPOptions()
@@ -136,6 +144,7 @@ COPYRIGHT
 	// config.Prepare.
 	options := []config.Options{
 		gopherpitOptions,
+		apiOptions,
 		loggingOptions,
 		emailOptions,
 		ldapOptions,
@@ -279,7 +288,23 @@ COPYRIGHT
 
 	logger, err := logging.GetLogger("default")
 	if err != nil {
-		return
+		fmt.Fprintf(os.Stderr, "Error: get default logger: %s", err)
+		os.Exit(2)
+	}
+	accessLogger, err := logging.GetLogger("access")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: get access logger: %s", err)
+		os.Exit(2)
+	}
+	auditLogger, err := logging.GetLogger("audit")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: get audit logger: %s", err)
+		os.Exit(2)
+	}
+	packageAccessLogger, err := logging.GetLogger("package-access")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: get package access logger: %s", err)
+		os.Exit(2)
 	}
 
 	// Initialize services required for server to function.
@@ -317,7 +342,7 @@ COPYRIGHT
 		if servicesOptions.SessionOptions != nil {
 			c.HTTPClient = httpClient.New(servicesOptions.SessionOptions)
 		}
-		sessionService = httpSession.NewService(c)
+		sessionService = httpSession.NewClient(c)
 	} else {
 		db, err := boltSession.NewDB(filepath.Join(gopherpitOptions.StorageDir, "session.db"), gopherpitOptions.StorageFileMode.FileMode(), nil)
 		if err != nil {
@@ -343,7 +368,7 @@ COPYRIGHT
 		if servicesOptions.UserOptions != nil {
 			c.HTTPClient = httpClient.New(servicesOptions.UserOptions)
 		}
-		userService = httpUser.NewService(c)
+		userService = httpUser.NewClient(c)
 	} else {
 		db, err := boltUser.NewDB(filepath.Join(gopherpitOptions.StorageDir, "user.db"), gopherpitOptions.StorageFileMode.FileMode(), nil)
 		if err != nil {
@@ -391,7 +416,7 @@ COPYRIGHT
 		if servicesOptions.NotificationOptions != nil {
 			c.HTTPClient = httpClient.New(servicesOptions.NotificationOptions)
 		}
-		notificationService = httpNotification.NewService(c)
+		notificationService = httpNotification.NewClient(c)
 	} else {
 		db, err := boltNotification.NewDB(filepath.Join(gopherpitOptions.StorageDir, "notification.db"), gopherpitOptions.StorageFileMode.FileMode(), nil)
 		if err != nil {
@@ -420,7 +445,7 @@ COPYRIGHT
 		if servicesOptions.CertificateOptions != nil {
 			c.HTTPClient = httpClient.New(servicesOptions.CertificateOptions)
 		}
-		certificateService = httpCertificate.NewService(c)
+		certificateService = httpCertificate.NewClient(c)
 	} else {
 		db, err := boltCertificate.NewDB(filepath.Join(gopherpitOptions.StorageDir, "certificate.db"), gopherpitOptions.StorageFileMode.FileMode(), nil)
 		if err != nil {
@@ -446,7 +471,7 @@ COPYRIGHT
 		if servicesOptions.PackagesOptions != nil {
 			c.HTTPClient = httpClient.New(servicesOptions.PackagesOptions)
 		}
-		packagesService = httpPackages.NewService(c)
+		packagesService = httpPackages.NewClient(c)
 	} else {
 		db, err := boltPackages.NewDB(filepath.Join(gopherpitOptions.StorageDir, "packages.db"), gopherpitOptions.StorageFileMode.FileMode(), nil)
 		if err != nil {
@@ -464,16 +489,61 @@ COPYRIGHT
 			Logger:    logger,
 		}
 	}
+	var keyService key.Service
+	if servicesOptions.KeyEndpoint != "" {
+		c := &apiClient.Client{
+			Endpoint:  servicesOptions.KeyEndpoint,
+			Key:       servicesOptions.KeyKey,
+			UserAgent: config.UserAgent,
+		}
+		if servicesOptions.KeyOptions != nil {
+			c.HTTPClient = httpClient.New(servicesOptions.KeyOptions)
+		}
+		keyService = httpKey.NewClient(c)
+	} else {
+		db, err := boltKey.NewDB(filepath.Join(gopherpitOptions.StorageDir, "key.db"), gopherpitOptions.StorageFileMode.FileMode(), nil)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "key service bolt database:", err)
+			os.Exit(2)
+		}
+		keyService = &boltKey.Service{
+			DB:     db,
+			Logger: logger,
+		}
+	}
+	var gcraStoreService gcrastore.Service
+	if servicesOptions.GCRAStoreEndpoint != "" {
+		c := &apiClient.Client{
+			Endpoint:  servicesOptions.GCRAStoreEndpoint,
+			Key:       servicesOptions.GCRAStoreKey,
+			UserAgent: config.UserAgent,
+		}
+		if servicesOptions.GCRAStoreOptions != nil {
+			c.HTTPClient = httpClient.New(servicesOptions.GCRAStoreOptions)
+		}
+		gcraStoreService = httpGCRAStore.NewClient(c)
+	} else {
+		gcraStoreService, err = memstore.New(65536)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "gcra memstore:", err)
+			os.Exit(2)
+		}
+	}
 
 	// Initialize server.
-	srv, err := server.NewServer(
+	if err = server.Configure(
 		server.Options{
 			Name:                    config.Name,
 			Version:                 config.Version,
 			BuildInfo:               config.BuildInfo,
 			Brand:                   gopherpitOptions.Brand,
 			Domain:                  gopherpitOptions.Domain,
-			RedirectToHTTPS:         gopherpitOptions.ListenTLS != "",
+			Listen:                  gopherpitOptions.Listen,
+			ListenTLS:               gopherpitOptions.ListenTLS,
+			ListenInternal:          gopherpitOptions.ListenInternal,
+			ListenInternalTLS:       gopherpitOptions.ListenInternalTLS,
+			TLSKey:                  gopherpitOptions.TLSKey,
+			TLSCert:                 gopherpitOptions.TLSCert,
 			Headers:                 gopherpitOptions.Headers,
 			XSRFCookieName:          gopherpitOptions.XSRFCookieName,
 			SessionCookieName:       gopherpitOptions.SessionCookieName,
@@ -492,7 +562,15 @@ COPYRIGHT
 			VerificationSubdomain:   gopherpitOptions.VerificationSubdomain,
 			TrustedDomains:          gopherpitOptions.TrustedDomains,
 			ForbiddenDomains:        gopherpitOptions.ForbiddenDomains,
-			TLSEnabled:              gopherpitOptions.ListenTLS != "",
+			APITrustedProxyCIDRs:    apiOptions.TrustedProxyCIDRs,
+			APIProxyRealIPHeader:    apiOptions.ProxyRealIPHeader,
+			APIHourlyRateLimit:      apiOptions.HourlyRateLimit,
+			APIEnabled:              !apiOptions.Disabled,
+
+			Logger:              logger,
+			AccessLogger:        accessLogger,
+			AuditLogger:         auditLogger,
+			PackageAccessLogger: packageAccessLogger,
 
 			EmailService:        *emailService,
 			RecoveryService:     *recoveryService,
@@ -501,9 +579,10 @@ COPYRIGHT
 			NotificationService: notificationService,
 			CertificateService:  certificateService,
 			PackagesService:     packagesService,
+			KeyService:          keyService,
+			GCRAStoreService:    gcraStoreService,
 		},
-	)
-	if err != nil {
+	); err != nil {
 		fmt.Fprintln(os.Stderr, "Error:", err)
 		os.Exit(2)
 	}
@@ -512,14 +591,7 @@ COPYRIGHT
 	// All functions must be non-blocking or short-lived.
 	// They will be executed in the same goroutine in the same order.
 	app.Functions = append(app.Functions, func() error {
-		return srv.Serve(server.ServeOptions{
-			Listen:            gopherpitOptions.Listen,
-			ListenTLS:         gopherpitOptions.ListenTLS,
-			ListenInternal:    gopherpitOptions.ListenInternal,
-			ListenInternalTLS: gopherpitOptions.ListenInternalTLS,
-			TLSKey:            gopherpitOptions.TLSKey,
-			TLSCert:           gopherpitOptions.TLSCert,
-		})
+		return server.Serve()
 	})
 	if service, ok := sessionService.(*boltSession.Service); ok {
 		// Start session cleanup.
@@ -548,7 +620,7 @@ COPYRIGHT
 
 	app.ShutdownFunc = func() error {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		srv.Shutdown(ctx)
+		server.Shutdown(ctx)
 		cancel()
 		return nil
 	}

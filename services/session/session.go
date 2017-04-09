@@ -4,6 +4,7 @@
 // license that can be found in the LICENSE file.
 
 package session // import "gopherpit.com/gopherpit/services/session"
+import "errors"
 
 // Session holds session ID and values associated.
 type Session struct {
@@ -37,6 +38,6 @@ type Service interface {
 }
 
 var (
-	// SessionNotFound is error if session does not exist.
-	SessionNotFound = NewError(1000, "session not found")
+	// ErrSessionNotFound is error if session does not exist.
+	ErrSessionNotFound = errors.New("session not found")
 )

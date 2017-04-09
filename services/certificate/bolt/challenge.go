@@ -46,12 +46,12 @@ func (t *acmeChallengeRecord) update(o *certificate.ACMEChallengeOptions) error 
 func getACMEChallengeRecord(tx *bolt.Tx, fqdn []byte) (t *acmeChallengeRecord, err error) {
 	bucket := tx.Bucket(bucketNameACMEChallenges)
 	if bucket == nil {
-		err = certificate.ACMEChallengeNotFound
+		err = certificate.ErrACMEChallengeNotFound
 		return
 	}
 	data := bucket.Get(fqdn)
 	if data == nil {
-		err = certificate.ACMEChallengeNotFound
+		err = certificate.ErrACMEChallengeNotFound
 		return
 	}
 	if err = json.Unmarshal(data, &t); err != nil {
@@ -65,7 +65,7 @@ func (t *acmeChallengeRecord) save(tx *bolt.Tx) (err error) {
 	t.fqdn = strings.ToLower(strings.TrimSpace(t.fqdn))
 	// Required fields
 	if t.fqdn == "" {
-		return certificate.FQDNMissing
+		return certificate.ErrFQDNMissing
 	}
 
 	// Save the ACME Challenge record data

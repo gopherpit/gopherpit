@@ -17,15 +17,13 @@
   </div>
 </div>
 <div class="hero-foot">
-  <div class="tabs is-boxed">
-    <div class="container">
-      <ul>
-        <li><a href="/domain/[[ .Domain.FQDN ]]">Packages</a></li>
-        <li><a href="/domain/[[ .Domain.FQDN ]]/team">Team</a></li>
-        <li><a href="/domain/[[ .Domain.FQDN ]]/settings">Settings</a></li>
-        <li class="is-active"><a href="/domain/[[ .Domain.FQDN ]]/changelog">Changelog</a></li>
-      </ul>
-    </div>
+  <div class="tabs is-centered is-boxed">
+    <ul>
+      <li><a href="/domain/[[ .Domain.FQDN ]]">Packages</a></li>
+      <li><a href="/domain/[[ .Domain.FQDN ]]/team">Team</a></li>
+      <li><a href="/domain/[[ .Domain.FQDN ]]/settings">Settings</a></li>
+      <li class="is-active"><a href="/domain/[[ .Domain.FQDN ]]/changelog">Changelog</a></li>
+    </ul>
   </div>
 </div>
 [[ end ]]
@@ -59,10 +57,10 @@
     [[ end ]]
     <p class="content">
       [[ if .Next ]]
-      <a href="/domain/[[ .Domain.FQDN ]]/changelog?start=[[ .Next | urlquery ]]" class="button"><span class="icon"><i class="fa fa-arrow-left"></i></span><span>Newer changes</span></a>
+      <a href="/domain/[[ .Domain.FQDN ]]/changelog?start=[[ .Next | urlquery ]]" class="button"><span class="icon is-small"><i class="fa fa-arrow-left"></i></span><span>Newer changes</span></a>
       [[ end ]]
       [[ if .Previous ]]
-      <a href="/domain/[[ .Domain.FQDN ]]/changelog?start=[[ .Previous | urlquery ]]" class="button"><span>Older changes</span><span class="icon"><i class="fa fa-arrow-right"></i></span></a>
+      <a href="/domain/[[ .Domain.FQDN ]]/changelog?start=[[ .Previous | urlquery ]]" class="button"><span>Older changes</span><span class="icon is-small"><i class="fa fa-arrow-right"></i></span></a>
       [[ end ]]
     </p>
   </div>

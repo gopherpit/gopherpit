@@ -39,18 +39,18 @@
             <div class="level-item">
               <h2 class="title">[[- $changelog.Domain.FQDN -]]</h2>
             </div>
-            <div class="level-item">
+            <div class="level-item is-hidden-touch">
               <a href="/domain/[[ $changelog.Domain.FQDN ]]"><span class="icon is-small"><i class="fa fa-cubes"></i></span></a>
             </div>
             [[ if eq $changelog.Domain.OwnerUserID $.User.ID ]]
-            <div class="level-item">
+            <div class="level-item is-hidden-touch">
               <a href="/domain/[[ $changelog.Domain.FQDN ]]/team"><span class="icon is-small"><i class="fa fa-users"></i></span></a>
             </div>
-            <div class="level-item">
+            <div class="level-item is-hidden-touch">
               <a href="/domain/[[ $changelog.Domain.FQDN ]]/settings"><span class="icon is-small"><i class="fa fa-gears"></i></span></a>
             </div>
             [[ end ]]
-            <div class="level-item">
+            <div class="level-item is-hidden-touch">
               <a href="/domain/[[ $changelog.Domain.FQDN ]]/changelog"><span class="icon is-small"><i class="fa fa-history"></i></span></a>
             </div>
             [[ if $changelog.Domain.Disabled ]]

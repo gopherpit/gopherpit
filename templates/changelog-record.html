@@ -15,6 +15,7 @@
           [[ if .Record.User ]][[ if eq .Record.User.ID .User.ID ]]You[[ else ]][[ if .Record.User.Name ]]<a href="/user/[[ .Record.User.ID ]]">[[ .Record.User.Name ]]</a>[[ else ]]<i>[[ .Record.User.ID ]]</i>[[ end ]][[ end ]][[ else ]]Unknown user[[ end ]] <strong>[[ .Record.Action.Display ]]</strong> [[ if .Record.ImportPrefix ]]<a href="/package/[[ .Record.PackageID ]]">[[ .Record.ImportPrefix ]]</a>[[ end ]]
           <i>[[ relative_time .Record.Time ]]</i>
         </p>
+        [[ if .Record.Changes ]]
         <ul>
         [[ range $change := .Record.Changes ]]
           <li>
@@ -22,6 +23,7 @@
           </li>
         [[ end ]]
         </ul>
+        [[ end ]]
       </div>
     </div>
   </article>

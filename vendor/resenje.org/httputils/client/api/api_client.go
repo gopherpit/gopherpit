@@ -6,6 +6,7 @@
 package apiClient // import "resenje.org/httputils/client/api"
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -117,11 +118,17 @@ func (c Client) Request(method, path string, query url.Values, body io.Reader, a
 			Message string `json:"message"`
 			Code    *int   `json:"code"`
 		}{}
+		var body []byte
+		body, err = ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return
+		}
 		if resp.ContentLength != 0 && strings.Contains(resp.Header.Get("Content-Type"), "application/json") {
-			if err = json.NewDecoder(resp.Body).Decode(&message); err != nil {
+			if err = json.Unmarshal(body, &message); err != nil {
 				switch e := err.(type) {
 				case *json.SyntaxError:
-					message.Message = fmt.Sprintf("json %s, offset: %d", e, e.Offset)
+					line, col := getLineColFromOffset(body, e.Offset)
+					message.Message = fmt.Sprintf("json %s, line: %d, column: %d", e, line, col)
 				case *json.UnmarshalTypeError:
 					// If the type of message is not as expected,
 					// continue with http based error reporting.
@@ -132,6 +139,10 @@ func (c Client) Request(method, path string, query url.Values, body io.Reader, a
 		}
 		if message.Code != nil && c.ErrorRegistry != nil {
 			if err = c.ErrorRegistry.Error(*message.Code); err != nil {
+				return
+			}
+			if handler := c.ErrorRegistry.Handler(*message.Code); handler != nil {
+				err = handler(body)
 				return
 			}
 		}
@@ -170,13 +181,12 @@ func (c Client) JSON(method, path string, query url.Values, body io.Reader, resp
 		if !strings.Contains(contentType, "application/json") {
 			return fmt.Errorf("unsupported content type: %s", contentType)
 		}
-		if err = json.NewDecoder(resp.Body).Decode(&response); err != nil {
-			switch e := err.(type) {
-			case *json.SyntaxError:
-				return fmt.Errorf("json %s, offset: %d", e, e.Offset)
-			case *json.UnmarshalTypeError:
-				return fmt.Errorf("expected json %s value but got %s, offset %d", e.Type, e.Value, e.Offset)
-			}
+		var body []byte
+		body, err = ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return
+		}
+		if err = JSONUnmarshal(body, &response); err != nil {
 			return
 		}
 	}
@@ -197,4 +207,26 @@ func (c Client) Stream(method, path string, query url.Values, body io.Reader, ac
 	contentType = resp.Header.Get("Content-Type")
 	data = resp.Body
 	return
+}
+
+// JSONUnmarshal decodes data into v and returns json.SyntaxError and
+// json.UnmarshalTypeError formated with additional information.
+func JSONUnmarshal(data []byte, v interface{}) error {
+	if err := json.Unmarshal(data, v); err != nil {
+		switch e := err.(type) {
+		case *json.SyntaxError:
+			line, col := getLineColFromOffset(data, e.Offset)
+			return fmt.Errorf("json %s, line: %d, column: %d", e, line, col)
+		case *json.UnmarshalTypeError:
+			line, col := getLineColFromOffset(data, e.Offset)
+			return fmt.Errorf("expected json %s value but got %s, line: %d, column: %d", e.Type, e.Value, line, col)
+		}
+		return err
+	}
+	return nil
+}
+
+func getLineColFromOffset(data []byte, offset int64) (line, col int) {
+	start := bytes.LastIndex(data[:offset], []byte("\n")) + 1
+	return bytes.Count(data[:start], []byte("\n")) + 1, int(offset) - start
 }

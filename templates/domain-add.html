@@ -49,12 +49,19 @@
   })
 </script>
 [[ end ]]
-[[ define "main" ]]
-<div class="columns content">
-  <div class="column">
+
+[[ define "hero" ]]
+<div class="hero-body has-text-centered">
+  <div class="container">
     <h1 class="title is-1">New domain</h1>
     <p>A domain is DNS domain that serves as a logical unit under which you can specify import paths for packages and their repositories.</p>
+  </div>
+</div>
+[[ end ]]
 
+[[ define "main" ]]
+<div class="columns">
+  <div class="column is-6 is-offset-3">
     <form id="domain-form" method="post" v-on:submit.prevent="submit" v-bind:class="{'is-disabled': isLoading}">
       <div class="notification is-danger" v-for="err in errors" v-cloak v-html="err"></div>
       <div class="content" v-if="tokens.length > 0" v-cloak>
@@ -62,40 +69,43 @@
           <div class="message-header" v-if="tokens.length == 1">To verify this domain the following DNS record must be present.</div>
           <div class="message-header" v-else-if="tokens.length > 1">To verify this domain any of the following DNS records must be present.</div>
           <div class="message-body">
-          <p v-for="token in tokens"><code v-html="token.domain +' TXT '+ token.token"></code></p>
+          <p v-for="token in tokens"><code v-html="token.fqdn +' TXT '+ token.token"></code></p>
           <p>After you add DNS record, come back to this form and submit this domain again.</p>
           <p>Keep in mind that DNS propagation requires some time after the record is set, depending on TTL value.</p>
           </div>
         </article>
       </div>
-      <p class="control">
-        <input class="input" type="text" v-model="fields.fqdn" placeholder="Fully qualified domain name" autofocus>
-        <p class="control help is-danger" v-for="err in fieldErrors.fqdn" v-cloak v-html="err"></p>
-      </p>
-      <p class="control">
-        <nav class="level">
-          <div class="level-left">
-          </div>
-          <div class="level-right">
-            <div class="level-item">
-              <p class="control">
-                <a class="ui button" href="/">Cancel</a> 
-                <button type="submit" class="button is-primary" tabindex="0" v-bind:class="{'is-loading': isLoading}">Add</button>
-              </p>
+      <div class="field">
+        <p class="control">
+          <input class="input" type="text" v-model="fields.fqdn" placeholder="Fully qualified domain name" v-bind:class="{'is-danger': fieldErrors.fqdn}" autofocus>
+        </p>
+        <p class="help is-danger" v-for="err in fieldErrors.fqdn" v-cloak v-html="err"></p>
+      </div>
+      <div class="field">
+        <p class="control">
+          <nav class="level">
+            <div class="level-left">
             </div>
-          </div>
-        </nav>
-      </p>
+            <div class="level-right">
+              <div class="level-item">
+                <p class="control">
+                  <a class="ui button" href="/">Cancel</a> 
+                  <button type="submit" class="button is-primary" tabindex="0" v-bind:class="{'is-loading': isLoading}">Add</button>
+                </p>
+              </div>
+            </div>
+          </nav>
+        </p>
+      </div>
     </form>
   </div>
-  <div class="column" id="help">
+</div>
+<div class="columns">
+  <div class="column content" id="help">
     <h2 class="title is-4">Your own domain or subdomain</h2>
     <div class="subtitle is-5">example.com or project.example.com</div>
     <p>Custom domain must have a CNAME DNS record with value: <code>[[ context "AliasCNAME" ]].</code><br />in order to be functional and to successfully request a TLS certificate. A verification of ownership is required by adding TXT DNS records with a unique value provided in the next step.</p>
     <p>If you already use your domain to serve content over HTTP(S), you can configure your web server to proxy only <i>go get</i> requests <a class="modal-button" v-on:click.prevent="isNginxExampleModalActive = true">nginx example</a>. In this case you can silence TLS warning message in domain settings.</p>
-    <h2 class="title is-4">Provided subdomain</h2>
-    <div class="subtitle is-5">my-project.[[ .DomainName ]]</div>
-    <p>Also, you can use a subdomain under <strong>[[ .DomainName ]]</strong> as a domain for your packages, which will be functional <strong>right away</strong> as no verification or DNS setup is needed. The only limitation is that the subdomain is available.</p>
 
     <div class="modal" v-bind:class="{'is-active': isNginxExampleModalActive}" v-cloak>
       <div class="modal-background" v-on:click="isNginxExampleModalActive = false"></div>
@@ -121,7 +131,11 @@ server {
       </div>
       <button class="modal-close" v-on:click.prevent="isNginxExampleModalActive = false"></button>
     </div>
-
+  </div>
+  <div class="column content">
+    <h2 class="title is-4">Provided subdomain</h2>
+    <div class="subtitle is-5">my-project.[[ .DomainName ]]</div>
+    <p>Also, you can use a subdomain under <strong>[[ .DomainName ]]</strong> as a domain for your packages, which will be functional <strong>right away</strong> as no verification or DNS setup is needed. The only limitation is that the subdomain is available.</p>
   </div>
 </div>
 [[ end ]]

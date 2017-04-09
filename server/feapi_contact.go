@@ -22,8 +22,8 @@ type contactRequest struct {
 	Message string `json:"message"`
 }
 
-func (s Server) contactPrivateFEAPIHandler(w http.ResponseWriter, r *http.Request) {
-	u, r, err := s.user(r)
+func contactPrivateFEAPIHandler(w http.ResponseWriter, r *http.Request) {
+	u, r, err := getRequestUser(r)
 	if err != nil {
 		panic(err)
 	}
@@ -31,63 +31,63 @@ func (s Server) contactPrivateFEAPIHandler(w http.ResponseWriter, r *http.Reques
 	request := contactRequest{}
 	errors := httputils.FormErrors{}
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		s.logger.Warningf("contact private fe api: request decode %s %s: %s", u.ID, u.Email, err)
+		srv.Logger.Warningf("contact private fe api: request decode %s %s: %s", u.ID, u.Email, err)
 		errors.AddError("Invalid data.")
 		jsonresponse.BadRequest(w, errors)
 		return
 	}
 
 	if request.Message == "" {
-		s.logger.Warningf("contact private fe api: message empty")
+		srv.Logger.Warningf("contact private fe api: message empty")
 		errors.AddFieldError("message", "The message is required.")
 		jsonresponse.BadRequest(w, errors)
 		return
 	}
 
-	if err := s.sendEmailContactEmail(
+	if err := sendEmailContactEmail(
 		u.Email,
 		fmt.Sprintf("Contact message from user: %s %s", u.Name, u.Username),
 		request.Message,
 	); err != nil {
-		s.logger.Errorf("contact private fe api: %s", err)
+		srv.Logger.Errorf("contact private fe api: %s", err)
 		jsonServerError(w, err)
 		return
 	}
-	s.logger.Infof("contact private fe api: success %s %s", u.ID, u.Email)
+	srv.Logger.Infof("contact private fe api: success %s %s", u.ID, u.Email)
 
-	s.auditf(r, request, "contact private", "%s: %s", u.ID, u.Email)
+	auditf(r, request, "contact private", "%s: %s", u.ID, u.Email)
 
 	jsonresponse.OK(w, nil)
 }
 
-func (s Server) contactFEAPIHandler(w http.ResponseWriter, r *http.Request) {
+func contactFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 	request := contactRequest{}
 	errors := httputils.FormErrors{}
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		s.logger.Warningf("contact fe api: request decode: %s", err)
+		srv.Logger.Warningf("contact fe api: request decode: %s", err)
 		errors.AddError("Invalid data.")
 		jsonresponse.BadRequest(w, errors)
 		return
 	}
 	if request.Email == "" {
-		s.logger.Warning("contact fe api: request: email empty")
+		srv.Logger.Warning("contact fe api: request: email empty")
 		errors.AddFieldError("email", "E-mail is required.")
 	} else {
 		emailParts := strings.Split(request.Email, "@")
 		if len(emailParts) != 2 {
-			s.logger.Warning("contact fe api: invalid email %s", request.Email)
+			srv.Logger.Warning("contact fe api: invalid email %s", request.Email)
 			errors.AddFieldError("email", "E-mail address is invalid.")
 		} else if _, err := net.ResolveIPAddr("ip", emailParts[1]); err != nil {
-			s.logger.Warning("contact fe api: invalid email domain %s", request.Email)
+			srv.Logger.Warning("contact fe api: invalid email domain %s", request.Email)
 			errors.AddFieldError("email", "E-mail address has invalid domain.")
 		}
 	}
 	if request.Message == "" {
-		s.logger.Warningf("contact fe api: message empty %s", request.Email)
+		srv.Logger.Warningf("contact fe api: message empty %s", request.Email)
 		errors.AddFieldError("message", "The message is required.")
 	}
 	if request.Name == "" {
-		s.logger.Warningf("contact fe api: name empty %s", request.Email)
+		srv.Logger.Warningf("contact fe api: name empty %s", request.Email)
 		errors.AddFieldError("name", "Your name is required.")
 	}
 	if errors.HasErrors() {
@@ -95,18 +95,18 @@ func (s Server) contactFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := s.sendEmailContactEmail(
+	if err := sendEmailContactEmail(
 		request.Email,
 		fmt.Sprintf("Contact message from: %s", request.Name),
 		request.Message,
 	); err != nil {
-		s.logger.Errorf("contact fe api: %s", err)
+		srv.Logger.Errorf("contact fe api: %s", err)
 		jsonServerError(w, err)
 		return
 	}
-	s.logger.Infof("contact fe api: request: success %s", request.Email)
+	srv.Logger.Infof("contact fe api: request: success %s", request.Email)
 
-	s.audit(r, request, "contact", request.Email)
+	audit(r, request, "contact", request.Email)
 
 	jsonresponse.OK(w, nil)
 }

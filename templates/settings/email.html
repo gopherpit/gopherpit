@@ -78,6 +78,9 @@
         </p>
         <ul class="menu-list">
           <li><a href="/settings">Basic information</a></li>
+          [[ if .APIEnabled ]]
+          <li><a href="/settings/api">API access</a></li>
+          [[ end ]]
           <li><a class="is-active" href="/settings/email">E-mail address</a></li>
           <li><a href="/settings/notifications">Notifications</a></li>
           <li><a href="/settings/password">Password</a></li>
@@ -127,11 +130,13 @@
           <div class="notification is-danger" v-for="err in errors" v-cloak v-html="err"></div>
           <p class="content">E-mail address change requires validation of ownership.</p>
           <label class="label">New e-mail address</label>
-          <p class="control">
-            <input class="input" name="email" v-model="fields.email" autofocus>
+          <div class="field">
+            <p class="control">
+              <input class="input" name="email" v-model="fields.email" v-bind:class="{'is-danger': fieldErrors.email}" autofocus>
+            </p>
+            <p class="help is-danger" v-for="err in fieldErrors.email" v-cloak v-html="err"></p>
             <span class="help">It will never be revealed to other user or visitors.</span>
-            <p class="control help is-danger" v-for="err in fieldErrors.email" v-cloak v-html="err"></p>
-          </p>
+          </div>
           <p class="control">
             <nav class="level">
               <div class="level-left">

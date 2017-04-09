@@ -79,13 +79,13 @@ func (c changelogs) Less(i, j int) bool {
 	return c[i].Records[0].Time.After(c[j].Records[0].Time)
 }
 
-func (s Server) updateChangelogRecords(u user.User, record packages.ChangelogRecord, records *[]changelogRecord, users *map[string]*user.User) (err error) {
+func updateChangelogRecords(u user.User, record packages.ChangelogRecord, records *[]changelogRecord, users *map[string]*user.User) (err error) {
 	if _, ok := (*users)[record.UserID]; !ok {
-		ru, err := s.UserService.UserByID(record.UserID)
+		ru, err := srv.UserService.UserByID(record.UserID)
 		switch err {
 		case nil:
 			(*users)[record.UserID] = ru
-		case user.UserNotFound:
+		case user.ErrUserNotFound:
 			(*users)[record.UserID] = nil
 		default:
 			return err
@@ -121,11 +121,11 @@ func (s Server) updateChangelogRecords(u user.User, record packages.ChangelogRec
 				c.Field = "Owner"
 				if change.To != nil {
 					if _, ok := (*users)[*change.To]; !ok {
-						ru, err := s.UserService.UserByID(*change.To)
+						ru, err := srv.UserService.UserByID(*change.To)
 						switch err {
 						case nil:
 							(*users)[*change.To] = ru
-						case user.UserNotFound:
+						case user.ErrUserNotFound:
 							(*users)[*change.To] = nil
 						default:
 							return err
@@ -146,11 +146,11 @@ func (s Server) updateChangelogRecords(u user.User, record packages.ChangelogRec
 
 				if change.From != nil {
 					if _, ok := (*users)[*change.From]; !ok {
-						ru, err := s.UserService.UserByID(*change.From)
+						ru, err := srv.UserService.UserByID(*change.From)
 						switch err {
 						case nil:
 							(*users)[*change.From] = ru
-						case user.UserNotFound:
+						case user.ErrUserNotFound:
 							(*users)[*change.From] = nil
 						default:
 							return err
@@ -198,11 +198,11 @@ func (s Server) updateChangelogRecords(u user.User, record packages.ChangelogRec
 				c.Field = "User"
 				if change.To != nil {
 					if _, ok := (*users)[*change.To]; !ok {
-						ru, err := s.UserService.UserByID(*change.To)
+						ru, err := srv.UserService.UserByID(*change.To)
 						switch err {
 						case nil:
 							(*users)[*change.To] = ru
-						case user.UserNotFound:
+						case user.ErrUserNotFound:
 							(*users)[*change.To] = nil
 						default:
 							return err
@@ -221,9 +221,9 @@ func (s Server) updateChangelogRecords(u user.User, record packages.ChangelogRec
 
 				if change.From != nil {
 					if _, ok := (*users)[*change.From]; !ok {
-						ru, err := s.UserService.User(*change.From)
+						ru, err := srv.UserService.User(*change.From)
 						if err != nil {
-							if err != user.UserNotFound {
+							if err != user.ErrUserNotFound {
 								(*users)[*change.From] = nil
 							}
 							return err

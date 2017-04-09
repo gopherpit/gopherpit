@@ -5,6 +5,8 @@
 
 package notification // import "gopherpit.com/gopherpit/services/notification"
 
+import "errors"
+
 // Email represents an e-mail message.
 type Email struct {
 	From      string   `json:"from"`
@@ -34,5 +36,5 @@ type Service interface {
 
 // Errors that are related to the Notification Service.
 var (
-	EmailAlreadySent = NewError(1000, "email already sent")
+	ErrEmailAlreadySent = errors.New("email already sent")
 )
