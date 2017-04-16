@@ -433,13 +433,18 @@ func Serve() error {
 			} else {
 				tlsPort = ":" + tlsPort
 			}
-			wwwDomain := "www." + srv.Domain
+			var altDomain string
+			if strings.HasPrefix("www.", srv.Domain) {
+				altDomain = strings.TrimPrefix(srv.Domain, "www.")
+			} else {
+				altDomain = "www." + srv.Domain
+			}
 			handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				domain, _, err := net.SplitHostPort(r.Host)
 				if err != nil {
 					domain = r.Host
 				}
-				if (domain == srv.Domain || domain == wwwDomain) && !strings.HasPrefix(r.URL.Path, acmeURLPrefix) {
+				if (domain == srv.Domain || domain == altDomain) && !strings.HasPrefix(r.URL.Path, acmeURLPrefix) {
 					c, _ := srv.certificateCache.Certificate(srv.Domain)
 					if c != nil {
 						http.Redirect(w, r, strings.Join([]string{"https://", srv.Domain, tlsPort, r.RequestURI}, ""), http.StatusMovedPermanently)
