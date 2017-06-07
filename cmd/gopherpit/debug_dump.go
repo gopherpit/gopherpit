@@ -18,7 +18,7 @@ func debugDumpCmd() {
 	// Service is able to receive the signal and dump debugging
 	// information to files or stderr.
 	err := (&daemon.Daemon{
-		PidFileName: gopherpitOptions.PidFileName,
+		PidFileName: options.PidFileName,
 	}).Signal(syscall.SIGUSR1)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Error:", err)

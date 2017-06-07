@@ -15,7 +15,7 @@ import (
 func statusCmd() {
 	// Use daemon.Daemon to obtain status information and print it.
 	pid, err := (&daemon.Daemon{
-		PidFileName: gopherpitOptions.PidFileName,
+		PidFileName: options.PidFileName,
 	}).Status()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Not running:", err)

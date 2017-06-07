@@ -52,7 +52,7 @@ func startCmd(daemon bool) {
 	app, err := application.NewApp(
 		config.Name,
 		application.Options{
-			HomeDir:                     gopherpitOptions.StorageDir,
+			HomeDir:                     options.StorageDir,
 			LogDir:                      loggingOptions.LogDir,
 			LogLevel:                    loggingOptions.LogLevel,
 			LogFileMode:                 loggingOptions.LogFileMode.FileMode(),
@@ -71,8 +71,8 @@ func startCmd(daemon bool) {
 			AuditSyslogFacility:         loggingOptions.AuditSyslogFacility,
 			AuditSyslogTag:              loggingOptions.AuditSyslogTag,
 			ForceLogToStderr:            *debug,
-			PidFileName:                 gopherpitOptions.PidFileName,
-			PidFileMode:                 gopherpitOptions.PidFileMode.FileMode(),
+			PidFileName:                 options.PidFileName,
+			PidFileMode:                 options.PidFileMode.FileMode(),
 			DaemonLogFileName:           loggingOptions.DaemonLogFileName,
 			DaemonLogFileMode:           loggingOptions.DaemonLogFileMode.FileMode(),
 		})
@@ -139,7 +139,7 @@ func startCmd(daemon bool) {
 		}
 		sessionService = httpSession.NewClient(c)
 	} else {
-		db, err := boltSession.NewDB(filepath.Join(gopherpitOptions.StorageDir, "session.db"), gopherpitOptions.StorageFileMode.FileMode(), nil)
+		db, err := boltSession.NewDB(filepath.Join(options.StorageDir, "session.db"), options.StorageFileMode.FileMode(), nil)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, "session service bolt database:", err)
 			os.Exit(2)
@@ -165,7 +165,7 @@ func startCmd(daemon bool) {
 		}
 		userService = httpUser.NewClient(c)
 	} else {
-		db, err := boltUser.NewDB(filepath.Join(gopherpitOptions.StorageDir, "user.db"), gopherpitOptions.StorageFileMode.FileMode(), nil)
+		db, err := boltUser.NewDB(filepath.Join(options.StorageDir, "user.db"), options.StorageFileMode.FileMode(), nil)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, "user service bolt database:", err)
 			os.Exit(2)
@@ -213,7 +213,7 @@ func startCmd(daemon bool) {
 		}
 		notificationService = httpNotification.NewClient(c)
 	} else {
-		db, err := boltNotification.NewDB(filepath.Join(gopherpitOptions.StorageDir, "notification.db"), gopherpitOptions.StorageFileMode.FileMode(), nil)
+		db, err := boltNotification.NewDB(filepath.Join(options.StorageDir, "notification.db"), options.StorageFileMode.FileMode(), nil)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, "notification service bolt database:", err)
 			os.Exit(2)
@@ -242,7 +242,7 @@ func startCmd(daemon bool) {
 		}
 		certificateService = httpCertificate.NewClient(c)
 	} else {
-		db, err := boltCertificate.NewDB(filepath.Join(gopherpitOptions.StorageDir, "certificate.db"), gopherpitOptions.StorageFileMode.FileMode(), nil)
+		db, err := boltCertificate.NewDB(filepath.Join(options.StorageDir, "certificate.db"), options.StorageFileMode.FileMode(), nil)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, "certificate service bolt database:", err)
 			os.Exit(2)
@@ -268,12 +268,12 @@ func startCmd(daemon bool) {
 		}
 		packagesService = httpPackages.NewClient(c)
 	} else {
-		db, err := boltPackages.NewDB(filepath.Join(gopherpitOptions.StorageDir, "packages.db"), gopherpitOptions.StorageFileMode.FileMode(), nil)
+		db, err := boltPackages.NewDB(filepath.Join(options.StorageDir, "packages.db"), options.StorageFileMode.FileMode(), nil)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, "packages service bolt database:", err)
 			os.Exit(2)
 		}
-		changelog, err := boltPackages.NewChangelogPool(filepath.Join(gopherpitOptions.StorageDir, "changelog"), gopherpitOptions.StorageFileMode.FileMode(), nil)
+		changelog, err := boltPackages.NewChangelogPool(filepath.Join(options.StorageDir, "changelog"), options.StorageFileMode.FileMode(), nil)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, "packages service bolt changelog database pool:", err)
 			os.Exit(2)
@@ -296,7 +296,7 @@ func startCmd(daemon bool) {
 		}
 		keyService = httpKey.NewClient(c)
 	} else {
-		db, err := boltKey.NewDB(filepath.Join(gopherpitOptions.StorageDir, "key.db"), gopherpitOptions.StorageFileMode.FileMode(), nil)
+		db, err := boltKey.NewDB(filepath.Join(options.StorageDir, "key.db"), options.StorageFileMode.FileMode(), nil)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, "key service bolt database:", err)
 			os.Exit(2)
@@ -331,32 +331,32 @@ func startCmd(daemon bool) {
 			Name:                    config.Name,
 			Version:                 config.Version,
 			BuildInfo:               config.BuildInfo,
-			Brand:                   gopherpitOptions.Brand,
-			Domain:                  gopherpitOptions.Domain,
-			Listen:                  gopherpitOptions.Listen,
-			ListenTLS:               gopherpitOptions.ListenTLS,
-			ListenInternal:          gopherpitOptions.ListenInternal,
-			ListenInternalTLS:       gopherpitOptions.ListenInternalTLS,
-			TLSKey:                  gopherpitOptions.TLSKey,
-			TLSCert:                 gopherpitOptions.TLSCert,
-			Headers:                 gopherpitOptions.Headers,
-			XSRFCookieName:          gopherpitOptions.XSRFCookieName,
-			SessionCookieName:       gopherpitOptions.SessionCookieName,
-			AssetsDir:               gopherpitOptions.AssetsDir,
-			StaticDir:               gopherpitOptions.StaticDir,
-			TemplatesDir:            gopherpitOptions.TemplatesDir,
-			StorageDir:              gopherpitOptions.StorageDir,
-			MaintenanceFilename:     gopherpitOptions.MaintenanceFilename,
-			GoogleAnalyticsID:       gopherpitOptions.GoogleAnalyticsID,
+			Brand:                   options.Brand,
+			Domain:                  options.Domain,
+			Listen:                  options.Listen,
+			ListenTLS:               options.ListenTLS,
+			ListenInternal:          options.ListenInternal,
+			ListenInternalTLS:       options.ListenInternalTLS,
+			TLSKey:                  options.TLSKey,
+			TLSCert:                 options.TLSCert,
+			Headers:                 options.Headers,
+			XSRFCookieName:          options.XSRFCookieName,
+			SessionCookieName:       options.SessionCookieName,
+			AssetsDir:               options.AssetsDir,
+			StaticDir:               options.StaticDir,
+			TemplatesDir:            options.TemplatesDir,
+			StorageDir:              options.StorageDir,
+			MaintenanceFilename:     options.MaintenanceFilename,
+			GoogleAnalyticsID:       options.GoogleAnalyticsID,
 			RememberMeDays:          userOptions.RememberMeDays,
 			DefaultFrom:             emailOptions.DefaultFrom,
-			ContactRecipientEmail:   gopherpitOptions.ContactRecipientEmail,
+			ContactRecipientEmail:   options.ContactRecipientEmail,
 			ACMEDirectoryURL:        certificateOptions.DirectoryURL,
 			ACMEDirectoryURLStaging: certificateOptions.DirectoryURLStaging,
-			SkipDomainVerification:  gopherpitOptions.SkipDomainVerification,
-			VerificationSubdomain:   gopherpitOptions.VerificationSubdomain,
-			TrustedDomains:          gopherpitOptions.TrustedDomains,
-			ForbiddenDomains:        gopherpitOptions.ForbiddenDomains,
+			SkipDomainVerification:  options.SkipDomainVerification,
+			VerificationSubdomain:   options.VerificationSubdomain,
+			TrustedDomains:          options.TrustedDomains,
+			ForbiddenDomains:        options.ForbiddenDomains,
 			APITrustedProxyCIDRs:    apiOptions.TrustedProxyCIDRs,
 			APIProxyRealIPHeader:    apiOptions.ProxyRealIPHeader,
 			APIHourlyRateLimit:      apiOptions.HourlyRateLimit,
@@ -407,7 +407,7 @@ func startCmd(daemon bool) {
 		})
 	}
 	if service, ok := certificateService.(*boltCertificate.Service); ok {
-		if gopherpitOptions.ListenTLS != "" || gopherpitOptions.ListenInternalTLS != "" {
+		if options.ListenTLS != "" || options.ListenInternalTLS != "" {
 			// Start renewal of certificates.
 			app.Functions = append(app.Functions, service.PeriodicRenew)
 		}

@@ -16,7 +16,7 @@ import (
 
 func stopCmd() {
 	err := application.StopDaemon(daemon.Daemon{
-		PidFileName: gopherpitOptions.PidFileName,
+		PidFileName: options.PidFileName,
 	})
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Error:", err)

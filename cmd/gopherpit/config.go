@@ -16,7 +16,7 @@ import (
 
 var (
 	// Initialize configurations with default values.
-	gopherpitOptions   = config.NewGopherPitOptions()
+	options            = config.NewGopherPitOptions()
 	apiOptions         = config.NewAPIOptions()
 	loggingOptions     = config.NewLoggingOptions()
 	emailOptions       = config.NewEmailOptions()
@@ -27,8 +27,8 @@ var (
 	servicesOptions    = config.NewServicesOptions()
 	// Make options list to be able to use them in config.Update and
 	// config.Prepare.
-	options = []config.Options{
-		gopherpitOptions,
+	allOptions = []config.Options{
+		options,
 		apiOptions,
 		loggingOptions,
 		emailOptions,
@@ -40,43 +40,9 @@ var (
 	}
 )
 
-func updateConfig() {
-	if *configDir == "" {
-		*configDir = os.Getenv(strings.ToUpper(config.Name) + "_CONFIGDIR")
-	}
-	if *configDir == "" {
-		*configDir = config.Dir
-	}
-	// Update options structures based on files in configDir and environment
-	// variables.
-	if err := config.Update(options, filepath.Join(config.BaseDir, "defaults"), *configDir); err != nil {
-		fmt.Fprintln(os.Stderr, "Error:", err)
-		os.Exit(2)
-	}
-}
-
-func verifyAndPrepareConfig() {
-	// Verify options values and provide help and error message in case of
-	// an error.
-	if help, err := config.Verify(options); err != nil {
-		fmt.Fprintln(os.Stderr, "Error:", err)
-		if help != "" {
-			fmt.Println()
-			fmt.Println(help)
-		}
-		os.Exit(2)
-	}
-	// Execute prepare methods on options structures.
-	// Usually it creates required directories or files.
-	if err := config.Prepare(options); err != nil {
-		fmt.Fprintln(os.Stderr, "Error:", err)
-		os.Exit(2)
-	}
-}
-
 func configCmd() {
 	// Print loaded configuration.
-	fmt.Printf("# gopherpit\n---\n%s\n", gopherpitOptions.String())
+	fmt.Printf("# %s\n---\n%s\n", config.Name, options.String())
 	fmt.Printf("# logging\n---\n%s\n", loggingOptions.String())
 	fmt.Printf("# email\n---\n%s\n", emailOptions.String())
 	fmt.Printf("# ldap\n---\n%s\n", ldapOptions.String())
@@ -86,4 +52,38 @@ func configCmd() {
 	fmt.Printf("# api\n---\n%s\n", apiOptions.String())
 	fmt.Printf("# services\n---\n%s\n", servicesOptions.String())
 	fmt.Printf("# config directories\n---\n- %s\n- %s\n", *configDir, filepath.Join(config.BaseDir, "defaults"))
+}
+
+func updateConfig() {
+	if *configDir == "" {
+		*configDir = os.Getenv(strings.ToUpper(config.Name) + "_CONFIGDIR")
+	}
+	if *configDir == "" {
+		*configDir = config.Dir
+	}
+	// Update options structures based on files in configDir and environment
+	// variables.
+	if err := config.Update(allOptions, filepath.Join(config.BaseDir, "defaults"), *configDir); err != nil {
+		fmt.Fprintln(os.Stderr, "Error:", err)
+		os.Exit(2)
+	}
+}
+
+func verifyAndPrepareConfig() {
+	// Verify options values and provide help and error message in case of
+	// an error.
+	if help, err := config.Verify(allOptions); err != nil {
+		fmt.Fprintln(os.Stderr, "Error:", err)
+		if help != "" {
+			fmt.Println()
+			fmt.Println(help)
+		}
+		os.Exit(2)
+	}
+	// Execute prepare methods on options structures.
+	// Usually it creates required directories or files.
+	if err := config.Prepare(allOptions); err != nil {
+		fmt.Fprintln(os.Stderr, "Error:", err)
+		os.Exit(2)
+	}
 }
