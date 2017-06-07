@@ -7,7 +7,7 @@ NAME = gopherpit
 VERSION ?= $(shell cat version)
 DOCKER_IMAGE ?= gopherpit/gopherpit
 GO_PACKAGE_PATH = gopherpit.com/gopherpit
-GOLANG_DOCKER_IMAGE ?= golang:1.8
+GOLANG_DOCKER_IMAGE ?= golang:1.8.3
 GO ?= go
 GOLINT ?= golint
 
