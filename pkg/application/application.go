@@ -357,8 +357,8 @@ func (a App) Start() error {
 		}
 	}()
 
-	logging.Info("Application start")
-	logging.Infof("Pid %d", os.Getpid())
+	logging.Info("application start")
+	logging.Infof("pid %d", os.Getpid())
 
 	// Start all async functions
 	for _, function := range a.Functions {
@@ -372,19 +372,40 @@ func (a App) Start() error {
 	interruptChannel := make(chan os.Signal)
 	signal.Notify(interruptChannel, syscall.SIGINT, syscall.SIGTERM)
 	// Blocking part
-	logging.Noticef("Received signal: %v", <-interruptChannel)
+	logging.Noticef("received signal: %v", <-interruptChannel)
 	if a.Daemon != nil && a.Daemon.PidFileName != "" {
 		// Remove Pid file only if there is a daemon
 		a.Daemon.Cleanup()
 	}
 
 	if a.ShutdownFunc != nil {
-		if err := a.ShutdownFunc(); err != nil {
-			logging.Errorf("Shutdown: %s", err)
+		done := make(chan struct{})
+		go func() {
+			defer func() {
+				if err := recover(); err != nil {
+					logging.Errorf("shutdown panic: %s", err)
+				}
+			}()
+
+			if err := a.ShutdownFunc(); err != nil {
+				logging.Errorf("shutdown: %s", err)
+			}
+			close(done)
+		}()
+
+		// If shutdown function is blocking too long,
+		// allow process termination by receiving another signal.
+		interruptChannel := make(chan os.Signal)
+		signal.Notify(interruptChannel, syscall.SIGINT, syscall.SIGTERM)
+		// Blocking part
+		select {
+		case sig := <-interruptChannel:
+			logging.Noticef("received signal: %v", sig)
+		case <-done:
 		}
 	}
 
-	logging.Info("Application stop")
+	logging.Info("application stop")
 	// Process remaining log messages
 	logging.WaitForAllUnprocessedRecords()
 	return nil
