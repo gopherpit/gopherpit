@@ -7,25 +7,26 @@ package server
 
 import (
 	"bytes"
-	"fmt"
 	"html/template"
 	"net"
 	"net/http"
 )
 
-func renderToResponse(w http.ResponseWriter, tmpl *template.Template, name string, status int, data interface{}, contentType string) (err error) {
+func renderToResponse(w http.ResponseWriter, tmpl *template.Template, name string, status int, data interface{}, contentType string) {
 	if name == "" {
 		name = "base"
 	}
 	buf := bytes.Buffer{}
-	if err = tmpl.ExecuteTemplate(&buf, name, data); err != nil {
-		return
+	if err := tmpl.ExecuteTemplate(&buf, name, data); err != nil {
+		panic(err)
 	}
 	if contentType != "" {
 		w.Header().Set("Content-Type", contentType)
 	}
 	w.WriteHeader(status)
-	_, err = buf.WriteTo(w)
+	if _, err := buf.WriteTo(w); err != nil {
+		srv.Logger.Errorf("render to response: %v", err)
+	}
 	return
 }
 
@@ -41,15 +42,11 @@ func renderToString(tmpl *template.Template, name string, data interface{}) (str
 }
 
 func respondText(w http.ResponseWriter, tmpl *template.Template, data interface{}) {
-	if err := renderToResponse(w, tmpl, "", http.StatusOK, data, "text/plain; charset=utf-8"); err != nil {
-		panic(fmt.Sprintf("respond text: %s", err))
-	}
+	renderToResponse(w, tmpl, "", http.StatusOK, data, "text/plain; charset=utf-8")
 }
 
 func respond(w http.ResponseWriter, templateName string, data interface{}) {
-	if err := renderToResponse(w, srv.templates[templateName], "", http.StatusOK, data, "text/html; charset=utf-8"); err != nil {
-		panic(fmt.Sprintf("respond: %s", err))
-	}
+	renderToResponse(w, srv.templates[templateName], "", http.StatusOK, data, "text/html; charset=utf-8")
 }
 
 var errorTemplates = map[int][]string{
@@ -68,14 +65,10 @@ func respondError(w http.ResponseWriter, r *http.Request, c int) {
 	if err != nil {
 		srv.Logger.Errorf("get user: %s", err)
 		if _, ok := err.(net.Error); ok {
-			if err := renderToResponse(w, srv.templates["ServiceUnavailable"], "", http.StatusServiceUnavailable, nil, "text/html; charset=utf-8"); err != nil {
-				srv.Logger.Errorf("render service unavailable response: %s", err)
-			}
+			renderToResponse(w, srv.templates["ServiceUnavailable"], "", http.StatusServiceUnavailable, nil, "text/html; charset=utf-8")
 			return
 		}
-		if err := renderToResponse(w, srv.templates["InternalServerError"], "", http.StatusServiceUnavailable, nil, "text/html; charset=utf-8"); err != nil {
-			srv.Logger.Errorf("render internal server error response: %s", err)
-		}
+		renderToResponse(w, srv.templates["InternalServerError"], "", http.StatusServiceUnavailable, nil, "text/html; charset=utf-8")
 		return
 	}
 	var tpl *template.Template
@@ -87,9 +80,7 @@ func respondError(w http.ResponseWriter, r *http.Request, c int) {
 	} else {
 		tpl = srv.templates[errorTemplates[c][0]]
 	}
-	if err := renderToResponse(w, tpl, "", c, ctx, "text/html; charset=utf-8"); err != nil {
-		srv.Logger.Errorf("render http code %v response: %s", c, err)
-	}
+	renderToResponse(w, tpl, "", c, ctx, "text/html; charset=utf-8")
 }
 
 func htmlBadRequestHandler(w http.ResponseWriter, r *http.Request) {
