@@ -6,6 +6,7 @@
 package boltCertificate
 
 import (
+	"net"
 	"time"
 
 	"github.com/boltdb/bolt"
@@ -34,6 +35,22 @@ func (s Service) Renew() error {
 
 			go func(fqdn string) {
 				defer s.RecoveryService.Recover()
+
+				addrs, err := net.LookupHost(fqdn)
+				if err != nil {
+					if e, ok := err.(*net.DNSError); ok {
+						if e.Err == "no such host" {
+							return
+						}
+					}
+					s.Logger.Errorf("acme certificates renewal: lookup dns host: %s: %s", fqdn, err)
+					return
+				}
+
+				if len(addrs) == 0 {
+					s.Logger.Errorf("acme certificates renewal: lookup dns host: %s: no addresses returned", fqdn)
+					return
+				}
 
 				cert, err := s.ObtainCertificate(fqdn)
 				if err != nil {
