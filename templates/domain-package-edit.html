@@ -202,8 +202,10 @@
                       </div>
                       <div class="level-right">
                         <div class="level-item">
-                          <a class="button modal-close-button" v-on:click.prevent="packageDelete.isModalActive = false">No</a>
-                          <a class="button is-danger" v-on:click.prevent="deletePackage" v-bind:class="{'is-loading': packageDelete.isLoading}">Yes, delete it!</a>
+                          <p class="control">
+                            <a class="button modal-close-button" v-on:click.prevent="packageDelete.isModalActive = false">No</a>
+                            <a class="button is-danger" v-on:click.prevent="deletePackage" v-bind:class="{'is-loading': packageDelete.isLoading}">Yes, delete it!</a>
+                          </p>
                         </div>
                       </div>
                     </nav>
