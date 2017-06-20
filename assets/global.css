@@ -89,3 +89,7 @@ span.button {
 pre + pre {
   margin-top: -1em;
 }
+
+footer > .container {
+  margin-bottom: 1em;
+}
