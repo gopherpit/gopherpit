@@ -40,7 +40,7 @@ dist:
 dist/$(NAME): dist FORCE
 	$(GO) version
 ifndef CGO_ENABLED
-	export CGO_ENABLED=0
+	$(eval export CGO_ENABLED=0)
 endif
 	$(GO) build -ldflags "$(LDFLAGS)" -o $@ ./cmd/$(NAME)
 
