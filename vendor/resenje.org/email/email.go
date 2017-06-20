@@ -35,7 +35,13 @@ type Service struct {
 
 // SendEmail sends an email message.
 func (s Service) SendEmail(from string, to []string, subject string, body string) error {
+	return s.SendEmailWithHeaders(from, to, subject, body, nil)
+}
+
+// SendEmailWithHeaders sends an email message with additional headers.
+func (s Service) SendEmailWithHeaders(from string, to []string, subject string, body string, headers map[string][]string) error {
 	m := gomail.NewMessage()
+	m.SetHeaders(headers)
 	m.SetHeader("From", from)
 	m.SetHeader("To", to...)
 	m.SetHeader("Subject", subject)
@@ -56,8 +62,13 @@ func (s Service) SendEmail(from string, to []string, subject string, body string
 
 // Notify sends an email message to Service.NotifyAddresses.
 func (s Service) Notify(subject, body string) error {
+	return s.NotifyWithHeaders(subject, body, nil)
+}
+
+// NotifyWithHeaders sends an email message to Service.NotifyAddresses with additional headers.
+func (s Service) NotifyWithHeaders(subject, body string, headers map[string][]string) error {
 	if len(s.NotifyAddresses) == 0 {
 		return nil
 	}
-	return s.SendEmail(s.DefaultFrom, s.NotifyAddresses, s.SubjectPrefix+subject, body)
+	return s.SendEmailWithHeaders(s.DefaultFrom, s.NotifyAddresses, s.SubjectPrefix+subject, body, headers)
 }

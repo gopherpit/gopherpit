@@ -39,6 +39,9 @@ type Options struct {
 	// IndexPage is a filename that will be used to render an index page
 	// for a directory.
 	IndexPage string
+	// AltDir is a directory path to look for files before the
+	// initialized directory.
+	AltDir string
 
 	// NotFoundHandler is used when no file can be found.
 	NotFoundHandler http.Handler

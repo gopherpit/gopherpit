@@ -68,7 +68,7 @@ func (handler *TimedFileHandler) Handle(record *Record) (err error) {
 		filename := filepath.Join(handler.Directory, timestamp)
 		if handler.FileExtension != "" {
 
-			filename += "." + handler.FileExtension
+			filename += handler.FileExtension
 		}
 		if handler.DirectoryMode == 0 {
 			handler.DirectoryMode = 0750

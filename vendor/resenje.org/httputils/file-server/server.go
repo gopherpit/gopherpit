@@ -82,7 +82,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			r.URL.Path = path.Join(s.root, cPath)
 		}
 	}
-	f, err := open(s.dir, p)
+	f, err := s.open(p)
 	if err != nil {
 		s.httpError(w, r, err)
 		return
@@ -112,7 +112,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	if d.IsDir() {
 		index := strings.TrimSuffix(p, "/") + s.IndexPage
-		ff, err := open(s.dir, index)
+		ff, err := s.open(index)
 		if err == nil {
 			defer ff.Close()
 			dd, err := ff.Stat()
@@ -176,7 +176,7 @@ func (s *Server) hash(p string) (h string, err error) {
 		return
 	}
 
-	f, err := open(s.dir, p)
+	f, err := s.open(p)
 	if err != nil {
 		return
 	}
@@ -237,4 +237,15 @@ func (s Server) canonicalPath(p string) string {
 	}
 
 	return d + f
+}
+
+func (s Server) open(p string) (f http.File, err error) {
+	if s.AltDir == "" {
+		return open(s.dir, p)
+	}
+	f, err = open(s.AltDir, p)
+	if os.IsNotExist(err) {
+		f, err = open(s.dir, p)
+	}
+	return
 }
