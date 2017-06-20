@@ -57,12 +57,6 @@
 			"revisionTime": "2017-06-10T17:02:32Z"
 		},
 		{
-			"checksumSHA1": "7xtI4YHA5UU4Ra/A5tBZ6rxzqCg=",
-			"path": "github.com/shurcooL/sanitized_anchor_name",
-			"revision": "541ff5ee47f1dddf6a5281af78307d921524bcb5",
-			"revisionTime": "2017-05-15T01:32:39Z"
-		},
-		{
 			"checksumSHA1": "C0rdOPxkLdobk6yQFN1CvsFRH1w=",
 			"path": "github.com/xenolf/lego/acme",
 			"revision": "28ead50ff1ca93acdb62734d3ed8da0206d036ff",
