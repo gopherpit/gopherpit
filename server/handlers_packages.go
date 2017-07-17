@@ -18,6 +18,29 @@ import (
 	"gopherpit.com/gopherpit/services/packages"
 )
 
+func packageHandler(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case strings.HasSuffix(r.URL.Path, "/info/refs"):
+			// Handle git refs info if git reference is set.
+			if notFound := packageGitInfoRefsHandler(w, r); !notFound {
+				return
+			}
+		case strings.HasSuffix(r.URL.Path, "/git-upload-pack"):
+			// Handle git upload pack if git reference is set.
+			if notFound := packageGitUploadPackHandler(w, r); !notFound {
+				return
+			}
+		}
+		// Handle go get domain/...
+		if r.URL.Query().Get("go-get") == "1" {
+			packageResolverHandler(w, r)
+			return
+		}
+		h.ServeHTTP(w, r)
+	})
+}
+
 func packageResolverHandler(w http.ResponseWriter, r *http.Request) {
 	var code int
 	defer func(startTime time.Time) {

@@ -374,26 +374,7 @@ func Serve() error {
 		srv.portTLS = ln.Addr().(*net.TCPAddr).Port
 
 		server := &http.Server{
-			Handler: nilRecoveryHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				switch {
-				case strings.HasSuffix(r.URL.Path, "/info/refs"):
-					// Handle git refs info if git reference is set.
-					if notFound := packageGitInfoRefsHandler(w, r); !notFound {
-						return
-					}
-				case strings.HasSuffix(r.URL.Path, "/git-upload-pack"):
-					// Handle git upload pack if git reference is set.
-					if notFound := packageGitUploadPackHandler(w, r); !notFound {
-						return
-					}
-				}
-				// Handle go get domain/...
-				if r.URL.Query().Get("go-get") == "1" {
-					packageResolverHandler(w, r)
-					return
-				}
-				srv.handler.ServeHTTP(w, r)
-			})),
+			Handler:   nilRecoveryHandler(packageHandler(srv.handler)),
 			TLSConfig: srv.tlsConfig,
 		}
 		srv.servers = append(srv.servers, server)
@@ -458,26 +439,7 @@ func Serve() error {
 		}
 
 		server := &http.Server{
-			Handler: nilRecoveryHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				switch {
-				case strings.HasSuffix(r.URL.Path, "/info/refs"):
-					// Handle git refs info if git reference is set.
-					if notFound := packageGitInfoRefsHandler(w, r); !notFound {
-						return
-					}
-				case strings.HasSuffix(r.URL.Path, "/git-upload-pack"):
-					// Handle git upload pack if git reference is set.
-					if notFound := packageGitUploadPackHandler(w, r); !notFound {
-						return
-					}
-				}
-				// Handle go get domain/...
-				if r.URL.Query().Get("go-get") == "1" {
-					packageResolverHandler(w, r)
-					return
-				}
-				handler.ServeHTTP(w, r)
-			})),
+			Handler: nilRecoveryHandler(packageHandler(handler)),
 		}
 		srv.servers = append(srv.servers, server)
 
