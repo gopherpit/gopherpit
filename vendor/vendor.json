@@ -273,6 +273,12 @@
 			"revisionTime": "2017-06-04T09:52:32Z"
 		},
 		{
+			"checksumSHA1": "ZJZrILtrehLRHdlSYGSvdbQW0B0=",
+			"path": "resenje.org/httputils/recovery",
+			"revision": "6e355ccc769385e5623626b07329017d2f495795",
+			"revisionTime": "2017-07-23T09:37:05Z"
+		},
+		{
 			"checksumSHA1": "5dJG9S53ybOcpzwiO/4BTALHkak=",
 			"path": "resenje.org/jsonresponse",
 			"revision": "c228c045b5f115f4647452aa4827711cda716926",

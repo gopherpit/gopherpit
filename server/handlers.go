@@ -10,13 +10,13 @@ import (
 	"fmt"
 	"net"
 	"net/http"
-	"runtime/debug"
 	"strings"
 	"time"
 
 	"resenje.org/antixsrf"
 	"resenje.org/httputils"
 	"resenje.org/httputils/log/access"
+	"resenje.org/httputils/recovery"
 	"resenje.org/jsonresponse"
 
 	"gopherpit.com/gopherpit/pkg/info"
@@ -87,87 +87,24 @@ func accessLogHandler(h http.Handler) http.Handler {
 	return accessLog.NewHandler(h, srv.AccessLogger)
 }
 
-// staticRecoveryHandler is a base hander for other recovery handlers.
-func staticRecoveryHandler(h http.Handler, body string, contentType string) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		defer func() {
-			if err := recover(); err != nil {
-				debugInfo := fmt.Sprintf(
-					"version: %s, build info: %s\r\n\r\n%s\r\n\r\n%#v\r\n\r\n%#v",
-					srv.Version,
-					srv.BuildInfo,
-					debug.Stack(),
-					r.URL,
-					r,
-				)
-				srv.Logger.Errorf("%v %v: %v\n%s", r.Method, r.URL.Path, err, debugInfo)
-				go func() {
-					defer srv.RecoveryService.Recover()
-					if err := srv.EmailService.Notify(
-						fmt.Sprint(
-							"Panic ",
-							r.Method,
-							" ",
-							r.URL.String(),
-							": ", err,
-						),
-						debugInfo,
-					); err != nil {
-						srv.Logger.Error("panic handler email sending: ", err)
-					}
-				}()
-				if contentType != "" {
-					w.Header().Set("Content-Type", contentType)
-				}
-				w.WriteHeader(http.StatusInternalServerError)
-				if body != "" {
-					fmt.Fprintln(w, body)
-				}
-			}
-		}()
-		h.ServeHTTP(w, r)
-	})
-}
-
 // Recovery handler for HTML frontend routers.
 func htmlRecoveryHandler(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		defer func() {
-			if err := recover(); err != nil {
-				debugInfo := fmt.Sprintf(
-					"version: %s, build info: %s\r\n\r\n%s\r\n\r\n%#v\r\n\r\n%#v",
-					srv.Version,
-					srv.BuildInfo,
-					debug.Stack(),
-					r.URL,
-					r,
-				)
-				srv.Logger.Errorf("%v %v: %v\n%s", r.Method, r.URL.Path, err, debugInfo)
-				go func() {
-					defer srv.RecoveryService.Recover()
-					if err := srv.EmailService.Notify(
-						fmt.Sprint(
-							"Panic ",
-							r.Method,
-							" ",
-							r.URL.String(),
-							": ", err,
-						),
-						debugInfo,
-					); err != nil {
-						srv.Logger.Error("panic handler email sending: ", err)
-					}
-				}()
-				htmlInternalServerErrorHandler(w, r)
-			}
-		}()
-		h.ServeHTTP(w, r)
-	})
+	return recovery.New(h,
+		recovery.WithLabel(version()),
+		recovery.WithLogFunc(srv.Logger.Errorf),
+		recovery.WithNotifier(srv.EmailService),
+		recovery.WithPanicResponseHandler(http.HandlerFunc(htmlInternalServerErrorHandler)),
+	)
 }
 
 // Recovery handler for JSON API routers.
 func jsonRecoveryHandler(h http.Handler) http.Handler {
-	return staticRecoveryHandler(h, `{"message":"Internal Server Error","code":500}`, "application/json; charset=utf-8")
+	return recovery.New(h,
+		recovery.WithLabel(version()),
+		recovery.WithLogFunc(srv.Logger.Errorf),
+		recovery.WithNotifier(srv.EmailService),
+		recovery.WithPanicResponse(`{"message":"Internal Server Error","code":500}`, "application/json; charset=utf-8"),
+	)
 }
 
 // Recovery handler that does not write anything to response.
@@ -175,7 +112,11 @@ func jsonRecoveryHandler(h http.Handler) http.Handler {
 // transforms response needs to be before other recovery handler,
 // like compress handler.
 func nilRecoveryHandler(h http.Handler) http.Handler {
-	return staticRecoveryHandler(h, "", "")
+	return recovery.New(h,
+		recovery.WithLabel(version()),
+		recovery.WithLogFunc(srv.Logger.Errorf),
+		recovery.WithNotifier(srv.EmailService),
+	)
 }
 
 func htmlMaxBodyBytesHandler(h http.Handler) http.Handler {
