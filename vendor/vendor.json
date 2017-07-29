@@ -245,38 +245,50 @@
 		{
 			"checksumSHA1": "pAuRTcdgLqh7jfocDBq4ATnJ7ZM=",
 			"path": "resenje.org/httputils",
-			"revision": "7b8894ee35e8ce3fc71d8a9e261c5f17b46319b3",
-			"revisionTime": "2017-06-04T09:52:32Z"
+			"revision": "16e7ca51e83fdf584434f5cd033f67c941553d10",
+			"revisionTime": "2017-07-29T19:47:11Z"
 		},
 		{
 			"checksumSHA1": "VsbA4BoG3vk81nUug+TCU5AWzdA=",
 			"path": "resenje.org/httputils/client/api",
-			"revision": "7b8894ee35e8ce3fc71d8a9e261c5f17b46319b3",
-			"revisionTime": "2017-06-04T09:52:32Z"
+			"revision": "16e7ca51e83fdf584434f5cd033f67c941553d10",
+			"revisionTime": "2017-07-29T19:47:11Z"
 		},
 		{
 			"checksumSHA1": "73dnfI9c9gfDPfomlu/gvTetLnU=",
 			"path": "resenje.org/httputils/client/http",
-			"revision": "7b8894ee35e8ce3fc71d8a9e261c5f17b46319b3",
-			"revisionTime": "2017-06-04T09:52:32Z"
+			"revision": "16e7ca51e83fdf584434f5cd033f67c941553d10",
+			"revisionTime": "2017-07-29T19:47:11Z"
 		},
 		{
 			"checksumSHA1": "UaFwWfjdQpWdt+zU5VIYpl3uX6E=",
 			"path": "resenje.org/httputils/file-server",
-			"revision": "7b8894ee35e8ce3fc71d8a9e261c5f17b46319b3",
-			"revisionTime": "2017-06-04T09:52:32Z"
+			"revision": "16e7ca51e83fdf584434f5cd033f67c941553d10",
+			"revisionTime": "2017-07-29T19:47:11Z"
 		},
 		{
 			"checksumSHA1": "8F3EPAh5Kw6YTd8Ih3tIKF1n2Ow=",
 			"path": "resenje.org/httputils/log/access",
-			"revision": "7b8894ee35e8ce3fc71d8a9e261c5f17b46319b3",
-			"revisionTime": "2017-06-04T09:52:32Z"
+			"revision": "16e7ca51e83fdf584434f5cd033f67c941553d10",
+			"revisionTime": "2017-07-29T19:47:11Z"
 		},
 		{
 			"checksumSHA1": "ZJZrILtrehLRHdlSYGSvdbQW0B0=",
 			"path": "resenje.org/httputils/recovery",
-			"revision": "6e355ccc769385e5623626b07329017d2f495795",
-			"revisionTime": "2017-07-23T09:37:05Z"
+			"revision": "16e7ca51e83fdf584434f5cd033f67c941553d10",
+			"revisionTime": "2017-07-29T19:47:11Z"
+		},
+		{
+			"checksumSHA1": "ZEE5rchfEGqaB68PjkzGmmhYwSI=",
+			"path": "resenje.org/httputils/servers",
+			"revision": "16e7ca51e83fdf584434f5cd033f67c941553d10",
+			"revisionTime": "2017-07-29T19:47:11Z"
+		},
+		{
+			"checksumSHA1": "IOkhaZraOu/hvmOQZ04xZIyCIqY=",
+			"path": "resenje.org/httputils/servers/http",
+			"revision": "16e7ca51e83fdf584434f5cd033f67c941553d10",
+			"revisionTime": "2017-07-29T19:47:11Z"
 		},
 		{
 			"checksumSHA1": "5dJG9S53ybOcpzwiO/4BTALHkak=",

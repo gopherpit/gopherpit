@@ -17,14 +17,13 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	throttled "gopkg.in/throttled/throttled.v2"
-	"resenje.org/httputils"
 	"resenje.org/httputils/file-server"
+	"resenje.org/httputils/servers"
+	"resenje.org/httputils/servers/http"
 	"resenje.org/logging"
 	"resenje.org/recovery"
 
@@ -56,13 +55,10 @@ type server struct {
 
 	salt []byte
 
-	tlsConfig        *tls.Config
 	tlsEnabled       bool
 	registerACMEUser bool
 
-	servers []*http.Server
-
-	port, portTLS, portInternal, portInternalTLS int
+	servers *servers.Servers
 
 	templates map[string]*template.Template
 
@@ -146,6 +142,10 @@ func Configure(o Options) (err error) {
 		templates:        map[string]*template.Template{},
 		tlsEnabled:       o.ListenTLS != "",
 		registerACMEUser: o.ListenTLS != "",
+		servers: servers.New(
+			servers.WithLogger(o.Logger),
+			servers.WithRecoverFunc(o.RecoveryService.Recover),
+		),
 	}
 	// Load or generate a salt value.
 	saltFilename := filepath.Join(s.StorageDir, s.Name+".salt")
@@ -257,12 +257,12 @@ func Configure(o Options) (err error) {
 	}
 
 	// Configure TLS
-	s.tlsConfig = &tls.Config{
+	tlsConfig := &tls.Config{
 		MinVersion:         tls.VersionTLS10,
 		NextProtos:         []string{"h2"},
 		ClientSessionCache: tls.NewLRUClientSessionCache(-1),
 	}
-	s.tlsConfig.GetCertificate = func(clientHello *tls.ClientHelloInfo) (*tls.Certificate, error) {
+	tlsConfig.GetCertificate = func(clientHello *tls.ClientHelloInfo) (*tls.Certificate, error) {
 		// If ServerName is defined in Options as Domain and there is TLSCert in Options
 		// use static configuration by returning nil or both cert and err
 		if clientHello.ServerName == srv.Domain && srv.TLSCert != "" {
@@ -317,13 +317,13 @@ func Configure(o Options) (err error) {
 		if c != nil {
 			return c, nil
 		}
-		if len(s.tlsConfig.NameToCertificate) != 0 {
+		if len(tlsConfig.NameToCertificate) != 0 {
 			name := strings.ToLower(clientHello.ServerName)
 			for len(name) > 0 && name[len(name)-1] == '.' {
 				name = name[:len(name)-1]
 			}
 
-			if cert, ok := s.tlsConfig.NameToCertificate[name]; ok {
+			if cert, ok := tlsConfig.NameToCertificate[name]; ok {
 				return cert, nil
 			}
 
@@ -331,7 +331,7 @@ func Configure(o Options) (err error) {
 			for i := range labels {
 				labels[i] = "*"
 				candidate := strings.Join(labels, ".")
-				if cert, ok := s.tlsConfig.NameToCertificate[candidate]; ok {
+				if cert, ok := tlsConfig.NameToCertificate[candidate]; ok {
 					return cert, nil
 				}
 			}
@@ -344,64 +344,18 @@ func Configure(o Options) (err error) {
 		if err != nil {
 			return fmt.Errorf("TLS Certificates: %s", err)
 		}
-		s.tlsConfig.Certificates = []tls.Certificate{cert}
-		s.tlsConfig.BuildNameToCertificate()
+		tlsConfig.Certificates = []tls.Certificate{cert}
+		tlsConfig.BuildNameToCertificate()
 	}
 
 	// Set the global srv variable
 	srv = s
 
-	return
-}
-
-// Serve starts HTTP servers.
-func Serve() error {
-	if srv == nil {
-		return errors.New("server not configured")
-	}
-
 	setupRouters()
 	setupInternalRouters()
 
-	if srv.ListenTLS != "" {
-		ln, err := net.Listen("tcp", srv.ListenTLS)
-		if err != nil {
-			return fmt.Errorf("listen tls '%v': %s", srv.ListenTLS, err)
-		}
-		ln = httputils.NewTCPKeepAliveListener(ln.(*net.TCPListener))
-		ln = tls.NewListener(ln, srv.tlsConfig)
-
-		srv.portTLS = ln.Addr().(*net.TCPAddr).Port
-
-		server := &http.Server{
-			Handler:   nilRecoveryHandler(packageHandler(srv.handler)),
-			TLSConfig: srv.tlsConfig,
-		}
-		srv.servers = append(srv.servers, server)
-
-		go func() {
-			defer srv.RecoveryService.Recover()
-
-			addr := net.JoinHostPort(ln.Addr().(*net.TCPAddr).IP.String(), strconv.Itoa(ln.Addr().(*net.TCPAddr).Port))
-
-			srv.Logger.Infof("TLS HTTP Listening on %v", addr)
-
-			if err := server.Serve(ln); err != nil && err != http.ErrServerClosed {
-				srv.Logger.Errorf("Serve TLS '%v': %s", addr, err)
-			}
-		}()
-	}
 	if srv.Listen != "" {
-		ln, err := net.Listen("tcp", srv.Listen)
-		if err != nil {
-			return fmt.Errorf("listen '%v': %s", srv.Listen, err)
-		}
-		ln = httputils.NewTCPKeepAliveListener(ln.(*net.TCPListener))
-
-		srv.port = ln.Addr().(*net.TCPAddr).Port
-
 		var handler http.Handler
-
 		if srv.ListenTLS != "" && srv.Domain != "" {
 			// Initialize handler that will redirect http:// to https:// only if
 			// certificate for configured domain or it's www subdomain is available.
@@ -437,81 +391,38 @@ func Serve() error {
 		} else {
 			handler = srv.handler
 		}
-
-		server := &http.Server{
-			Handler: nilRecoveryHandler(packageHandler(handler)),
-		}
-		srv.servers = append(srv.servers, server)
-
-		go func() {
-			defer srv.RecoveryService.Recover()
-
-			addr := net.JoinHostPort(ln.Addr().(*net.TCPAddr).IP.String(), strconv.Itoa(ln.Addr().(*net.TCPAddr).Port))
-
-			srv.Logger.Infof("Plain HTTP Listening on %v", addr)
-
-			if err := server.Serve(ln); err != nil && err != http.ErrServerClosed {
-				srv.Logger.Errorf("Serve '%v': %s", addr, err)
-			}
-		}()
+		srv.servers.Add("HTTP", srv.Listen, httpServer.New(
+			nilRecoveryHandler(packageHandler(handler)),
+		))
 	}
-
-	if srv.ListenInternalTLS != "" {
-		ln, err := net.Listen("tcp", srv.ListenInternalTLS)
-		if err != nil {
-			return fmt.Errorf("listen internal tls '%v': %s", srv.ListenInternalTLS, err)
-		}
-		ln = httputils.NewTCPKeepAliveListener(ln.(*net.TCPListener))
-		ln = tls.NewListener(ln, srv.tlsConfig)
-
-		srv.portInternalTLS = ln.Addr().(*net.TCPAddr).Port
-
-		server := &http.Server{
-			Handler:   nilRecoveryHandler(srv.internalHandler),
-			TLSConfig: srv.tlsConfig,
-		}
-		srv.servers = append(srv.servers, server)
-
-		go func() {
-			defer srv.RecoveryService.Recover()
-
-			addr := net.JoinHostPort(ln.Addr().(*net.TCPAddr).IP.String(), strconv.Itoa(ln.Addr().(*net.TCPAddr).Port))
-
-			srv.Logger.Infof("Internal TLS HTTP Listening on %v", addr)
-
-			if err := server.Serve(ln); err != nil && err != http.ErrServerClosed {
-				srv.Logger.Errorf("Serve Internal TLS '%v': %s", addr, err)
-			}
-		}()
+	if srv.ListenTLS != "" {
+		srv.servers.Add("TLS HTTP", srv.ListenTLS, httpServer.New(
+			nilRecoveryHandler(packageHandler(srv.handler)),
+			httpServer.WithTLSConfig(tlsConfig),
+		))
 	}
-
 	if srv.ListenInternal != "" {
-		ln, err := net.Listen("tcp", srv.ListenInternal)
-		if err != nil {
-			return fmt.Errorf("listen internal '%v': %s", srv.ListenInternal, err)
-		}
-		ln = httputils.NewTCPKeepAliveListener(ln.(*net.TCPListener))
-
-		srv.portInternal = ln.Addr().(*net.TCPAddr).Port
-
-		server := &http.Server{
-			Handler: nilRecoveryHandler(srv.internalHandler),
-		}
-		srv.servers = append(srv.servers, server)
-
-		go func() {
-			defer srv.RecoveryService.Recover()
-
-			addr := net.JoinHostPort(ln.Addr().(*net.TCPAddr).IP.String(), strconv.Itoa(ln.Addr().(*net.TCPAddr).Port))
-
-			srv.Logger.Infof("Internal plain HTTP Listening on %v", addr)
-
-			if err := server.Serve(ln); err != nil && err != http.ErrServerClosed {
-				srv.Logger.Errorf("Serve Internal '%v': %s", addr, err)
-			}
-		}()
+		srv.servers.Add("internal HTTP", srv.ListenInternal, httpServer.New(
+			nilRecoveryHandler(srv.internalHandler),
+		))
 	}
-	return nil
+	if srv.ListenInternalTLS != "" {
+		srv.servers.Add("internal TLS HTTP", srv.ListenInternalTLS, httpServer.New(
+			nilRecoveryHandler(srv.internalHandler),
+			httpServer.WithTLSConfig(tlsConfig),
+		))
+	}
+
+	return
+}
+
+// Serve starts HTTP servers.
+func Serve() error {
+	if srv == nil {
+		return errors.New("server not configured")
+	}
+
+	return srv.servers.Serve()
 }
 
 // Shutdown gracefully terminates HTTP servers.
@@ -520,20 +431,7 @@ func Shutdown(ctx context.Context) {
 		return
 	}
 
-	srv.Logger.Debug("Shutting down HTTP servers")
-	wg := sync.WaitGroup{}
-	for _, server := range srv.servers {
-		wg.Add(1)
-		go func(server *http.Server) {
-			defer srv.RecoveryService.Recover()
-			defer wg.Done()
-
-			if err := server.Shutdown(ctx); err != nil {
-				srv.Logger.Errorf("Server shutdown: %s", err)
-			}
-		}(server)
-	}
-	wg.Wait()
+	srv.servers.Shutdown(ctx)
 }
 
 // Version returns service version based on values from version and

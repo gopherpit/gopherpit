@@ -24,7 +24,7 @@ func TestAPIAccess(t *testing.T) {
 
 	t.Run("invalid key", func(t *testing.T) {
 		c := api.NewClientWithEndpoint(
-			"localhost:"+strconv.Itoa(srv.port)+"/api/v1",
+			"localhost:"+strconv.Itoa(srv.servers.Addr("HTTP").Port)+"/api/v1",
 			"INVALIDKEY",
 		)
 		c.UserAgent = "gopherpit-test-client"
@@ -35,7 +35,7 @@ func TestAPIAccess(t *testing.T) {
 		}
 
 		c = api.NewClientWithEndpoint(
-			"localhost:"+strconv.Itoa(srv.port)+"/api/v1",
+			"localhost:"+strconv.Itoa(srv.servers.Addr("HTTP").Port)+"/api/v1",
 			"",
 		)
 		c.UserAgent = "gopherpit-test-client"
@@ -74,7 +74,7 @@ func TestAPIAccess(t *testing.T) {
 		}
 
 		c := api.NewClientWithEndpoint(
-			"localhost:"+strconv.Itoa(srv.port)+"/api/v1",
+			"localhost:"+strconv.Itoa(srv.servers.Addr("HTTP").Port)+"/api/v1",
 			k.Secret,
 		)
 		c.UserAgent = username + "-gopherpit-test-client"
@@ -118,7 +118,7 @@ func TestAPIAccess(t *testing.T) {
 		}
 
 		c := api.NewClientWithEndpoint(
-			"localhost:"+strconv.Itoa(srv.port)+"/api/",
+			"localhost:"+strconv.Itoa(srv.servers.Addr("HTTP").Port)+"/api/",
 			k.Secret,
 		)
 		c.UserAgent = username + "-gopherpit-test-client"
@@ -129,7 +129,7 @@ func TestAPIAccess(t *testing.T) {
 		}
 
 		c = api.NewClientWithEndpoint(
-			"localhost:"+strconv.Itoa(srv.port)+"/api/v2/",
+			"localhost:"+strconv.Itoa(srv.servers.Addr("HTTP").Port)+"/api/v2/",
 			k.Secret,
 		)
 		c.UserAgent = username + "-gopherpit-test-client"
@@ -181,7 +181,7 @@ func TestAPIRateLimit(t *testing.T) {
 	}
 
 	c := api.NewClientWithEndpoint(
-		"localhost:"+strconv.Itoa(srv.port)+"/api/v1",
+		"localhost:"+strconv.Itoa(srv.servers.Addr("HTTP").Port)+"/api/v1",
 		k.Secret,
 	)
 	c.UserAgent = username + "-gopherpit-test-client"

@@ -60,7 +60,7 @@ func TestDomainsAPI(t *testing.T) {
 			}
 
 			httpClients[username] = api.NewClientWithEndpoint(
-				"localhost:"+strconv.Itoa(srv.port)+"/api/v1",
+				"localhost:"+strconv.Itoa(srv.servers.Addr("HTTP").Port)+"/api/v1",
 				k.Secret,
 			)
 			httpClients[username].UserAgent = username + "-gopherpit-test-client"
