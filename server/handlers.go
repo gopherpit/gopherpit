@@ -14,21 +14,14 @@ import (
 	"time"
 
 	"resenje.org/antixsrf"
-	"resenje.org/httputils"
-	"resenje.org/httputils/log/access"
-	"resenje.org/httputils/recovery"
 	"resenje.org/jsonresponse"
+	"resenje.org/web"
+	"resenje.org/web/log/access"
+	"resenje.org/web/recovery"
 
 	"gopherpit.com/gopherpit/pkg/info"
 	"gopherpit.com/gopherpit/services/key"
 	"gopherpit.com/gopherpit/services/user"
-)
-
-var (
-	// Shorter variables for functions that chain handlers.
-	chainHandlers    = httputils.ChainHandlers
-	finalHandler     = httputils.FinalHandler
-	finalHandlerFunc = httputils.FinalHandlerFunc
 )
 
 // Helper function for raising unexpected errors in JSON API handlers.
@@ -120,7 +113,7 @@ func nilRecoveryHandler(h http.Handler) http.Handler {
 }
 
 func htmlMaxBodyBytesHandler(h http.Handler) http.Handler {
-	return httputils.MaxBodyBytesHandler{
+	return web.MaxBodyBytesHandler{
 		Handler: h,
 		Limit:   2 * 1024 * 1024,
 		BodyFunc: func(r *http.Request) (string, error) {
@@ -132,7 +125,7 @@ func htmlMaxBodyBytesHandler(h http.Handler) http.Handler {
 }
 
 func textMaxBodyBytesHandler(h http.Handler) http.Handler {
-	return httputils.MaxBodyBytesHandler{
+	return web.MaxBodyBytesHandler{
 		Handler: h,
 		Limit:   2 * 1024 * 1024,
 		BodyFunc: func(r *http.Request) (string, error) {
@@ -144,7 +137,7 @@ func textMaxBodyBytesHandler(h http.Handler) http.Handler {
 }
 
 func jsonMaxBodyBytesHandler(h http.Handler) http.Handler {
-	return httputils.MaxBodyBytesHandler{
+	return web.MaxBodyBytesHandler{
 		Handler: h,
 		Limit:   2 * 1024 * 1024,
 		BodyFunc: func(r *http.Request) (string, error) {
@@ -310,13 +303,13 @@ func jsonValidatedEmailRequiredHandler(h http.Handler) http.Handler {
 type textMethodHandler map[string]http.Handler
 
 func (h textMethodHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	httputils.HandleMethods(h, "Method Not Allowed", "text/plain; charset=utf-8", w, r)
+	web.HandleMethods(h, "Method Not Allowed", "text/plain; charset=utf-8", w, r)
 }
 
 type jsonMethodHandler map[string]http.Handler
 
 func (h jsonMethodHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	httputils.HandleMethods(h, `{"message":"Method Not Allowed","code":405}`, "application/json; charset=utf-8", w, r)
+	web.HandleMethods(h, `{"message":"Method Not Allowed","code":405}`, "application/json; charset=utf-8", w, r)
 }
 
 func noCacheHeaderHandler(h http.Handler) http.Handler {
@@ -348,7 +341,7 @@ func apiKeyAuthHandler(h http.Handler, body, contentType string) http.Handler {
 		}
 		trustedProxyNetworks = append(trustedProxyNetworks, *cidrnet)
 	}
-	return httputils.AuthHandler{
+	return web.AuthHandler{
 		Handler: h,
 		UnauthorizedHandler: http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			jsonresponse.Unauthorized(w, nil)

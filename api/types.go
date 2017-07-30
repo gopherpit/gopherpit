@@ -5,7 +5,7 @@
 
 package api // import "gopherpit.com/gopherpit/api"
 
-import apiClient "resenje.org/httputils/client/api"
+import apiClient "resenje.org/web/client/api"
 
 // MaxLimit is a default maximum number of elements for paged responses.
 const MaxLimit = 100

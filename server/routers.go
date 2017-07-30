@@ -10,7 +10,7 @@ import (
 	"net/http/pprof"
 
 	"github.com/gorilla/handlers"
-	"resenje.org/httputils"
+	"resenje.org/web"
 )
 
 func setupRouters() {
@@ -20,25 +20,25 @@ func setupRouters() {
 
 	baseRouter := http.NewServeMux()
 
-	baseRouter.Handle("/assets/", chainHandlers(
+	baseRouter.Handle("/assets/", web.ChainHandlers(
 		handlers.CompressHandler,
 		htmlRecoveryHandler,
 		accessLogHandler,
 		htmlMaxBodyBytesHandler,
-		httputils.NoExpireHeadersHandler,
-		finalHandler(srv.assetsServer),
+		web.NoExpireHeadersHandler,
+		web.FinalHandler(srv.assetsServer),
 	))
 	setupFrontendRouter(baseRouter)
 	setupFrontendAPIRouter(baseRouter)
 	setupAPIRouter(baseRouter)
 
 	// Final handler
-	srv.handler = chainHandlers(
+	srv.handler = web.ChainHandlers(
 		domainHandler,
 		func(h http.Handler) http.Handler {
-			return httputils.NewSetHeadersHandler(h, srv.Headers)
+			return web.NewSetHeadersHandler(h, srv.Headers)
 		},
-		finalHandler(baseRouter),
+		web.FinalHandler(baseRouter),
 	)
 }
 
@@ -53,10 +53,10 @@ func setupInternalRouters() {
 	// Internal frontend router
 	//
 	internalRouter := http.NewServeMux()
-	internalBaseRouter.Handle("/", chainHandlers(
+	internalBaseRouter.Handle("/", web.ChainHandlers(
 		handlers.CompressHandler,
-		httputils.NoCacheHeadersHandler,
-		finalHandler(internalRouter),
+		web.NoCacheHeadersHandler,
+		web.FinalHandler(internalRouter),
 	))
 	internalRouter.Handle("/", http.HandlerFunc(textNotFoundHandler))
 	internalRouter.Handle("/status", http.HandlerFunc(statusHandler))
@@ -72,11 +72,11 @@ func setupInternalRouters() {
 	// Internal API router
 	//
 	internalAPIRouter := http.NewServeMux()
-	internalBaseRouter.Handle("/api/", chainHandlers(
+	internalBaseRouter.Handle("/api/", web.ChainHandlers(
 		handlers.CompressHandler,
 		jsonRecoveryHandler,
-		httputils.NoCacheHeadersHandler,
-		finalHandler(internalAPIRouter),
+		web.NoCacheHeadersHandler,
+		web.FinalHandler(internalAPIRouter),
 	))
 	internalAPIRouter.Handle("/api/", http.HandlerFunc(jsonNotFoundHandler))
 	internalAPIRouter.Handle("/api/status", http.HandlerFunc(statusAPIHandler))
@@ -87,10 +87,10 @@ func setupInternalRouters() {
 	})
 
 	// Final internal handler
-	srv.internalHandler = chainHandlers(
+	srv.internalHandler = web.ChainHandlers(
 		func(h http.Handler) http.Handler {
-			return httputils.NewSetHeadersHandler(h, srv.Headers)
+			return web.NewSetHeadersHandler(h, srv.Headers)
 		},
-		finalHandler(internalBaseRouter),
+		web.FinalHandler(internalBaseRouter),
 	)
 }

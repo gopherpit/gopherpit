@@ -18,9 +18,9 @@ import (
 
 	"github.com/gorilla/mux"
 	"golang.org/x/net/publicsuffix"
-	"resenje.org/httputils"
 	"resenje.org/jsonresponse"
 	"resenje.org/marshal"
+	"resenje.org/web"
 
 	"gopherpit.com/gopherpit/services/packages"
 	"gopherpit.com/gopherpit/services/user"
@@ -44,7 +44,7 @@ func certificateFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 	domain, err := srv.PackagesService.Domain(id)
 	switch err {
 	case packages.ErrDomainNotFound:
-		jsonresponse.BadRequest(w, httputils.NewError("Unknown domain."))
+		jsonresponse.BadRequest(w, web.NewError("Unknown domain."))
 		return
 	case nil:
 	default:
@@ -77,7 +77,7 @@ func certificateFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 	certificate, err := srv.CertificateService.ObtainCertificate(domain.FQDN)
 	if err != nil {
 		srv.Logger.Warningf("certificate fe api: obtain certificate: %s: %s", domain.FQDN, err)
-		jsonresponse.BadRequest(w, httputils.NewError("Unable to obtain TLS certificate."))
+		jsonresponse.BadRequest(w, web.NewError("Unable to obtain TLS certificate."))
 		return
 	}
 	srv.Logger.Infof("certificate api: obtain certificate: success for %s: expiration time: %s", certificate.FQDN, certificate.ExpirationTime)
@@ -99,7 +99,7 @@ type domainToken struct {
 }
 
 type validationFormErrorResponse struct {
-	httputils.FormErrors
+	web.FormErrors
 	Tokens []domainToken `json:"tokens"`
 }
 
@@ -115,19 +115,19 @@ func domainFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 	request := domainFEAPIRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		srv.Logger.Warningf("domain fe api: request decode: %s", err)
-		jsonresponse.BadRequest(w, httputils.NewError("Invalid data."))
+		jsonresponse.BadRequest(w, web.NewError("Invalid data."))
 		return
 	}
 
 	fqdn := strings.TrimSpace(request.FQDN)
 	if fqdn == "" {
 		srv.Logger.Warning("domain fe api: request: fqdn empty")
-		jsonresponse.BadRequest(w, httputils.NewFieldError("fqdn", "Fully qualified domain name is required."))
+		jsonresponse.BadRequest(w, web.NewFieldError("fqdn", "Fully qualified domain name is required."))
 		return
 	}
 
 	if !fqdnRegex.MatchString(fqdn) && fqdn != srv.Domain {
-		jsonresponse.BadRequest(w, httputils.NewFieldError("fqdn", "Fully qualified domain name is invalid."))
+		jsonresponse.BadRequest(w, web.NewFieldError("fqdn", "Fully qualified domain name is invalid."))
 		return
 	}
 
@@ -137,7 +137,7 @@ func domainFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			switch err {
 			case packages.ErrDomainNotFound:
-				jsonresponse.BadRequest(w, httputils.NewError("Unknown domain."))
+				jsonresponse.BadRequest(w, web.NewError("Unknown domain."))
 				return
 			case nil:
 			default:
@@ -150,7 +150,7 @@ func domainFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 
 	for _, d := range srv.ForbiddenDomains {
 		if d == fqdn || strings.HasSuffix(fqdn, "."+d) {
-			jsonresponse.BadRequest(w, httputils.NewFieldError("fqdn", "Domain is not available"))
+			jsonresponse.BadRequest(w, web.NewFieldError("fqdn", "Domain is not available"))
 			return
 		}
 	}
@@ -170,17 +170,17 @@ func domainFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 		switch {
 		case fqdn == srv.Domain, strings.HasSuffix(fqdn, "."+srv.Domain):
 			if strings.Count(fqdn, ".") > strings.Count(srv.Domain, ".")+1 {
-				jsonresponse.BadRequest(w, httputils.NewFieldError("fqdn", fmt.Sprintf("Only one subdomain is allowed for domain %s", srv.Domain)))
+				jsonresponse.BadRequest(w, web.NewFieldError("fqdn", fmt.Sprintf("Only one subdomain is allowed for domain %s", srv.Domain)))
 				return
 			}
 		default:
 			publicSuffix, icann := publicsuffix.PublicSuffix(fqdn)
 			if !icann {
-				jsonresponse.BadRequest(w, httputils.NewFieldError("fqdn", fmt.Sprintf("Top level domain %s is not an ICANN domain.", publicSuffix)))
+				jsonresponse.BadRequest(w, web.NewFieldError("fqdn", fmt.Sprintf("Top level domain %s is not an ICANN domain.", publicSuffix)))
 				return
 			}
 			if fqdn == publicSuffix {
-				jsonresponse.BadRequest(w, httputils.NewFieldError("fqdn", fmt.Sprintf("The domain %s is an ICANN domain.", publicSuffix)))
+				jsonresponse.BadRequest(w, web.NewFieldError("fqdn", fmt.Sprintf("The domain %s is an ICANN domain.", publicSuffix)))
 				return
 			}
 
@@ -188,7 +188,7 @@ func domainFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 			domainParts := strings.Split(fqdn, ".")
 			startIndex := len(domainParts) - strings.Count(publicSuffix, ".") - 2
 			if startIndex < 0 {
-				jsonresponse.BadRequest(w, httputils.NewFieldError("fqdn", "Fully qualified domain name is invalid."))
+				jsonresponse.BadRequest(w, web.NewFieldError("fqdn", "Fully qualified domain name is invalid."))
 				return
 			}
 
@@ -200,7 +200,7 @@ func domainFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 					return
 				}
 			} else {
-				jsonresponse.BadRequest(w, httputils.NewFieldError("fqdn", "Domain already exists."))
+				jsonresponse.BadRequest(w, web.NewFieldError("fqdn", "Domain already exists."))
 				return
 			}
 
@@ -232,7 +232,7 @@ func domainFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 
 			if !verified {
 				jsonresponse.BadRequest(w, validationFormErrorResponse{
-					FormErrors: httputils.NewFieldError("fqdn", "Domain is not verified."),
+					FormErrors: web.NewFieldError("fqdn", "Domain is not verified."),
 					Tokens:     tokens,
 				})
 				return
@@ -263,16 +263,16 @@ func domainFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		switch err {
 		case packages.ErrDomainFQDNRequired:
-			jsonresponse.BadRequest(w, httputils.NewFieldError("fqdn", "Domain fully qualified domain name is required."))
+			jsonresponse.BadRequest(w, web.NewFieldError("fqdn", "Domain fully qualified domain name is required."))
 			return
 		case packages.ErrDomainOwnerUserIDRequired:
-			jsonresponse.BadRequest(w, httputils.NewError("Domain user is required."))
+			jsonresponse.BadRequest(w, web.NewError("Domain user is required."))
 			return
 		case packages.ErrDomainNotFound:
-			jsonresponse.BadRequest(w, httputils.NewFieldError("fqdn", "Unknown domain."))
+			jsonresponse.BadRequest(w, web.NewFieldError("fqdn", "Unknown domain."))
 			return
 		case packages.ErrDomainAlreadyExists:
-			jsonresponse.BadRequest(w, httputils.NewFieldError("fqdn", "Domain is already registered."))
+			jsonresponse.BadRequest(w, web.NewFieldError("fqdn", "Domain is already registered."))
 			return
 		case nil:
 		default:
@@ -333,7 +333,7 @@ func domainDeleteFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		switch err {
 		case packages.ErrDomainNotFound:
-			jsonresponse.BadRequest(w, httputils.NewError("Unknown domain."))
+			jsonresponse.BadRequest(w, web.NewError("Unknown domain."))
 			return
 		case nil:
 		default:
@@ -363,19 +363,19 @@ func domainUserGrantFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 	request := userIDRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		srv.Logger.Warningf("domain user grant fe api: request decode: %s", err)
-		jsonresponse.BadRequest(w, httputils.NewError("Invalid data."))
+		jsonresponse.BadRequest(w, web.NewError("Invalid data."))
 		return
 	}
 
 	if request.ID == "" {
-		jsonresponse.BadRequest(w, httputils.NewFieldError("id", "User is required."))
+		jsonresponse.BadRequest(w, web.NewFieldError("id", "User is required."))
 		return
 	}
 
 	domainID := mux.Vars(r)["id"]
 
 	if request.ID == u.Username || request.ID == u.Email || request.ID == u.ID {
-		jsonresponse.BadRequest(w, httputils.NewFieldError("id", "You are already granted."))
+		jsonresponse.BadRequest(w, web.NewFieldError("id", "You are already granted."))
 		return
 	}
 
@@ -383,7 +383,7 @@ func domainUserGrantFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if err == user.ErrUserNotFound {
 			srv.Logger.Warningf("domain user grant fe api: user %s: %s", request.ID, err)
-			jsonresponse.BadRequest(w, httputils.NewFieldError("id", "Unknown user."))
+			jsonresponse.BadRequest(w, web.NewFieldError("id", "Unknown user."))
 			return
 		}
 		srv.Logger.Errorf("domain user grant fe api: user %s: %s", request.ID, err)
@@ -393,13 +393,13 @@ func domainUserGrantFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 	err = srv.PackagesService.AddUserToDomain(domainID, grantUser.ID, u.ID)
 	switch err {
 	case packages.ErrDomainNotFound:
-		jsonresponse.BadRequest(w, httputils.NewError("Unknown domain."))
+		jsonresponse.BadRequest(w, web.NewError("Unknown domain."))
 		return
 	case packages.ErrUserExists:
-		jsonresponse.BadRequest(w, httputils.NewFieldError("id", "This user is already granted."))
+		jsonresponse.BadRequest(w, web.NewFieldError("id", "This user is already granted."))
 		return
 	case packages.ErrForbidden:
-		jsonresponse.BadRequest(w, httputils.NewError("You do not have permission to revoke user."))
+		jsonresponse.BadRequest(w, web.NewError("You do not have permission to revoke user."))
 		return
 	case nil:
 	default:
@@ -422,19 +422,19 @@ func domainUserRevokeFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 	request := userIDRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		srv.Logger.Warningf("domain user grant fe api: request decode: %s", err)
-		jsonresponse.BadRequest(w, httputils.NewError("Invalid data."))
+		jsonresponse.BadRequest(w, web.NewError("Invalid data."))
 		return
 	}
 
 	if request.ID == "" {
-		jsonresponse.BadRequest(w, httputils.NewFieldError("id", "User is required."))
+		jsonresponse.BadRequest(w, web.NewFieldError("id", "User is required."))
 		return
 	}
 
 	domainID := mux.Vars(r)["id"]
 
 	if request.ID == u.Username || request.ID == u.Email || request.ID == u.ID {
-		jsonresponse.BadRequest(w, httputils.NewFieldError("id", "You can not revoke yourself."))
+		jsonresponse.BadRequest(w, web.NewFieldError("id", "You can not revoke yourself."))
 		return
 	}
 
@@ -442,7 +442,7 @@ func domainUserRevokeFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if err == user.ErrUserNotFound {
 			srv.Logger.Warningf("domain user revoke fe api: user %s: %s", request.ID, err)
-			jsonresponse.BadRequest(w, httputils.NewFieldError("id", "Unknown user."))
+			jsonresponse.BadRequest(w, web.NewFieldError("id", "Unknown user."))
 			return
 		}
 		srv.Logger.Errorf("domain user revoke fe api: user %s: %s", request.ID, err)
@@ -452,13 +452,13 @@ func domainUserRevokeFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 	err = srv.PackagesService.RemoveUserFromDomain(domainID, revokeUser.ID, u.ID)
 	switch err {
 	case packages.ErrDomainNotFound:
-		jsonresponse.BadRequest(w, httputils.NewError("Unknown domain."))
+		jsonresponse.BadRequest(w, web.NewError("Unknown domain."))
 		return
 	case packages.ErrUserDoesNotExist:
-		jsonresponse.BadRequest(w, httputils.NewFieldError("id", "This user is not granted."))
+		jsonresponse.BadRequest(w, web.NewFieldError("id", "This user is not granted."))
 		return
 	case packages.ErrForbidden:
-		jsonresponse.BadRequest(w, httputils.NewError("You do not have permission to revoke user."))
+		jsonresponse.BadRequest(w, web.NewError("You do not have permission to revoke user."))
 		return
 	case nil:
 	default:
@@ -487,13 +487,13 @@ func domainOwnerChangeFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 	request := domainOwnerChangeFEAPIRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		srv.Logger.Warningf("domain owner change fe api: request decode: %s", err)
-		jsonresponse.BadRequest(w, httputils.NewError("Invalid data."))
+		jsonresponse.BadRequest(w, web.NewError("Invalid data."))
 		return
 	}
 
 	if request.ID == "" {
 		srv.Logger.Warning("domain owner change fe api: request: id empty")
-		jsonresponse.BadRequest(w, httputils.NewFieldError("id", "User ID is required."))
+		jsonresponse.BadRequest(w, web.NewFieldError("id", "User ID is required."))
 		return
 	}
 
@@ -501,7 +501,7 @@ func domainOwnerChangeFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		switch err {
 		case packages.ErrDomainNotFound:
-			jsonresponse.BadRequest(w, httputils.NewError("Unknown domain."))
+			jsonresponse.BadRequest(w, web.NewError("Unknown domain."))
 			return
 		case nil:
 		default:
@@ -512,12 +512,12 @@ func domainOwnerChangeFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if domain.OwnerUserID != u.ID {
-		jsonresponse.BadRequest(w, httputils.NewError("You do not have permission to change the owner of this domain."))
+		jsonresponse.BadRequest(w, web.NewError("You do not have permission to change the owner of this domain."))
 		return
 	}
 
 	if request.ID == u.Username || request.ID == u.Email || request.ID == u.ID {
-		jsonresponse.BadRequest(w, httputils.NewFieldError("id", "You are already the owner."))
+		jsonresponse.BadRequest(w, web.NewFieldError("id", "You are already the owner."))
 		return
 	}
 
@@ -525,7 +525,7 @@ func domainOwnerChangeFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if err == user.ErrUserNotFound {
 			srv.Logger.Warningf("domain owner change fe api: user %s: %s", request.ID, err)
-			jsonresponse.BadRequest(w, httputils.NewFieldError("id", "Unknown user."))
+			jsonresponse.BadRequest(w, web.NewFieldError("id", "Unknown user."))
 			return
 		}
 		srv.Logger.Errorf("domain user revoke fe api: user %s: %s", request.ID, err)
@@ -537,7 +537,7 @@ func domainOwnerChangeFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 	}, u.ID)
 	switch err {
 	case packages.ErrDomainNotFound:
-		jsonresponse.BadRequest(w, httputils.NewError("Unknown domain."))
+		jsonresponse.BadRequest(w, web.NewError("Unknown domain."))
 		return
 	case nil:
 	default:
@@ -574,11 +574,11 @@ func packageFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 	request := packageFEAPIRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		srv.Logger.Warningf("package fe api: request decode: %s", err)
-		jsonresponse.BadRequest(w, httputils.NewError("Invalid data."))
+		jsonresponse.BadRequest(w, web.NewError("Invalid data."))
 		return
 	}
 
-	errors := httputils.FormErrors{}
+	errors := web.FormErrors{}
 
 	request.DomainID = strings.TrimSpace(request.DomainID)
 	if request.DomainID == "" {
@@ -690,43 +690,43 @@ func packageFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	switch err {
 	case packages.ErrForbidden:
-		jsonresponse.BadRequest(w, httputils.NewError("You do not have permission to add packages to this domain."))
+		jsonresponse.BadRequest(w, web.NewError("You do not have permission to add packages to this domain."))
 		return
 	case packages.ErrDomainNotFound:
-		jsonresponse.BadRequest(w, httputils.NewError("Unknown domain."))
+		jsonresponse.BadRequest(w, web.NewError("Unknown domain."))
 		return
 	case packages.ErrPackageNotFound:
-		jsonresponse.BadRequest(w, httputils.NewError("Unknown package."))
+		jsonresponse.BadRequest(w, web.NewError("Unknown package."))
 		return
 	case packages.ErrPackageDomainRequired:
-		jsonresponse.BadRequest(w, httputils.NewError("Domain is required."))
+		jsonresponse.BadRequest(w, web.NewError("Domain is required."))
 		return
 	case packages.ErrPackagePathRequired:
-		jsonresponse.BadRequest(w, httputils.NewFieldError("path", "Path is required."))
+		jsonresponse.BadRequest(w, web.NewFieldError("path", "Path is required."))
 		return
 	case packages.ErrPackageVCSRequired:
-		jsonresponse.BadRequest(w, httputils.NewFieldError("vcs", "VCS is required."))
+		jsonresponse.BadRequest(w, web.NewFieldError("vcs", "VCS is required."))
 		return
 	case packages.ErrPackageRepoRootRequired:
-		jsonresponse.BadRequest(w, httputils.NewFieldError("repoRoot", "Repository is required."))
+		jsonresponse.BadRequest(w, web.NewFieldError("repoRoot", "Repository is required."))
 		return
 	case packages.ErrPackageRepoRootInvalid:
-		jsonresponse.BadRequest(w, httputils.NewFieldError("repoRoot", "Repository is invalid."))
+		jsonresponse.BadRequest(w, web.NewFieldError("repoRoot", "Repository is invalid."))
 		return
 	case packages.ErrPackageRepoRootSchemeRequired:
-		jsonresponse.BadRequest(w, httputils.NewFieldError("repoRoot", "Repository URL scheme is required."))
+		jsonresponse.BadRequest(w, web.NewFieldError("repoRoot", "Repository URL scheme is required."))
 		return
 	case packages.ErrPackageRepoRootSchemeInvalid:
-		jsonresponse.BadRequest(w, httputils.NewFieldError("repoRoot", "Repository URL scheme is invalid."))
+		jsonresponse.BadRequest(w, web.NewFieldError("repoRoot", "Repository URL scheme is invalid."))
 		return
 	case packages.ErrPackageRepoRootHostInvalid:
-		jsonresponse.BadRequest(w, httputils.NewFieldError("repoRoot", "Repository URL host is invalid."))
+		jsonresponse.BadRequest(w, web.NewFieldError("repoRoot", "Repository URL host is invalid."))
 		return
 	case packages.ErrPackageRefChangeRejected:
-		jsonresponse.BadRequest(w, httputils.NewFieldError("refName", "Reference change is allowed only for Git HTTP and HTTPS repositeries."))
+		jsonresponse.BadRequest(w, web.NewFieldError("refName", "Reference change is allowed only for Git HTTP and HTTPS repositeries."))
 		return
 	case packages.ErrPackageAlreadyExists:
-		jsonresponse.BadRequest(w, httputils.NewFieldError("path", "Package already exists."))
+		jsonresponse.BadRequest(w, web.NewFieldError("path", "Package already exists."))
 		return
 	case nil:
 	default:
@@ -756,13 +756,13 @@ func packageDeleteFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 	p, err := srv.PackagesService.DeletePackage(id, u.ID)
 	switch err {
 	case packages.ErrForbidden:
-		jsonresponse.BadRequest(w, httputils.NewError("You do not have permission to add packages to this domain."))
+		jsonresponse.BadRequest(w, web.NewError("You do not have permission to add packages to this domain."))
 		return
 	case packages.ErrDomainNotFound:
-		jsonresponse.BadRequest(w, httputils.NewError("Unknown domain."))
+		jsonresponse.BadRequest(w, web.NewError("Unknown domain."))
 		return
 	case packages.ErrPackageNotFound:
-		jsonresponse.BadRequest(w, httputils.NewError("Unknown package."))
+		jsonresponse.BadRequest(w, web.NewError("Unknown package."))
 		return
 	case nil:
 	default:

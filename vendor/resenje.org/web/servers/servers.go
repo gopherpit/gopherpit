@@ -31,8 +31,7 @@ func (l stdLogger) Errorf(format string, a ...interface{}) {
 	log.Printf("ERROR "+format, a...)
 }
 
-// Option is a function that sets optional parameters for
-// the Serve function.
+// Option is a function that sets optional parameters for Servers.
 type Option func(*Servers)
 
 // WithLogger sets the Logger instance for logging messages.

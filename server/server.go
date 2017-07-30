@@ -21,11 +21,11 @@ import (
 	"time"
 
 	throttled "gopkg.in/throttled/throttled.v2"
-	"resenje.org/httputils/file-server"
-	"resenje.org/httputils/servers"
-	"resenje.org/httputils/servers/http"
 	"resenje.org/logging"
 	"resenje.org/recovery"
+	"resenje.org/web/file-server"
+	"resenje.org/web/servers"
+	"resenje.org/web/servers/http"
 
 	"gopherpit.com/gopherpit/pkg/certificate-cache"
 	"gopherpit.com/gopherpit/services/certificate"

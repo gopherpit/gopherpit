@@ -9,8 +9,8 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"resenje.org/httputils"
 	"resenje.org/jsonresponse"
+	"resenje.org/web"
 
 	"gopherpit.com/gopherpit/services/certificate"
 )
@@ -38,7 +38,7 @@ func registerACMEUserFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	request := registerACMEUserRequest{}
-	errors := httputils.FormErrors{}
+	errors := web.FormErrors{}
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		srv.Logger.Warningf("register acme user fe api: request decode %s %s: %s", u.ID, u.Email, err)
 		errors.AddError("Invalid data.")

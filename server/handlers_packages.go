@@ -12,8 +12,8 @@ import (
 	"strings"
 	"time"
 
-	"resenje.org/httputils"
 	"resenje.org/logging"
+	"resenje.org/web"
 
 	"gopherpit.com/gopherpit/services/packages"
 )
@@ -78,7 +78,7 @@ func packageResolverHandler(w http.ResponseWriter, r *http.Request) {
 		default:
 			level = logging.DEBUG
 		}
-		srv.PackageAccessLogger.Logf(level, "%s \"%s\" %s %s %s %d %f \"%s\" \"%s\"", r.RemoteAddr, xips, r.Method, httputils.GetRequestEndpoint(r)+r.URL.String(), r.Proto, code, time.Since(startTime).Seconds(), referrer, userAgent)
+		srv.PackageAccessLogger.Logf(level, "%s \"%s\" %s %s %s %d %f \"%s\" \"%s\"", r.RemoteAddr, xips, r.Method, web.GetRequestEndpoint(r)+r.URL.String(), r.Proto, code, time.Since(startTime).Seconds(), referrer, userAgent)
 	}(time.Now())
 
 	domain, _, err := net.SplitHostPort(r.Host)
@@ -166,7 +166,7 @@ func packageGitUploadPackHandler(w http.ResponseWriter, r *http.Request) (notFou
 			default:
 				level = logging.DEBUG
 			}
-			srv.PackageAccessLogger.Logf(level, "%s \"%s\" %s %s %s %d %f \"%s\" \"%s\"", r.RemoteAddr, xips, r.Method, httputils.GetRequestEndpoint(r)+r.URL.String(), r.Proto, code, time.Since(startTime).Seconds(), referrer, userAgent)
+			srv.PackageAccessLogger.Logf(level, "%s \"%s\" %s %s %s %d %f \"%s\" \"%s\"", r.RemoteAddr, xips, r.Method, web.GetRequestEndpoint(r)+r.URL.String(), r.Proto, code, time.Since(startTime).Seconds(), referrer, userAgent)
 		}
 	}(time.Now())
 
@@ -270,7 +270,7 @@ func packageGitInfoRefsHandler(w http.ResponseWriter, r *http.Request) (notFound
 			default:
 				level = logging.DEBUG
 			}
-			srv.PackageAccessLogger.Logf(level, "%s \"%s\" %s %s %s %d %f \"%s\" \"%s\"", r.RemoteAddr, xips, r.Method, httputils.GetRequestEndpoint(r)+r.URL.String(), r.Proto, code, time.Since(startTime).Seconds(), referrer, userAgent)
+			srv.PackageAccessLogger.Logf(level, "%s \"%s\" %s %s %s %d %f \"%s\" \"%s\"", r.RemoteAddr, xips, r.Method, web.GetRequestEndpoint(r)+r.URL.String(), r.Proto, code, time.Since(startTime).Seconds(), referrer, userAgent)
 		}
 	}(time.Now())
 

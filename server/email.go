@@ -13,8 +13,8 @@ import (
 	"net/http"
 	"regexp"
 
-	"resenje.org/httputils"
 	"resenje.org/logging"
+	"resenje.org/web"
 
 	"gopherpit.com/gopherpit/services/notification"
 )
@@ -31,7 +31,7 @@ func sendEmailValidationEmail(r *http.Request, to, token string) error {
 
 	if err := emailTemplateEmailValidateText.Execute(&textBody, map[string]interface{}{
 		"Brand":              srv.Brand,
-		"Host":               httputils.GetRequestEndpoint(r),
+		"Host":               web.GetRequestEndpoint(r),
 		"Token":              token,
 		"EmailSettingsToken": string(emailSettingsToken),
 	}); err != nil {
@@ -40,7 +40,7 @@ func sendEmailValidationEmail(r *http.Request, to, token string) error {
 
 	if err := emailTemplateEmailValidateHTML.Execute(&htmlBody, map[string]interface{}{
 		"Brand":              srv.Brand,
-		"Host":               httputils.GetRequestEndpoint(r),
+		"Host":               web.GetRequestEndpoint(r),
 		"Token":              token,
 		"EmailSettingsToken": string(emailSettingsToken),
 	}); err != nil {
@@ -70,7 +70,7 @@ func sendEmailPasswordResetEmail(r *http.Request, to, token string) error {
 
 	if err := emailTemplatePasswordResetText.Execute(&textBody, map[string]interface{}{
 		"Brand":              srv.Brand,
-		"Host":               httputils.GetRequestEndpoint(r),
+		"Host":               web.GetRequestEndpoint(r),
 		"Token":              token,
 		"EmailSettingsToken": string(emailSettingsToken),
 	}); err != nil {
@@ -79,7 +79,7 @@ func sendEmailPasswordResetEmail(r *http.Request, to, token string) error {
 
 	if err := emailTemplatePasswordResetHTML.Execute(&htmlBody, map[string]interface{}{
 		"Brand":              srv.Brand,
-		"Host":               httputils.GetRequestEndpoint(r),
+		"Host":               web.GetRequestEndpoint(r),
 		"Token":              token,
 		"EmailSettingsToken": string(emailSettingsToken),
 	}); err != nil {

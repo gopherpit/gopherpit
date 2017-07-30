@@ -12,8 +12,8 @@ import (
 	"net/http"
 	"strings"
 
-	"resenje.org/httputils"
 	"resenje.org/jsonresponse"
+	"resenje.org/web"
 )
 
 type contactRequest struct {
@@ -29,7 +29,7 @@ func contactPrivateFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	request := contactRequest{}
-	errors := httputils.FormErrors{}
+	errors := web.FormErrors{}
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		srv.Logger.Warningf("contact private fe api: request decode %s %s: %s", u.ID, u.Email, err)
 		errors.AddError("Invalid data.")
@@ -62,7 +62,7 @@ func contactPrivateFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 
 func contactFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 	request := contactRequest{}
-	errors := httputils.FormErrors{}
+	errors := web.FormErrors{}
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		srv.Logger.Warningf("contact fe api: request decode: %s", err)
 		errors.AddError("Invalid data.")

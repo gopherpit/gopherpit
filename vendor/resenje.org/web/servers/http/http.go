@@ -27,7 +27,7 @@ type Option func(*Options)
 func WithTLSConfig(tlsConfig *tls.Config) Option { return func(o *Options) { o.tlsConfig = tlsConfig } }
 
 // Server wraps http.Server to provide methods for
-// resenje.org/httputils/servers.Server interface.
+// resenje.org/web/servers.Server interface.
 type Server struct {
 	http.Server
 }

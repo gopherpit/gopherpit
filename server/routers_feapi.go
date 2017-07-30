@@ -8,20 +8,22 @@ package server
 import (
 	"net/http"
 
+	"resenje.org/web"
+
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 )
 
 func setupFrontendAPIRouter(baseRouter *http.ServeMux) {
 	frontendAPIRouter := mux.NewRouter().StrictSlash(true)
-	baseRouter.Handle("/i/", chainHandlers(
+	baseRouter.Handle("/i/", web.ChainHandlers(
 		handlers.CompressHandler,
 		jsonRecoveryHandler,
 		accessLogHandler,
 		jsonMaintenanceHandler,
 		jsonAntiXSRFHandler,
 		jsonMaxBodyBytesHandler,
-		finalHandler(frontendAPIRouter),
+		web.FinalHandler(frontendAPIRouter),
 	))
 	frontendAPIRouter.NotFoundHandler = http.HandlerFunc(jsonNotFoundHandler)
 	// Frontend API routes start
@@ -55,116 +57,116 @@ func setupFrontendAPIRouter(baseRouter *http.ServeMux) {
 		),
 	})
 	// User settings
-	frontendAPIRouter.Handle("/i/user", chainHandlers(
+	frontendAPIRouter.Handle("/i/user", web.ChainHandlers(
 		jsonLoginRequiredHandler,
-		finalHandler(jsonMethodHandler{
+		web.FinalHandler(jsonMethodHandler{
 			"POST": http.HandlerFunc(userFEAPIHandler),
 		}),
 	))
-	frontendAPIRouter.Handle("/i/user/email", chainHandlers(
+	frontendAPIRouter.Handle("/i/user/email", web.ChainHandlers(
 		jsonLoginRequiredHandler,
-		finalHandler(jsonMethodHandler{
+		web.FinalHandler(jsonMethodHandler{
 			"POST": http.HandlerFunc(userEmailFEAPIHandler),
 		}),
 	))
-	frontendAPIRouter.Handle("/i/user/notifications", chainHandlers(
+	frontendAPIRouter.Handle("/i/user/notifications", web.ChainHandlers(
 		jsonLoginRequiredHandler,
-		finalHandler(jsonMethodHandler{
+		web.FinalHandler(jsonMethodHandler{
 			"POST": http.HandlerFunc(userNotificationsSettingsFEAPIHandler),
 		}),
 	))
-	frontendAPIRouter.Handle("/i/user/email/validation-email", chainHandlers(
+	frontendAPIRouter.Handle("/i/user/email/validation-email", web.ChainHandlers(
 		jsonLoginRequiredHandler,
-		finalHandler(jsonMethodHandler{
+		web.FinalHandler(jsonMethodHandler{
 			"POST": http.HandlerFunc(userSendEmailValidationEmailFEAPIHandler),
 		}),
 	))
-	frontendAPIRouter.Handle("/i/user/password", chainHandlers(
+	frontendAPIRouter.Handle("/i/user/password", web.ChainHandlers(
 		jsonLoginRequiredHandler,
-		finalHandler(jsonMethodHandler{
+		web.FinalHandler(jsonMethodHandler{
 			"POST": http.HandlerFunc(userPasswordFEAPIHandler),
 		}),
 	))
-	frontendAPIRouter.Handle("/i/user/delete", chainHandlers(
+	frontendAPIRouter.Handle("/i/user/delete", web.ChainHandlers(
 		jsonLoginRequiredHandler,
-		finalHandler(jsonMethodHandler{
+		web.FinalHandler(jsonMethodHandler{
 			"POST": http.HandlerFunc(userDeleteFEAPIHandler),
 		}),
 	))
 	// API settings
-	frontendAPIRouter.Handle(`/i/api/key`, chainHandlers(
+	frontendAPIRouter.Handle(`/i/api/key`, web.ChainHandlers(
 		apiDisabledHandler,
 		jsonLoginRequiredHandler,
-		finalHandler(jsonMethodHandler{
+		web.FinalHandler(jsonMethodHandler{
 			"POST":   http.HandlerFunc(apiKeyFEAPIHandler),
 			"DELETE": http.HandlerFunc(apiKeyDeleteFEAPIHandler),
 		}),
 	))
-	frontendAPIRouter.Handle(`/i/api/networks`, chainHandlers(
+	frontendAPIRouter.Handle(`/i/api/networks`, web.ChainHandlers(
 		apiDisabledHandler,
 		jsonLoginRequiredHandler,
-		finalHandler(jsonMethodHandler{
+		web.FinalHandler(jsonMethodHandler{
 			"POST": http.HandlerFunc(apiNetworksFEAPIHandler),
 		}),
 	))
-	frontendAPIRouter.Handle(`/i/api/secret`, chainHandlers(
+	frontendAPIRouter.Handle(`/i/api/secret`, web.ChainHandlers(
 		apiDisabledHandler,
 		jsonLoginRequiredHandler,
-		finalHandler(jsonMethodHandler{
+		web.FinalHandler(jsonMethodHandler{
 			"POST": http.HandlerFunc(apiRegenerateSecretFEAPIHandler),
 		}),
 	))
 	// SSL Certificate
-	frontendAPIRouter.Handle(`/i/certificate/{id}`, chainHandlers(
+	frontendAPIRouter.Handle(`/i/certificate/{id}`, web.ChainHandlers(
 		jsonLoginRequiredHandler,
 		jsonValidatedEmailRequiredHandler,
-		finalHandler(jsonMethodHandler{
+		web.FinalHandler(jsonMethodHandler{
 			"POST": http.HandlerFunc(certificateFEAPIHandler),
 		}),
 	))
 	// Domain
-	frontendAPIRouter.Handle(`/i/domain`, chainHandlers(
+	frontendAPIRouter.Handle(`/i/domain`, web.ChainHandlers(
 		jsonLoginRequiredHandler,
 		jsonValidatedEmailRequiredHandler,
-		finalHandler(jsonMethodHandler{
+		web.FinalHandler(jsonMethodHandler{
 			"POST": http.HandlerFunc(domainFEAPIHandler),
 		}),
 	))
-	frontendAPIRouter.Handle(`/i/domain/{id}`, chainHandlers(
+	frontendAPIRouter.Handle(`/i/domain/{id}`, web.ChainHandlers(
 		jsonLoginRequiredHandler,
 		jsonValidatedEmailRequiredHandler,
-		finalHandler(jsonMethodHandler{
+		web.FinalHandler(jsonMethodHandler{
 			"POST":   http.HandlerFunc(domainFEAPIHandler),
 			"DELETE": http.HandlerFunc(domainDeleteFEAPIHandler),
 		}),
 	))
-	frontendAPIRouter.Handle(`/i/domain/{id}/user`, chainHandlers(
+	frontendAPIRouter.Handle(`/i/domain/{id}/user`, web.ChainHandlers(
 		jsonLoginRequiredHandler,
 		jsonValidatedEmailRequiredHandler,
-		finalHandler(jsonMethodHandler{
+		web.FinalHandler(jsonMethodHandler{
 			"POST":   http.HandlerFunc(domainUserGrantFEAPIHandler),
 			"DELETE": http.HandlerFunc(domainUserRevokeFEAPIHandler),
 		}),
 	))
-	frontendAPIRouter.Handle(`/i/domain/{id}/owner`, chainHandlers(
+	frontendAPIRouter.Handle(`/i/domain/{id}/owner`, web.ChainHandlers(
 		jsonLoginRequiredHandler,
 		jsonValidatedEmailRequiredHandler,
-		finalHandler(jsonMethodHandler{
+		web.FinalHandler(jsonMethodHandler{
 			"POST": http.HandlerFunc(domainOwnerChangeFEAPIHandler),
 		}),
 	))
 	// Package
-	frontendAPIRouter.Handle(`/i/package`, chainHandlers(
+	frontendAPIRouter.Handle(`/i/package`, web.ChainHandlers(
 		jsonLoginRequiredHandler,
 		jsonValidatedEmailRequiredHandler,
-		finalHandler(jsonMethodHandler{
+		web.FinalHandler(jsonMethodHandler{
 			"POST": http.HandlerFunc(packageFEAPIHandler),
 		}),
 	))
-	frontendAPIRouter.Handle(`/i/package/{id}`, chainHandlers(
+	frontendAPIRouter.Handle(`/i/package/{id}`, web.ChainHandlers(
 		jsonLoginRequiredHandler,
 		jsonValidatedEmailRequiredHandler,
-		finalHandler(jsonMethodHandler{
+		web.FinalHandler(jsonMethodHandler{
 			"POST":   http.HandlerFunc(packageFEAPIHandler),
 			"DELETE": http.HandlerFunc(packageDeleteFEAPIHandler),
 		}),

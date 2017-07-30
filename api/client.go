@@ -50,7 +50,7 @@ To use GopherPit installation on-premises:
 package api
 
 import (
-	apiClient "resenje.org/httputils/client/api"
+	apiClient "resenje.org/web/client/api"
 )
 
 var (

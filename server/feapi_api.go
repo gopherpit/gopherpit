@@ -12,8 +12,8 @@ import (
 
 	"gopherpit.com/gopherpit/services/key"
 
-	"resenje.org/httputils"
 	"resenje.org/jsonresponse"
+	"resenje.org/web"
 )
 
 type apiKeyFEAPIResponse struct {
@@ -104,7 +104,7 @@ func apiNetworksFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	request := apiNetworksFEAPIRequest{}
-	errors := httputils.FormErrors{}
+	errors := web.FormErrors{}
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		srv.Logger.Warningf("api networks fe api: request decode %s %s: %s", u.ID, u.Email, err)
 		errors.AddError("Invalid data.")

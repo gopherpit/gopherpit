@@ -7,7 +7,7 @@ package httpPackages
 
 import (
 	"gopherpit.com/gopherpit/services/packages"
-	"resenje.org/httputils/client/api"
+	"resenje.org/web/client/api"
 )
 
 var errorRegistry = apiClient.NewMapErrorRegistry(nil, nil)

@@ -10,7 +10,7 @@ import (
 	"encoding/json"
 	"time"
 
-	"resenje.org/httputils/client/api"
+	"resenje.org/web/client/api"
 )
 
 // Client is HTTP implementation of gcrastore.Service.

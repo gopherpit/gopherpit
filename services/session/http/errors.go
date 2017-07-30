@@ -6,7 +6,7 @@
 package httpSession
 
 import (
-	"resenje.org/httputils/client/api"
+	"resenje.org/web/client/api"
 
 	"gopherpit.com/gopherpit/services/session"
 )

@@ -6,7 +6,7 @@
 package httpUser
 
 import (
-	"resenje.org/httputils/client/api"
+	"resenje.org/web/client/api"
 
 	"gopherpit.com/gopherpit/services/user"
 )

@@ -16,10 +16,10 @@ import (
 	"gopkg.in/throttled/throttled.v2/store/memstore"
 
 	"resenje.org/email"
-	"resenje.org/httputils/client/api"
-	"resenje.org/httputils/client/http"
 	"resenje.org/logging"
 	"resenje.org/recovery"
+	"resenje.org/web/client/api"
+	"resenje.org/web/client/http"
 
 	"gopherpit.com/gopherpit/pkg/application"
 	"gopherpit.com/gopherpit/server"

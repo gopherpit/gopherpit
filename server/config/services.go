@@ -13,7 +13,7 @@ import (
 
 	"github.com/kelseyhightower/envconfig"
 	yaml "gopkg.in/yaml.v2"
-	"resenje.org/httputils/client/http"
+	"resenje.org/web/client/http"
 )
 
 // ServicesOptions defines parameters for communication with external services.

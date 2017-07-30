@@ -8,13 +8,15 @@ package server
 import (
 	"net/http"
 
+	"resenje.org/web"
+
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 )
 
 func setupAPIRouter(baseRouter *http.ServeMux) {
 	apiRouter := mux.NewRouter().StrictSlash(true)
-	baseRouter.Handle("/api/", chainHandlers(
+	baseRouter.Handle("/api/", web.ChainHandlers(
 		handlers.CompressHandler,
 		jsonRecoveryHandler,
 		accessLogHandler,
@@ -23,22 +25,22 @@ func setupAPIRouter(baseRouter *http.ServeMux) {
 		jsonMaxBodyBytesHandler,
 		jsonAPIKeyAuthHandler,
 		jsonValidatedEmailRequiredHandler,
-		finalHandler(apiRouter),
+		web.FinalHandler(apiRouter),
 	))
 	apiRouter.NotFoundHandler = http.HandlerFunc(jsonNotFoundHandler)
 	// API routes start
 	apiRouter.Handle("/api/v1/domains", jsonMethodHandler{
 		"GET": http.HandlerFunc(domainsAPIHandler),
-		"POST": chainHandlers(
+		"POST": web.ChainHandlers(
 			jsonAPIRateLimiterHandler,
-			finalHandlerFunc(updateDomainAPIHandler),
+			web.FinalHandlerFunc(updateDomainAPIHandler),
 		),
 	})
 	apiRouter.Handle("/api/v1/domains/{id}", jsonMethodHandler{
 		"GET": http.HandlerFunc(domainAPIHandler),
-		"POST": chainHandlers(
+		"POST": web.ChainHandlers(
 			jsonAPIRateLimiterHandler,
-			finalHandlerFunc(updateDomainAPIHandler),
+			web.FinalHandlerFunc(updateDomainAPIHandler),
 		),
 		"DELETE": http.HandlerFunc(deleteDomainAPIHandler),
 	})

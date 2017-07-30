@@ -9,7 +9,7 @@ import (
 	"bytes"
 	"encoding/json"
 
-	"resenje.org/httputils/client/api"
+	"resenje.org/web/client/api"
 
 	"gopherpit.com/gopherpit/services/notification"
 )

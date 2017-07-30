@@ -11,7 +11,7 @@ import (
 	"net/http"
 	"time"
 
-	"resenje.org/httputils"
+	"resenje.org/web"
 
 	"gopherpit.com/gopherpit/services/user"
 )
@@ -48,7 +48,7 @@ func audit(r *http.Request, info interface{}, action, message string) {
 		Username: username,
 		Email:    email,
 		Info:     info,
-		IPs:      httputils.GetRequestIPs(r),
+		IPs:      web.GetRequestIPs(r),
 		Action:   action,
 		Message:  message,
 	})
