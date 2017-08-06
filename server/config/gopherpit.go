@@ -12,8 +12,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/kelseyhightower/envconfig"
-	yaml "gopkg.in/yaml.v2"
 	"resenje.org/marshal"
 )
 
@@ -29,9 +27,6 @@ type GopherPitOptions struct {
 	Domain                 string            `json:"domain" yaml:"domain" envconfig:"DOMAIN"`
 	Headers                map[string]string `json:"headers" yaml:"headers" envconfig:"HEADERS"`
 	SessionCookieName      string            `json:"session-cookie-name" yaml:"session-cookie-name" envconfig:"SESSION_COOKIE_NAME"`
-	XSRFCookieName         string            `json:"xsrf-cookie-name" yaml:"xsrf-cookie-name" envconfig:"XSRF_COOKIE_NAME"`
-	XSRFHeader             string            `json:"xsrf-header" yaml:"xsrf-header" envconfig:"XSRF_HEADER"`
-	XSRFFormField          string            `json:"xsrf-form-field" yaml:"xsrf-form-field" envconfig:"XSRF_FORM_FIELD"`
 	Debug                  bool              `json:"debug" yaml:"debug" envconfig:"DEBUG"`
 	PidFileName            string            `json:"pid-file" yaml:"pid-file" envconfig:"PID_FILE"`
 	PidFileMode            marshal.Mode      `json:"pid-file-mode" yaml:"pid-file-mode" envconfig:"PID_FILE_MODE"`
@@ -66,9 +61,6 @@ func NewGopherPitOptions() *GopherPitOptions {
 			"X-XSS-Protection": "1; mode=block",
 		},
 		SessionCookieName:      "sesid",
-		XSRFCookieName:         "secid",
-		XSRFHeader:             "X-Secid",
-		XSRFFormField:          "secid",
 		Debug:                  false,
 		PidFileName:            filepath.Join(BaseDir, Name+".pid"),
 		PidFileMode:            0644,
@@ -87,31 +79,8 @@ func NewGopherPitOptions() *GopherPitOptions {
 	}
 }
 
-// Update updates options by loading gopherpit.json files.
-func (o *GopherPitOptions) Update(dirs ...string) error {
-	for _, dir := range dirs {
-		f := filepath.Join(dir, "gopherpit.yaml")
-		if _, err := os.Stat(f); !os.IsNotExist(err) {
-			if err := loadYAML(f, o); err != nil {
-				return fmt.Errorf("load yaml config: %s", err)
-			}
-		}
-		f = filepath.Join(dir, "gopherpit.json")
-		if _, err := os.Stat(f); !os.IsNotExist(err) {
-			if err := loadJSON(f, o); err != nil {
-				return fmt.Errorf("load json config: %s", err)
-			}
-		}
-	}
-	if err := envconfig.Process(strings.Replace(Name, "-", "_", -1), o); err != nil {
-		return fmt.Errorf("load env valiables: %s", err)
-	}
-	return nil
-}
-
-// Verify checks if configuration values are valid and if all requirements are
-// set for service to start.
-func (o *GopherPitOptions) Verify() (help string, err error) {
+// VerifyAndPrepare implements application.Options interface.
+func (o *GopherPitOptions) VerifyAndPrepare() (err error) {
 	if o.TLSCert != "" {
 		if !strings.HasPrefix(o.TLSCert, "/") {
 			o.TLSCert = filepath.Join(BaseDir, o.TLSCert)
@@ -143,23 +112,22 @@ func (o *GopherPitOptions) Verify() (help string, err error) {
 		return
 	}
 	ln.Close()
-	lnTLS, err := net.Listen("tcp", o.ListenTLS)
+	ln, err = net.Listen("tcp", o.ListenTLS)
 	if err != nil {
 		return
 	}
-	lnTLS.Close()
-	return
-}
+	ln.Close()
+	ln, err = net.Listen("tcp", o.ListenInternal)
+	if err != nil {
+		return
+	}
+	ln.Close()
+	ln, err = net.Listen("tcp", o.ListenInternalTLS)
+	if err != nil {
+		return
+	}
+	ln.Close()
 
-// String returns a JSON representation of the options.
-func (o *GopherPitOptions) String() string {
-	data, _ := yaml.Marshal(o)
-	return string(data)
-}
-
-// Prepare creates configured directories for home, storage, logs and
-// temporary files.
-func (o *GopherPitOptions) Prepare() error {
 	for _, dir := range []string{
 		o.StorageDir,
 		filepath.Dir(o.PidFileName),
@@ -170,5 +138,5 @@ func (o *GopherPitOptions) Prepare() error {
 			}
 		}
 	}
-	return nil
+	return
 }

@@ -36,7 +36,7 @@ func (m Mode) MarshalJSON() ([]byte, error) {
 	return b, err
 }
 
-// UnmarshalJSON implements json.Unamrshaler interface.
+// UnmarshalJSON implements json.Unmarshaler interface.
 // It parses octal representations of integer.
 func (m *Mode) UnmarshalJSON(data []byte) error {
 	if len(data) <= 2 || data[0] != '"' || data[len(data)-1] != '"' {
@@ -59,7 +59,7 @@ func (m Mode) MarshalText() ([]byte, error) {
 	return buf.Bytes(), err
 }
 
-// UnmarshalText implements encoding.TextUnamrshaler interface.
+// UnmarshalText implements encoding.TextUnmarshaler interface.
 // It parses octal representations of integer.
 func (m *Mode) UnmarshalText(data []byte) error {
 	i, err := strconv.ParseUint(string(data), 8, 16)

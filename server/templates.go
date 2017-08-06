@@ -5,16 +5,9 @@
 
 package server
 
-import (
-	"encoding/base32"
-	"errors"
-	"fmt"
-	"html/template"
-	"strings"
-	"time"
-)
+import "net/http"
 
-var templates = map[string][]string{
+var htmlTemplates = map[string][]string{
 	"LandingPage":           {"base.html", "cover.html", "login.html", "landing-page.html"},
 	"EmailUnvalidated":      {"base.html", "app.html", "email-unvalidated.html"},
 	"Dashboard":             {"base.html", "app.html", "changelog-record.html", "dashboard.html"},
@@ -56,105 +49,18 @@ var templates = map[string][]string{
 	// Maintenance
 	"Maintenance": {"base.html", "cover.html", "error.html", "error/maintenance.html"},
 	// HTTP Errors
-	"BadRequest":                   {"base.html", "cover.html", "error.html", "error/bad-request.html"},
-	"BadRequestPrivate":            {"base.html", "app.html", "error-private.html", "error/bad-request.html"},
-	"Unauthorized":                 {"base.html", "cover.html", "error.html", "error/unauthorized.html"},
-	"UnauthorizedPrivate":          {"base.html", "app.html", "error-private.html", "error/unauthorized.html"},
-	"Forbidden":                    {"base.html", "cover.html", "error.html", "error/forbidden.html"},
-	"ForbiddenPrivate":             {"base.html", "app.html", "error-private.html", "error/forbidden.html"},
-	"NotFound":                     {"base.html", "cover.html", "error.html", "error/not-found.html"},
-	"NotFoundPrivate":              {"base.html", "app.html", "error-private.html", "error/not-found.html"},
-	"RequestEntityTooLarge":        {"base.html", "cover.html", "error.html", "error/request-entity-too-large.html"},
-	"RequestEntityTooLargePrivate": {"base.html", "app.html", "error-private.html", "error/request-entity-too-large.html"},
-	"InternalServerError":          {"base.html", "cover.html", "error.html", "error/internal-server-error.html"},
-	"InternalServerErrorPrivate":   {"base.html", "app.html", "error-private.html", "error/internal-server-error.html"},
-	"ServiceUnavailable":           {"base.html", "cover.html", "error.html", "error/service-unavailable.html"},
-	"ServiceUnavailablePrivate":    {"base.html", "app.html", "error-private.html", "error/service-unavailable.html"},
-}
-
-func assetFunc(str string) string {
-	p, err := srv.assetsServer.HashedPath(str)
-	if err != nil {
-		srv.Logger.Errorf("html response: asset func: hashed path: %s", err)
-		return str
-	}
-	return p
-}
-
-func relativeTimeFunc(t time.Time) string {
-	const day = 24 * time.Hour
-	d := time.Since(t)
-	switch {
-	case d < time.Second:
-		return "just now"
-	case d < 2*time.Second:
-		return "one second ago"
-	case d < time.Minute:
-		return fmt.Sprintf("%d seconds ago", d/time.Second)
-	case d < 2*time.Minute:
-		return "one minute ago"
-	case d < time.Hour:
-		return fmt.Sprintf("%d minutes ago", d/time.Minute)
-	case d < 2*time.Hour:
-		return "one hour ago"
-	case d < day:
-		return fmt.Sprintf("%d hours ago", d/time.Hour)
-	case d < 2*day:
-		return "one day ago"
-	}
-	return fmt.Sprintf("%d days ago", d/day)
-}
-
-func safeHTMLFunc(text string) template.HTML {
-	return template.HTML(text)
-}
-
-func yearRangeFunc(year int) string {
-	curYear := time.Now().Year()
-	if year >= curYear {
-		return fmt.Sprintf("%d", year)
-	}
-	return fmt.Sprintf("%d - %d", year, curYear)
-}
-
-func containsStringFunc(list []string, element, yes, no string) string {
-	for _, e := range list {
-		if e == element {
-			return yes
-		}
-	}
-	return no
-}
-
-func htmlBrFunc(text string) string {
-	text = template.HTMLEscapeString(text)
-	return strings.Replace(text, "\n", "<br>", -1)
-}
-
-func mapFunc(values ...interface{}) (map[string]interface{}, error) {
-	if len(values)%2 != 0 {
-		return nil, errors.New("invalid map call")
-	}
-	m := make(map[string]interface{}, len(values)/2)
-	for i := 0; i < len(values); i += 2 {
-		key, ok := values[i].(string)
-		if !ok {
-			return nil, errors.New("map keys must be strings")
-		}
-		m[key] = values[i+1]
-	}
-	return m, nil
-}
-
-func newContext(m map[string]interface{}) func(string) interface{} {
-	return func(key string) interface{} {
-		if value, ok := m[key]; ok {
-			return value
-		}
-		return nil
-	}
-}
-
-func base32encodeFunc(text string) string {
-	return strings.TrimRight(base32.StdEncoding.EncodeToString([]byte(text)), "=")
+	http.StatusText(http.StatusBadRequest):                        {"base.html", "cover.html", "error.html", "error/bad-request.html"},
+	http.StatusText(http.StatusBadRequest) + " Private":           {"base.html", "app.html", "error-private.html", "error/bad-request.html"},
+	http.StatusText(http.StatusUnauthorized):                      {"base.html", "cover.html", "error.html", "error/unauthorized.html"},
+	http.StatusText(http.StatusUnauthorized) + " Private":         {"base.html", "app.html", "error-private.html", "error/unauthorized.html"},
+	http.StatusText(http.StatusForbidden):                         {"base.html", "cover.html", "error.html", "error/forbidden.html"},
+	http.StatusText(http.StatusForbidden) + " Private":            {"base.html", "app.html", "error-private.html", "error/forbidden.html"},
+	http.StatusText(http.StatusNotFound):                          {"base.html", "cover.html", "error.html", "error/not-found.html"},
+	http.StatusText(http.StatusNotFound) + " Private":             {"base.html", "app.html", "error-private.html", "error/not-found.html"},
+	http.StatusText(http.StatusRequestEntityTooLarge):             {"base.html", "cover.html", "error.html", "error/request-entity-too-large.html"},
+	http.StatusText(http.StatusRequestEntityTooLarge) + "Private": {"base.html", "app.html", "error-private.html", "error/request-entity-too-large.html"},
+	http.StatusText(http.StatusInternalServerError):               {"base.html", "cover.html", "error.html", "error/internal-server-error.html"},
+	http.StatusText(http.StatusInternalServerError) + " Private":  {"base.html", "app.html", "error-private.html", "error/internal-server-error.html"},
+	http.StatusText(http.StatusServiceUnavailable):                {"base.html", "cover.html", "error.html", "error/service-unavailable.html"},
+	http.StatusText(http.StatusServiceUnavailable) + " Private":   {"base.html", "app.html", "error-private.html", "error/service-unavailable.html"},
 }

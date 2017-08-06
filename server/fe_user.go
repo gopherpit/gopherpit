@@ -13,144 +13,144 @@ import (
 	"gopherpit.com/gopherpit/services/key"
 )
 
-func logoutHandler(w http.ResponseWriter, r *http.Request) {
-	r, err := logout(w, r)
+func (s *Server) logoutHandler(w http.ResponseWriter, r *http.Request) {
+	r, err := s.logout(w, r)
 	if err != nil {
-		srv.Logger.Errorf("logout: %s", err)
-		htmlServerError(w, r, err)
+		s.Logger.Errorf("logout: %s", err)
+		s.htmlServerError(w, r, err)
 		return
 	}
 	http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 }
 
-func registrationHandler(w http.ResponseWriter, r *http.Request) {
-	respond(w, "Registration", nil)
+func (s *Server) registrationHandler(w http.ResponseWriter, r *http.Request) {
+	s.html.Respond(w, "Registration", nil)
 }
 
-func passwordResetHandler(w http.ResponseWriter, r *http.Request) {
-	respond(w, "PasswordReset", map[string]interface{}{
+func (s *Server) passwordResetHandler(w http.ResponseWriter, r *http.Request) {
+	s.html.Respond(w, "PasswordReset", map[string]interface{}{
 		"Token": mux.Vars(r)["token"],
 	})
 }
 
-func passwordResetTokenHandler(w http.ResponseWriter, r *http.Request) {
-	respond(w, "PasswordResetToken", nil)
+func (s *Server) passwordResetTokenHandler(w http.ResponseWriter, r *http.Request) {
+	s.html.Respond(w, "PasswordResetToken", nil)
 }
 
-func emailValidationHandler(w http.ResponseWriter, r *http.Request) {
-	u, r, err := getRequestUser(r)
+func (s *Server) emailValidationHandler(w http.ResponseWriter, r *http.Request) {
+	u, r, err := s.getRequestUser(r)
 	if err != nil {
 		panic(err)
 	}
 	vars := mux.Vars(r)
 	token := vars["token"]
 
-	u2, err := srv.UserService.ChangeEmail(u.ID, token)
+	u2, err := s.UserService.ChangeEmail(u.ID, token)
 	if err != nil {
-		srv.Logger.Errorf("email validation: user %s: change email token %s: %s", u.ID, token, err)
-		respond(w, "EmailValidation", map[string]interface{}{
+		s.Logger.Errorf("email validation: user %s: change email token %s: %s", u.ID, token, err)
+		s.html.Respond(w, "EmailValidation", map[string]interface{}{
 			"Valid": false,
 			"User":  u,
 		})
 		return
 	}
-	respond(w, "EmailValidation", map[string]interface{}{
+	s.html.Respond(w, "EmailValidation", map[string]interface{}{
 		"Valid": !u2.EmailUnvalidated,
 		"User":  u2,
 	})
 }
 
-func settingsHandler(w http.ResponseWriter, r *http.Request) {
-	u, r, err := getRequestUser(r)
+func (s *Server) settingsHandler(w http.ResponseWriter, r *http.Request) {
+	u, r, err := s.getRequestUser(r)
 	if err != nil {
 		panic(err)
 	}
-	respond(w, "Settings", map[string]interface{}{
+	s.html.Respond(w, "Settings", map[string]interface{}{
 		"User":       u,
-		"APIEnabled": srv.APIEnabled,
+		"APIEnabled": s.APIEnabled,
 	})
 }
 
-func settingsEmailHandler(w http.ResponseWriter, r *http.Request) {
-	u, r, err := getRequestUser(r)
+func (s *Server) settingsEmailHandler(w http.ResponseWriter, r *http.Request) {
+	u, r, err := s.getRequestUser(r)
 	if err != nil {
 		panic(err)
 	}
-	optedOut, err := srv.NotificationService.IsEmailOptedOut(u.Email)
+	optedOut, err := s.NotificationService.IsEmailOptedOut(u.Email)
 	if err != nil {
-		srv.Logger.Errorf("settings email: %s: is email opted out api: %s", u.Email, err)
-		htmlServerError(w, r, err)
+		s.Logger.Errorf("settings email: %s: is email opted out api: %s", u.Email, err)
+		s.htmlServerError(w, r, err)
 		return
 	}
-	respond(w, "SettingsEmail", map[string]interface{}{
+	s.html.Respond(w, "SettingsEmail", map[string]interface{}{
 		"User":       u,
 		"OptedOut":   optedOut,
-		"APIEnabled": srv.APIEnabled,
+		"APIEnabled": s.APIEnabled,
 	})
 }
 
-func settingsNotificationsHandler(w http.ResponseWriter, r *http.Request) {
-	u, r, err := getRequestUser(r)
+func (s *Server) settingsNotificationsHandler(w http.ResponseWriter, r *http.Request) {
+	u, r, err := s.getRequestUser(r)
 	if err != nil {
 		panic(err)
 	}
-	optedOut, err := srv.NotificationService.IsEmailOptedOut(u.Email)
+	optedOut, err := s.NotificationService.IsEmailOptedOut(u.Email)
 	if err != nil {
-		srv.Logger.Errorf("settings notifications: %s: is email opted out api: %s", u.Email, err)
-		htmlServerError(w, r, err)
+		s.Logger.Errorf("settings notifications: %s: is email opted out api: %s", u.Email, err)
+		s.htmlServerError(w, r, err)
 		return
 	}
-	respond(w, "SettingsNotifications", map[string]interface{}{
+	s.html.Respond(w, "SettingsNotifications", map[string]interface{}{
 		"User":       u,
 		"OptedOut":   optedOut,
-		"APIEnabled": srv.APIEnabled,
+		"APIEnabled": s.APIEnabled,
 	})
 }
 
-func settingsPasswordHandler(w http.ResponseWriter, r *http.Request) {
-	u, r, err := getRequestUser(r)
+func (s *Server) settingsPasswordHandler(w http.ResponseWriter, r *http.Request) {
+	u, r, err := s.getRequestUser(r)
 	if err != nil {
 		panic(err)
 	}
-	respond(w, "SettingsPassword", map[string]interface{}{
+	s.html.Respond(w, "SettingsPassword", map[string]interface{}{
 		"User":       u,
-		"APIEnabled": srv.APIEnabled,
+		"APIEnabled": s.APIEnabled,
 	})
 }
 
-func apiAccessSettingsHandler(w http.ResponseWriter, r *http.Request) {
-	if !srv.APIEnabled {
-		htmlNotFoundHandler(w, r)
+func (s *Server) apiAccessSettingsHandler(w http.ResponseWriter, r *http.Request) {
+	if !s.APIEnabled {
+		s.htmlNotFoundHandler(w, r)
 		return
 	}
-	u, r, err := getRequestUser(r)
+	u, r, err := s.getRequestUser(r)
 	if err != nil {
 		panic(err)
 	}
-	k, err := srv.KeyService.KeyByRef(u.ID)
+	k, err := s.KeyService.KeyByRef(u.ID)
 	switch err {
 	case nil:
 	case key.ErrKeyNotFound:
 		k = &key.Key{}
 	default:
-		srv.Logger.Errorf("settings api access: %s: get key by ref: %s", u.ID, err)
-		htmlServerError(w, r, err)
+		s.Logger.Errorf("settings api access: %s: get key by ref: %s", u.ID, err)
+		s.htmlServerError(w, r, err)
 		return
 	}
-	respond(w, "SettingsAPIAccess", map[string]interface{}{
+	s.html.Respond(w, "SettingsAPIAccess", map[string]interface{}{
 		"User":       u,
 		"Key":        k,
-		"APIEnabled": srv.APIEnabled,
+		"APIEnabled": s.APIEnabled,
 	})
 }
 
-func settingsDeleteAccountHandler(w http.ResponseWriter, r *http.Request) {
-	u, r, err := getRequestUser(r)
+func (s *Server) settingsDeleteAccountHandler(w http.ResponseWriter, r *http.Request) {
+	u, r, err := s.getRequestUser(r)
 	if err != nil {
 		panic(err)
 	}
-	respond(w, "SettingsDeleteAccount", map[string]interface{}{
+	s.html.Respond(w, "SettingsDeleteAccount", map[string]interface{}{
 		"User":       u,
-		"APIEnabled": srv.APIEnabled,
+		"APIEnabled": s.APIEnabled,
 	})
 }

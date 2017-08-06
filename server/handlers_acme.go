@@ -23,7 +23,7 @@ const (
 	acmeURLPrefixLen = 28
 )
 
-func domainHandler(h http.Handler) http.Handler {
+func (s *Server) domainHandler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		rDomain, port, err := net.SplitHostPort(r.Host)
 		if err != nil {
@@ -31,10 +31,10 @@ func domainHandler(h http.Handler) http.Handler {
 		}
 		// Handle ACME challenges.
 		if strings.HasPrefix(r.URL.Path, acmeURLPrefix) {
-			srv.Logger.Debugf("domain: acme challenge: %s%s", r.Host, r.URL.String())
+			s.Logger.Debugf("domain: acme challenge: %s%s", r.Host, r.URL.String())
 			token := r.URL.Path[acmeURLPrefixLen:]
 			if token != "" {
-				c, err := srv.CertificateService.ACMEChallenge(rDomain)
+				c, err := s.CertificateService.ACMEChallenge(rDomain)
 				if err != nil {
 					logging.Errorf("domain: %s: acme challenge: %s", rDomain, err)
 					w.Header().Set("Content-Type", "text/plain; charset=utf-8")
@@ -48,11 +48,11 @@ func domainHandler(h http.Handler) http.Handler {
 					fmt.Fprintln(w, c.KeyAuth)
 					return
 				}
-				srv.Logger.Warningf("domain: acme challenge: %s: invalid token %s", r.URL.String(), c.Token)
+				s.Logger.Warningf("domain: acme challenge: %s: invalid token %s", r.URL.String(), c.Token)
 			}
 		}
 		// Redirect www to naked domain
-		if rDomain == "www."+srv.Domain {
+		if rDomain == "www."+s.Domain {
 			scheme := "http"
 			if r.TLS != nil {
 				scheme = "https"
@@ -64,12 +64,12 @@ func domainHandler(h http.Handler) http.Handler {
 			if query != "" {
 				query = "?" + query
 			}
-			http.Redirect(w, r, strings.Join([]string{scheme, "://", srv.Domain, port, r.URL.Path, query}, ""), http.StatusMovedPermanently)
+			http.Redirect(w, r, strings.Join([]string{scheme, "://", s.Domain, port, r.URL.Path, query}, ""), http.StatusMovedPermanently)
 			return
 		}
 		// Handle packages.
-		if srv.Domain != "" && rDomain != srv.Domain {
-			packageResolverHandler(w, r)
+		if s.Domain != "" && rDomain != s.Domain {
+			s.packageResolverHandler(w, r)
 			return
 		}
 		// Handle main site.
@@ -77,47 +77,47 @@ func domainHandler(h http.Handler) http.Handler {
 	})
 }
 
-func acmeUserHandler(h http.Handler) http.Handler {
+func (s *Server) acmeUserHandler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if srv.registerACMEUser {
-			u, r, err := getRequestUser(r)
+		if s.registerACMEUser {
+			u, r, err := s.getRequestUser(r)
 			if err != nil && err != user.ErrUserNotFound {
 				go func() {
-					defer srv.RecoveryService.Recover()
-					if err := srv.EmailService.Notify("Get user error", fmt.Sprint(err)); err != nil {
-						srv.Logger.Errorf("email notify: %s", err)
+					defer s.RecoveryService.Recover()
+					if err := s.EmailService.Notify("Get user error", fmt.Sprint(err)); err != nil {
+						s.Logger.Errorf("email notify: %s", err)
 					}
 				}()
-				htmlServerError(w, r, err)
+				s.htmlServerError(w, r, err)
 				return
 			}
 
-			au, err := srv.CertificateService.ACMEUser()
+			au, err := s.CertificateService.ACMEUser()
 			if err != nil {
 				if err == certificate.ErrACMEUserNotFound {
-					if r.Header.Get(srv.XSRFCookieName) == "" {
+					if r.Header.Get(antixsrf.XSRFCookieName) == "" {
 						antixsrf.Generate(w, r, "/")
 					}
 					if u != nil {
-						respond(w, "RegisterACMEUserPrivate", map[string]interface{}{
+						s.html.Respond(w, "RegisterACMEUserPrivate", map[string]interface{}{
 							"User":                u,
-							"ProductionDirectory": srv.ACMEDirectoryURL,
-							"StagingDirectory":    srv.ACMEDirectoryURLStaging,
+							"ProductionDirectory": s.ACMEDirectoryURL,
+							"StagingDirectory":    s.ACMEDirectoryURLStaging,
 						})
 						return
 					}
-					respond(w, "RegisterACMEUser", map[string]interface{}{
-						"ProductionDirectory": srv.ACMEDirectoryURL,
-						"StagingDirectory":    srv.ACMEDirectoryURLStaging,
+					s.html.Respond(w, "RegisterACMEUser", map[string]interface{}{
+						"ProductionDirectory": s.ACMEDirectoryURL,
+						"StagingDirectory":    s.ACMEDirectoryURLStaging,
 					})
 					return
 				}
-				srv.Logger.Errorf("acme user: get acme user: %s", err)
-				htmlInternalServerErrorHandler(w, r)
+				s.Logger.Errorf("acme user: get acme user: %s", err)
+				s.htmlInternalServerErrorHandler(w, r)
 				return
 			}
 			if au != nil {
-				srv.registerACMEUser = false
+				s.registerACMEUser = false
 			}
 		}
 		h.ServeHTTP(w, r)

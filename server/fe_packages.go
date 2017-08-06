@@ -18,8 +18,8 @@ import (
 	"gopherpit.com/gopherpit/services/user"
 )
 
-func domainPackagesHandler(w http.ResponseWriter, r *http.Request) {
-	u, r, err := getRequestUser(r)
+func (s *Server) domainPackagesHandler(w http.ResponseWriter, r *http.Request) {
+	u, r, err := s.getRequestUser(r)
 	if err != nil {
 		panic(err)
 	}
@@ -36,20 +36,20 @@ func domainPackagesHandler(w http.ResponseWriter, r *http.Request) {
 			return string(b), err
 		}(start)
 		if err != nil {
-			srv.Logger.Warningf("domain packages: base32 decode start %s: %s", id, err)
-			htmlNotFoundHandler(w, r)
+			s.Logger.Warningf("domain packages: base32 decode start %s: %s", id, err)
+			s.htmlNotFoundHandler(w, r)
 			return
 		}
 	}
-	pkgs, err := srv.PackagesService.PackagesByDomain(id, start, 0)
+	pkgs, err := s.PackagesService.PackagesByDomain(id, start, 0)
 	if err != nil {
 		if err == packages.ErrDomainNotFound {
-			srv.Logger.Warningf("domain packages: packages by domain %s: %s", id, err)
-			htmlNotFoundHandler(w, r)
+			s.Logger.Warningf("domain packages: packages by domain %s: %s", id, err)
+			s.htmlNotFoundHandler(w, r)
 			return
 		}
-		srv.Logger.Errorf("domain packages: packages by domain %s: %s", id, err)
-		htmlInternalServerErrorHandler(w, r)
+		s.Logger.Errorf("domain packages: packages by domain %s: %s", id, err)
+		s.htmlServerError(w, r, err)
 		return
 	}
 
@@ -57,18 +57,18 @@ func domainPackagesHandler(w http.ResponseWriter, r *http.Request) {
 	domains := packages.Domains{}
 	authorized := false
 	for {
-		response, err := srv.PackagesService.DomainsByUser(u.ID, token, 0)
+		response, err := s.PackagesService.DomainsByUser(u.ID, token, 0)
 		if err != nil {
 			if err == packages.ErrUserDoesNotExist {
-				srv.Logger.Warningf("domain packages: user domains %s: %s", u.ID, err)
+				s.Logger.Warningf("domain packages: user domains %s: %s", u.ID, err)
 				break
 			}
 			if err == packages.ErrDomainNotFound {
-				srv.Logger.Warningf("domain packages: user domains %s: %s", u.ID, err)
+				s.Logger.Warningf("domain packages: user domains %s: %s", u.ID, err)
 				break
 			}
-			srv.Logger.Errorf("domain packages: user domains %s: %s", u.ID, err)
-			htmlInternalServerErrorHandler(w, r)
+			s.Logger.Errorf("domain packages: user domains %s: %s", u.ID, err)
+			s.htmlServerError(w, r, err)
 			return
 		}
 		for _, domain := range response.Domains {
@@ -84,11 +84,11 @@ func domainPackagesHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !authorized {
-		htmlNotFoundHandler(w, r)
+		s.htmlNotFoundHandler(w, r)
 		return
 	}
 
-	respond(w, "DomainPackages", map[string]interface{}{
+	s.html.Respond(w, "DomainPackages", map[string]interface{}{
 		"User":     u,
 		"Domain":   pkgs.Domain,
 		"Domains":  domains,
@@ -98,8 +98,8 @@ func domainPackagesHandler(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func domainAddHandler(w http.ResponseWriter, r *http.Request) {
-	u, r, err := getRequestUser(r)
+func (s *Server) domainAddHandler(w http.ResponseWriter, r *http.Request) {
+	u, r, err := s.getRequestUser(r)
 	if err != nil {
 		panic(err)
 	}
@@ -108,48 +108,48 @@ func domainAddHandler(w http.ResponseWriter, r *http.Request) {
 
 	domain := packages.Domain{}
 	if id != "" {
-		d, err := srv.PackagesService.Domain(id)
+		d, err := s.PackagesService.Domain(id)
 		if err != nil {
 			if err == packages.ErrDomainNotFound {
-				srv.Logger.Warningf("domain add: domain %s: %s", id, err)
-				htmlNotFoundHandler(w, r)
+				s.Logger.Warningf("domain add: domain %s: %s", id, err)
+				s.htmlNotFoundHandler(w, r)
 				return
 			}
-			srv.Logger.Errorf("domain add: domain %s: %s", id, err)
-			htmlInternalServerErrorHandler(w, r)
+			s.Logger.Errorf("domain add: domain %s: %s", id, err)
+			s.htmlServerError(w, r, err)
 			return
 		}
 		domain = *d
 		if domain.OwnerUserID != u.ID {
-			htmlNotFoundHandler(w, r)
+			s.htmlNotFoundHandler(w, r)
 			return
 		}
 	}
 
-	respond(w, "DomainAdd", map[string]interface{}{
+	s.html.Respond(w, "DomainAdd", map[string]interface{}{
 		"User":       u,
 		"Domain":     domain,
-		"DomainName": srv.Domain,
+		"DomainName": s.Domain,
 	})
 }
 
-func domainChangelogHandler(w http.ResponseWriter, r *http.Request) {
-	u, r, err := getRequestUser(r)
+func (s *Server) domainChangelogHandler(w http.ResponseWriter, r *http.Request) {
+	u, r, err := s.getRequestUser(r)
 	if err != nil {
 		panic(err)
 	}
 
 	id := mux.Vars(r)["id"]
 
-	domain, err := srv.PackagesService.Domain(id)
+	domain, err := s.PackagesService.Domain(id)
 	if err != nil {
 		if err == packages.ErrDomainNotFound {
-			srv.Logger.Warningf("domain changelog: domain %s: %s", id, err)
-			htmlNotFoundHandler(w, r)
+			s.Logger.Warningf("domain changelog: domain %s: %s", id, err)
+			s.htmlNotFoundHandler(w, r)
 			return
 		}
-		srv.Logger.Errorf("domain changelog: domain %s: %s", id, err)
-		htmlInternalServerErrorHandler(w, r)
+		s.Logger.Errorf("domain changelog: domain %s: %s", id, err)
+		s.htmlServerError(w, r, err)
 		return
 	}
 
@@ -157,18 +157,18 @@ func domainChangelogHandler(w http.ResponseWriter, r *http.Request) {
 	domains := packages.Domains{}
 	authorized := false
 	for {
-		response, err := srv.PackagesService.DomainsByUser(u.ID, token, 0)
+		response, err := s.PackagesService.DomainsByUser(u.ID, token, 0)
 		if err != nil {
 			if err == packages.ErrUserDoesNotExist {
-				srv.Logger.Warningf("domain changelog: user domains %s: %s", u.ID, err)
+				s.Logger.Warningf("domain changelog: user domains %s: %s", u.ID, err)
 				break
 			}
 			if err == packages.ErrDomainNotFound {
-				srv.Logger.Warningf("domain changelog: user domains %s: %s", u.ID, err)
+				s.Logger.Warningf("domain changelog: user domains %s: %s", u.ID, err)
 				break
 			}
-			srv.Logger.Errorf("domain changelog: user domains %s: %s", u.ID, err)
-			htmlInternalServerErrorHandler(w, r)
+			s.Logger.Errorf("domain changelog: user domains %s: %s", u.ID, err)
+			s.htmlServerError(w, r, err)
 			return
 		}
 		for _, d := range response.Domains {
@@ -184,21 +184,21 @@ func domainChangelogHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !authorized {
-		htmlNotFoundHandler(w, r)
+		s.htmlNotFoundHandler(w, r)
 		return
 	}
 
 	start := r.URL.Query().Get("start")
 
-	changelog, err := srv.PackagesService.ChangelogForDomain(id, start, 20)
+	changelog, err := s.PackagesService.ChangelogForDomain(id, start, 20)
 	if err != nil {
 		if err == packages.ErrDomainNotFound {
-			srv.Logger.Warningf("domain changelog: domain changelog %s: %s", id, err)
-			htmlNotFoundHandler(w, r)
+			s.Logger.Warningf("domain changelog: domain changelog %s: %s", id, err)
+			s.htmlNotFoundHandler(w, r)
 			return
 		}
-		srv.Logger.Errorf("domain changelog: domain changelog %s: %s", id, err)
-		htmlInternalServerErrorHandler(w, r)
+		s.Logger.Errorf("domain changelog: domain changelog %s: %s", id, err)
+		s.htmlServerError(w, r, err)
 		return
 	}
 	if start != "" && changelog.Next == "" {
@@ -214,14 +214,14 @@ func domainChangelogHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	records := make([]changelogRecord, 0, len(changelog.Records))
 	for _, record := range changelog.Records {
-		if err = updateChangelogRecords(*u, record, &records, &users); err != nil {
-			srv.Logger.Errorf("domain changelog: update users map: %s", err)
-			htmlInternalServerErrorHandler(w, r)
+		if err = s.updateChangelogRecords(*u, record, &records, &users); err != nil {
+			s.Logger.Errorf("domain changelog: update users map: %s", err)
+			s.htmlServerError(w, r, err)
 			return
 		}
 	}
 
-	respond(w, "DomainChangelog", map[string]interface{}{
+	s.html.Respond(w, "DomainChangelog", map[string]interface{}{
 		"User":             u,
 		"Domain":           domain,
 		"Domains":          domains,
@@ -231,8 +231,8 @@ func domainChangelogHandler(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func domainTeamHandler(w http.ResponseWriter, r *http.Request) {
-	u, r, err := getRequestUser(r)
+func (s *Server) domainTeamHandler(w http.ResponseWriter, r *http.Request) {
+	u, r, err := s.getRequestUser(r)
 	if err != nil {
 		panic(err)
 	}
@@ -240,33 +240,33 @@ func domainTeamHandler(w http.ResponseWriter, r *http.Request) {
 	id := mux.Vars(r)["id"]
 
 	var domain *packages.Domain
-	domain, err = srv.PackagesService.Domain(id)
+	domain, err = s.PackagesService.Domain(id)
 	if err != nil {
 		if err == packages.ErrDomainNotFound {
-			srv.Logger.Warningf("domain team: domain %s: %s", id, err)
-			htmlNotFoundHandler(w, r)
+			s.Logger.Warningf("domain team: domain %s: %s", id, err)
+			s.htmlNotFoundHandler(w, r)
 			return
 		}
-		srv.Logger.Errorf("domain team: domain %s: %s", id, err)
-		htmlInternalServerErrorHandler(w, r)
+		s.Logger.Errorf("domain team: domain %s: %s", id, err)
+		s.htmlServerError(w, r, err)
 		return
 	}
 
 	token := ""
 	domains := packages.Domains{}
 	for {
-		response, err := srv.PackagesService.DomainsByUser(u.ID, token, 0)
+		response, err := s.PackagesService.DomainsByUser(u.ID, token, 0)
 		if err != nil {
 			if err == packages.ErrUserDoesNotExist {
-				srv.Logger.Warningf("domain team: user domains %s: %s", u.ID, err)
+				s.Logger.Warningf("domain team: user domains %s: %s", u.ID, err)
 				break
 			}
 			if err == packages.ErrDomainNotFound {
-				srv.Logger.Warningf("domain team: user domains %s: %s", u.ID, err)
+				s.Logger.Warningf("domain team: user domains %s: %s", u.ID, err)
 				break
 			}
-			srv.Logger.Errorf("domain team: user domains %s: %s", u.ID, err)
-			htmlInternalServerErrorHandler(w, r)
+			s.Logger.Errorf("domain team: user domains %s: %s", u.ID, err)
+			s.htmlServerError(w, r, err)
 			return
 		}
 		domains = append(domains, response.Domains...)
@@ -277,7 +277,7 @@ func domainTeamHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if domain.OwnerUserID != u.ID {
-		respond(w, "DomainTeam", map[string]interface{}{
+		s.html.Respond(w, "DomainTeam", map[string]interface{}{
 			"Forbidden": true,
 			"User":      u,
 			"Domain":    domain,
@@ -286,28 +286,28 @@ func domainTeamHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	domainUsers, err := srv.PackagesService.DomainUsers(id)
+	domainUsers, err := s.PackagesService.DomainUsers(id)
 	if err != nil {
 		if err == packages.ErrDomainNotFound {
-			srv.Logger.Warningf("domain team: domain users %s: %s", id, err)
-			htmlNotFoundHandler(w, r)
+			s.Logger.Warningf("domain team: domain users %s: %s", id, err)
+			s.htmlNotFoundHandler(w, r)
 			return
 		}
-		srv.Logger.Errorf("domain team: domain users %s: %s", id, err)
-		htmlInternalServerErrorHandler(w, r)
+		s.Logger.Errorf("domain team: domain users %s: %s", id, err)
+		s.htmlServerError(w, r, err)
 		return
 	}
 
 	users := []user.User{}
 	for _, id := range domainUsers.UserIDs {
-		domainUser, err := srv.UserService.User(id)
+		domainUser, err := s.UserService.User(id)
 		if err != nil {
 			if err == user.ErrUserNotFound {
-				srv.Logger.Warningf("domain team: user %s: %s", id, err)
+				s.Logger.Warningf("domain team: user %s: %s", id, err)
 				continue
 			}
-			srv.Logger.Errorf("domain team: user %s: %s", id, err)
-			htmlInternalServerErrorHandler(w, r)
+			s.Logger.Errorf("domain team: user %s: %s", id, err)
+			s.htmlServerError(w, r, err)
 			return
 		}
 		if domainUser == nil || domainUser.Disabled {
@@ -316,7 +316,7 @@ func domainTeamHandler(w http.ResponseWriter, r *http.Request) {
 		users = append(users, *domainUser)
 	}
 
-	respond(w, "DomainTeam", map[string]interface{}{
+	s.html.Respond(w, "DomainTeam", map[string]interface{}{
 		"Forbidden": false,
 		"User":      u,
 		"Users":     users,
@@ -325,8 +325,8 @@ func domainTeamHandler(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func domainSettingsHandler(w http.ResponseWriter, r *http.Request) {
-	u, r, err := getRequestUser(r)
+func (s *Server) domainSettingsHandler(w http.ResponseWriter, r *http.Request) {
+	u, r, err := s.getRequestUser(r)
 	if err != nil {
 		panic(err)
 	}
@@ -335,33 +335,33 @@ func domainSettingsHandler(w http.ResponseWriter, r *http.Request) {
 
 	var domain *packages.Domain
 	if id != "" {
-		domain, err = srv.PackagesService.Domain(id)
+		domain, err = s.PackagesService.Domain(id)
 		if err != nil {
 			if err == packages.ErrDomainNotFound {
-				srv.Logger.Warningf("domain settings: domain %s: %s", id, err)
-				htmlNotFoundHandler(w, r)
+				s.Logger.Warningf("domain settings: domain %s: %s", id, err)
+				s.htmlNotFoundHandler(w, r)
 				return
 			}
-			srv.Logger.Errorf("domain settings: domain %s: %s", id, err)
-			htmlInternalServerErrorHandler(w, r)
+			s.Logger.Errorf("domain settings: domain %s: %s", id, err)
+			s.htmlServerError(w, r, err)
 			return
 		}
 	}
 	token := ""
 	domains := packages.Domains{}
 	for {
-		response, err := srv.PackagesService.DomainsByUser(u.ID, token, 0)
+		response, err := s.PackagesService.DomainsByUser(u.ID, token, 0)
 		if err != nil {
 			if err == packages.ErrUserDoesNotExist {
-				srv.Logger.Warningf("domain settings: user domains %s: %s", u.ID, err)
+				s.Logger.Warningf("domain settings: user domains %s: %s", u.ID, err)
 				break
 			}
 			if err == packages.ErrDomainNotFound {
-				srv.Logger.Warningf("domain settings: user domains %s: %s", u.ID, err)
+				s.Logger.Warningf("domain settings: user domains %s: %s", u.ID, err)
 				break
 			}
-			srv.Logger.Errorf("domain settings: user domains %s: %s", u.ID, err)
-			htmlInternalServerErrorHandler(w, r)
+			s.Logger.Errorf("domain settings: user domains %s: %s", u.ID, err)
+			s.htmlServerError(w, r, err)
 			return
 		}
 		domains = append(domains, response.Domains...)
@@ -371,28 +371,28 @@ func domainSettingsHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	isCertificateBeingObtained, err := srv.CertificateService.IsCertificateBeingObtained(domain.FQDN)
+	isCertificateBeingObtained, err := s.CertificateService.IsCertificateBeingObtained(domain.FQDN)
 	if err != nil {
-		srv.Logger.Errorf("domain settings: is certificate being optained %s: %s", domain.FQDN, err)
-		htmlInternalServerErrorHandler(w, r)
+		s.Logger.Errorf("domain settings: is certificate being optained %s: %s", domain.FQDN, err)
+		s.htmlServerError(w, r, err)
 		return
 	}
 
 	var certificateExpirationTime *time.Time
 	if !isCertificateBeingObtained {
-		cert, err := srv.CertificateService.Certificate(domain.FQDN)
+		cert, err := s.CertificateService.Certificate(domain.FQDN)
 		switch err {
 		case certificate.ErrCertificateNotFound:
 		case nil:
 			certificateExpirationTime = cert.ExpirationTime
 		default:
-			srv.Logger.Errorf("domain settings: certificate %s: %s", domain.FQDN, err)
-			htmlInternalServerErrorHandler(w, r)
+			s.Logger.Errorf("domain settings: certificate %s: %s", domain.FQDN, err)
+			s.htmlServerError(w, r, err)
 			return
 		}
 	}
 
-	respond(w, "DomainSettings", map[string]interface{}{
+	s.html.Respond(w, "DomainSettings", map[string]interface{}{
 		"Forbidden":                  domain.OwnerUserID != u.ID,
 		"User":                       u,
 		"Domain":                     domain,
@@ -402,23 +402,23 @@ func domainSettingsHandler(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func domainDomainUserGrantHandler(w http.ResponseWriter, r *http.Request) {
-	u, r, err := getRequestUser(r)
+func (s *Server) domainDomainUserGrantHandler(w http.ResponseWriter, r *http.Request) {
+	u, r, err := s.getRequestUser(r)
 	if err != nil {
 		panic(err)
 	}
 
 	id := mux.Vars(r)["id"]
 
-	domain, err := srv.PackagesService.Domain(id)
+	domain, err := s.PackagesService.Domain(id)
 	if err != nil {
 		if err == packages.ErrDomainNotFound {
-			srv.Logger.Warningf("domain user grant: domain %s: %s", id, err)
-			htmlNotFoundHandler(w, r)
+			s.Logger.Warningf("domain user grant: domain %s: %s", id, err)
+			s.htmlNotFoundHandler(w, r)
 			return
 		}
-		srv.Logger.Errorf("domain user grant: domain %s: %s", id, err)
-		htmlInternalServerErrorHandler(w, r)
+		s.Logger.Errorf("domain user grant: domain %s: %s", id, err)
+		s.htmlServerError(w, r, err)
 		return
 	}
 
@@ -426,18 +426,18 @@ func domainDomainUserGrantHandler(w http.ResponseWriter, r *http.Request) {
 	domains := packages.Domains{}
 	authorized := false
 	for {
-		response, err := srv.PackagesService.DomainsByUser(u.ID, token, 0)
+		response, err := s.PackagesService.DomainsByUser(u.ID, token, 0)
 		if err != nil {
 			if err == packages.ErrUserDoesNotExist {
-				srv.Logger.Warningf("domain user grant: user domains %s: %s", u.ID, err)
+				s.Logger.Warningf("domain user grant: user domains %s: %s", u.ID, err)
 				break
 			}
 			if err == packages.ErrDomainNotFound {
-				srv.Logger.Warningf("domain user grant: user domains %s: %s", u.ID, err)
+				s.Logger.Warningf("domain user grant: user domains %s: %s", u.ID, err)
 				break
 			}
-			srv.Logger.Errorf("domain user grant: user domains %s: %s", u.ID, err)
-			htmlInternalServerErrorHandler(w, r)
+			s.Logger.Errorf("domain user grant: user domains %s: %s", u.ID, err)
+			s.htmlServerError(w, r, err)
 			return
 		}
 		for _, d := range response.Domains {
@@ -453,19 +453,19 @@ func domainDomainUserGrantHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !authorized {
-		htmlNotFoundHandler(w, r)
+		s.htmlNotFoundHandler(w, r)
 		return
 	}
 
-	respond(w, "DomainUserGrant", map[string]interface{}{
+	s.html.Respond(w, "DomainUserGrant", map[string]interface{}{
 		"User":    u,
 		"Domain":  domain,
 		"Domains": domains,
 	})
 }
 
-func domainDomainUserRevokeHandler(w http.ResponseWriter, r *http.Request) {
-	u, r, err := getRequestUser(r)
+func (s *Server) domainDomainUserRevokeHandler(w http.ResponseWriter, r *http.Request) {
+	u, r, err := s.getRequestUser(r)
 	if err != nil {
 		panic(err)
 	}
@@ -473,15 +473,15 @@ func domainDomainUserRevokeHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
 
-	domain, err := srv.PackagesService.Domain(id)
+	domain, err := s.PackagesService.Domain(id)
 	if err != nil {
 		if err == packages.ErrDomainNotFound {
-			srv.Logger.Warningf("domain user revoke: domain %s: %s", id, err)
-			htmlNotFoundHandler(w, r)
+			s.Logger.Warningf("domain user revoke: domain %s: %s", id, err)
+			s.htmlNotFoundHandler(w, r)
 			return
 		}
-		srv.Logger.Errorf("domain user revoke: domain %s: %s", id, err)
-		htmlInternalServerErrorHandler(w, r)
+		s.Logger.Errorf("domain user revoke: domain %s: %s", id, err)
+		s.htmlServerError(w, r, err)
 		return
 	}
 
@@ -489,18 +489,18 @@ func domainDomainUserRevokeHandler(w http.ResponseWriter, r *http.Request) {
 	domains := packages.Domains{}
 	authorized := false
 	for {
-		response, err := srv.PackagesService.DomainsByUser(u.ID, token, 0)
+		response, err := s.PackagesService.DomainsByUser(u.ID, token, 0)
 		if err != nil {
 			if err == packages.ErrUserDoesNotExist {
-				srv.Logger.Warningf("domain user revoke: user domains %s: %s", u.ID, err)
+				s.Logger.Warningf("domain user revoke: user domains %s: %s", u.ID, err)
 				break
 			}
 			if err == packages.ErrDomainNotFound {
-				srv.Logger.Warningf("domain user revoke: user domains %s: %s", u.ID, err)
+				s.Logger.Warningf("domain user revoke: user domains %s: %s", u.ID, err)
 				break
 			}
-			srv.Logger.Errorf("domain user revoke: user domains %s: %s", u.ID, err)
-			htmlInternalServerErrorHandler(w, r)
+			s.Logger.Errorf("domain user revoke: user domains %s: %s", u.ID, err)
+			s.htmlServerError(w, r, err)
 			return
 		}
 		for _, d := range response.Domains {
@@ -516,32 +516,32 @@ func domainDomainUserRevokeHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !authorized {
-		htmlNotFoundHandler(w, r)
+		s.htmlNotFoundHandler(w, r)
 		return
 	}
 
 	userID := vars["user-id"]
-	domainUser, err := srv.UserService.User(userID)
+	domainUser, err := s.UserService.User(userID)
 	if err != nil {
 		if err == user.ErrUserNotFound {
-			srv.Logger.Warningf("domain user revoke: user %s: %s", userID, err)
-			htmlNotFoundHandler(w, r)
+			s.Logger.Warningf("domain user revoke: user %s: %s", userID, err)
+			s.htmlNotFoundHandler(w, r)
 			return
 		}
-		srv.Logger.Errorf("domain user revoke: user %s: %s", userID, err)
-		htmlInternalServerErrorHandler(w, r)
+		s.Logger.Errorf("domain user revoke: user %s: %s", userID, err)
+		s.htmlServerError(w, r, err)
 		return
 	}
 
-	domainUsers, err := srv.PackagesService.DomainUsers(id)
+	domainUsers, err := s.PackagesService.DomainUsers(id)
 	if err != nil {
 		if err == packages.ErrDomainNotFound {
-			srv.Logger.Warningf("domain user revoke: domain users %s: %s", id, err)
-			htmlNotFoundHandler(w, r)
+			s.Logger.Warningf("domain user revoke: domain users %s: %s", id, err)
+			s.htmlNotFoundHandler(w, r)
 			return
 		}
-		srv.Logger.Errorf("domain user revoke: domain users %s: %s", id, err)
-		htmlInternalServerErrorHandler(w, r)
+		s.Logger.Errorf("domain user revoke: domain users %s: %s", id, err)
+		s.htmlServerError(w, r, err)
 		return
 	}
 
@@ -553,11 +553,11 @@ func domainDomainUserRevokeHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if !found {
-		htmlNotFoundHandler(w, r)
+		s.htmlNotFoundHandler(w, r)
 		return
 	}
 
-	respond(w, "DomainUserRevoke", map[string]interface{}{
+	s.html.Respond(w, "DomainUserRevoke", map[string]interface{}{
 		"User":       u,
 		"Domain":     domain,
 		"Domains":    domains,
@@ -565,23 +565,23 @@ func domainDomainUserRevokeHandler(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func domainDomainOwnerChangeHandler(w http.ResponseWriter, r *http.Request) {
-	u, r, err := getRequestUser(r)
+func (s *Server) domainDomainOwnerChangeHandler(w http.ResponseWriter, r *http.Request) {
+	u, r, err := s.getRequestUser(r)
 	if err != nil {
 		panic(err)
 	}
 
 	id := mux.Vars(r)["id"]
 
-	domain, err := srv.PackagesService.Domain(id)
+	domain, err := s.PackagesService.Domain(id)
 	if err != nil {
 		if err == packages.ErrDomainNotFound {
-			srv.Logger.Warningf("domain owner change: domain %s: %s", id, err)
-			htmlNotFoundHandler(w, r)
+			s.Logger.Warningf("domain owner change: domain %s: %s", id, err)
+			s.htmlNotFoundHandler(w, r)
 			return
 		}
-		srv.Logger.Errorf("domain owner change: domain %s: %s", id, err)
-		htmlInternalServerErrorHandler(w, r)
+		s.Logger.Errorf("domain owner change: domain %s: %s", id, err)
+		s.htmlServerError(w, r, err)
 		return
 	}
 
@@ -589,18 +589,18 @@ func domainDomainOwnerChangeHandler(w http.ResponseWriter, r *http.Request) {
 	domains := packages.Domains{}
 	authorized := false
 	for {
-		response, err := srv.PackagesService.DomainsByUser(u.ID, token, 0)
+		response, err := s.PackagesService.DomainsByUser(u.ID, token, 0)
 		if err != nil {
 			if err == packages.ErrUserDoesNotExist {
-				srv.Logger.Warningf("domain owner change: user domains %s: %s", u.ID, err)
+				s.Logger.Warningf("domain owner change: user domains %s: %s", u.ID, err)
 				break
 			}
 			if err == packages.ErrDomainNotFound {
-				srv.Logger.Warningf("domain owner change: user domains %s: %s", u.ID, err)
+				s.Logger.Warningf("domain owner change: user domains %s: %s", u.ID, err)
 				break
 			}
-			srv.Logger.Errorf("domain owner change: user domains %s: %s", u.ID, err)
-			htmlInternalServerErrorHandler(w, r)
+			s.Logger.Errorf("domain owner change: user domains %s: %s", u.ID, err)
+			s.htmlServerError(w, r, err)
 			return
 		}
 		for _, d := range response.Domains {
@@ -616,11 +616,11 @@ func domainDomainOwnerChangeHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !authorized {
-		htmlNotFoundHandler(w, r)
+		s.htmlNotFoundHandler(w, r)
 		return
 	}
 
-	respond(w, "DomainOwnerChange", map[string]interface{}{
+	s.html.Respond(w, "DomainOwnerChange", map[string]interface{}{
 		"User":    u,
 		"Domain":  domain,
 		"Domains": domains,
@@ -639,8 +639,8 @@ var vcsInfos = []vcsInfo{
 	{packages.VCSSubversion, "Subversion"},
 }
 
-func domainPackageEditHandler(w http.ResponseWriter, r *http.Request) {
-	u, r, err := getRequestUser(r)
+func (s *Server) domainPackageEditHandler(w http.ResponseWriter, r *http.Request) {
+	u, r, err := s.getRequestUser(r)
 	if err != nil {
 		panic(err)
 	}
@@ -653,29 +653,29 @@ func domainPackageEditHandler(w http.ResponseWriter, r *http.Request) {
 	domainID := vars["domain-id"]
 	packageID := vars["package-id"]
 	if packageID != "" {
-		p, err := srv.PackagesService.Package(packageID)
+		p, err := s.PackagesService.Package(packageID)
 		if err != nil {
 			if err == packages.ErrPackageNotFound {
-				srv.Logger.Warningf("domain package edit: package %s: %s", packageID, err)
-				htmlNotFoundHandler(w, r)
+				s.Logger.Warningf("domain package edit: package %s: %s", packageID, err)
+				s.htmlNotFoundHandler(w, r)
 				return
 			}
-			srv.Logger.Errorf("domain package edit: package %s: %s", packageID, err)
-			htmlInternalServerErrorHandler(w, r)
+			s.Logger.Errorf("domain package edit: package %s: %s", packageID, err)
+			s.htmlServerError(w, r, err)
 			return
 		}
 		pkg = *p
 		domain = pkg.Domain
 	} else {
-		domain, err = srv.PackagesService.Domain(domainID)
+		domain, err = s.PackagesService.Domain(domainID)
 		if err != nil {
 			if err == packages.ErrDomainNotFound {
-				srv.Logger.Warningf("domain package edit: domain %s: %s", domainID, err)
-				htmlNotFoundHandler(w, r)
+				s.Logger.Warningf("domain package edit: domain %s: %s", domainID, err)
+				s.htmlNotFoundHandler(w, r)
 				return
 			}
-			srv.Logger.Errorf("domain package edit: domain %s: %s", domainID, err)
-			htmlInternalServerErrorHandler(w, r)
+			s.Logger.Errorf("domain package edit: domain %s: %s", domainID, err)
+			s.htmlServerError(w, r, err)
 			return
 		}
 	}
@@ -684,18 +684,18 @@ func domainPackageEditHandler(w http.ResponseWriter, r *http.Request) {
 	domains := packages.Domains{}
 	authorized := false
 	for {
-		response, err := srv.PackagesService.DomainsByUser(u.ID, token, 0)
+		response, err := s.PackagesService.DomainsByUser(u.ID, token, 0)
 		if err != nil {
 			if err == packages.ErrUserDoesNotExist {
-				srv.Logger.Warningf("domain package edit: domains by user %s: %s", u.ID, err)
+				s.Logger.Warningf("domain package edit: domains by user %s: %s", u.ID, err)
 				break
 			}
 			if err == packages.ErrDomainNotFound {
-				srv.Logger.Warningf("domain package edit: domains by user %s: %s", u.ID, err)
+				s.Logger.Warningf("domain package edit: domains by user %s: %s", u.ID, err)
 				break
 			}
-			srv.Logger.Errorf("domain package edit: domains by user %s: %s", u.ID, err)
-			htmlInternalServerErrorHandler(w, r)
+			s.Logger.Errorf("domain package edit: domains by user %s: %s", u.ID, err)
+			s.htmlServerError(w, r, err)
 			return
 		}
 		for _, d := range response.Domains {
@@ -711,11 +711,11 @@ func domainPackageEditHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !authorized {
-		htmlNotFoundHandler(w, r)
+		s.htmlNotFoundHandler(w, r)
 		return
 	}
 
-	respond(w, "DomainPackageEdit", map[string]interface{}{
+	s.html.Respond(w, "DomainPackageEdit", map[string]interface{}{
 		"User":     u,
 		"Domain":   domain,
 		"Domains":  domains,
@@ -724,26 +724,26 @@ func domainPackageEditHandler(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func userPageHandler(w http.ResponseWriter, r *http.Request) {
-	u, r, err := getRequestUser(r)
+func (s *Server) userPageHandler(w http.ResponseWriter, r *http.Request) {
+	u, r, err := s.getRequestUser(r)
 	if err != nil {
 		panic(err)
 	}
 
 	id := mux.Vars(r)["id"]
 
-	pu, err := srv.UserService.UserByID(id)
+	pu, err := s.UserService.UserByID(id)
 	if err != nil {
 		if err == user.ErrUserNotFound {
-			srv.Logger.Warningf("user page: user by id %s: %s", id, err)
+			s.Logger.Warningf("user page: user by id %s: %s", id, err)
 			return
 		}
-		srv.Logger.Errorf("user page: user by id %s: %s", id, err)
-		htmlInternalServerErrorHandler(w, r)
+		s.Logger.Errorf("user page: user by id %s: %s", id, err)
+		s.htmlServerError(w, r, err)
 		return
 	}
 
-	respond(w, "UserPage", map[string]interface{}{
+	s.html.Respond(w, "UserPage", map[string]interface{}{
 		"User":     u,
 		"PageUser": pu,
 	})

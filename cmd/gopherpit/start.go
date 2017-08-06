@@ -7,7 +7,9 @@ package main
 
 import (
 	"context"
+	"expvar"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"syscall"
@@ -16,12 +18,12 @@ import (
 	"gopkg.in/throttled/throttled.v2/store/memstore"
 
 	"resenje.org/email"
-	"resenje.org/logging"
 	"resenje.org/recovery"
 	"resenje.org/web/client/api"
 	"resenje.org/web/client/http"
+	"resenje.org/web/maintenance"
+	"resenje.org/x/application"
 
-	"gopherpit.com/gopherpit/pkg/application"
 	"gopherpit.com/gopherpit/server"
 	"gopherpit.com/gopherpit/server/config"
 	"gopherpit.com/gopherpit/services/certificate"
@@ -47,60 +49,84 @@ import (
 	"gopherpit.com/gopherpit/services/user/ldap"
 )
 
+func init() {
+	now := time.Now().UTC()
+	expvar.Publish("app", expvar.Func(func() interface{} {
+		return struct {
+			Version   string
+			BuildInfo string
+			StartTime string
+		}{
+			Version:   config.Version,
+			BuildInfo: config.BuildInfo,
+			StartTime: now.String(),
+		}
+	}))
+}
+
 func startCmd(daemon bool) {
 	// Initialize the application with loaded options.
 	app, err := application.NewApp(
 		config.Name,
-		application.Options{
-			HomeDir:                     options.StorageDir,
-			LogDir:                      loggingOptions.LogDir,
-			LogLevel:                    loggingOptions.LogLevel,
-			LogFileMode:                 loggingOptions.LogFileMode.FileMode(),
-			LogDirectoryMode:            loggingOptions.LogDirectoryMode.FileMode(),
-			SyslogFacility:              loggingOptions.SyslogFacility,
-			SyslogTag:                   loggingOptions.SyslogTag,
-			SyslogNetwork:               loggingOptions.SyslogNetwork,
-			SyslogAddress:               loggingOptions.SyslogAddress,
-			AccessLogLevel:              loggingOptions.AccessLogLevel,
-			AccessSyslogFacility:        loggingOptions.AccessSyslogFacility,
-			AccessSyslogTag:             loggingOptions.AccessSyslogTag,
-			PackageAccessLogLevel:       loggingOptions.PackageAccessLogLevel,
-			PackageAccessSyslogFacility: loggingOptions.PackageAccessSyslogFacility,
-			PackageAccessSyslogTag:      loggingOptions.PackageAccessSyslogTag,
-			AuditLogDisabled:            loggingOptions.AuditLogDisabled,
-			AuditSyslogFacility:         loggingOptions.AuditSyslogFacility,
-			AuditSyslogTag:              loggingOptions.AuditSyslogTag,
-			ForceLogToStderr:            *debug,
-			PidFileName:                 options.PidFileName,
-			PidFileMode:                 options.PidFileMode.FileMode(),
-			DaemonLogFileName:           loggingOptions.DaemonLogFileName,
-			DaemonLogFileMode:           loggingOptions.DaemonLogFileMode.FileMode(),
+		application.AppOptions{
+			HomeDir:           options.StorageDir,
+			LogDir:            loggingOptions.LogDir,
+			PidFileName:       options.PidFileName,
+			PidFileMode:       options.PidFileMode.FileMode(),
+			DaemonLogFileName: loggingOptions.DaemonLogFileName,
+			DaemonLogFileMode: loggingOptions.DaemonLogFileMode.FileMode(),
 		})
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Error:", err)
 		os.Exit(2)
 	}
 
-	logger, err := logging.GetLogger("default")
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: get default logger: %s", err)
-		os.Exit(2)
-	}
-	accessLogger, err := logging.GetLogger("access")
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: get access logger: %s", err)
-		os.Exit(2)
-	}
-	auditLogger, err := logging.GetLogger("audit")
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: get audit logger: %s", err)
-		os.Exit(2)
-	}
-	packageAccessLogger, err := logging.GetLogger("package-access")
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: get package access logger: %s", err)
-		os.Exit(2)
-	}
+	// Setup logging.
+	loggers := application.NewLoggers(
+		application.WithForcedWriter(func() io.Writer {
+			if *debug {
+				return os.Stderr
+			}
+			return nil
+		}()),
+	)
+	logger := loggers.NewLogger("default", loggingOptions.LogLevel,
+		application.NewTimedFileHandler(loggingOptions.LogDir, config.Name),
+		application.NewSyslogHandler(
+			loggingOptions.SyslogFacility,
+			loggingOptions.SyslogTag,
+			loggingOptions.SyslogNetwork,
+			loggingOptions.SyslogAddress,
+		),
+	)
+	application.SetStdLogger()
+	accessLogger := loggers.NewLogger("access", loggingOptions.AccessLogLevel,
+		application.NewTimedFileHandler(loggingOptions.LogDir, "access"),
+		application.NewSyslogHandler(
+			loggingOptions.AccessSyslogFacility,
+			loggingOptions.AccessSyslogTag,
+			loggingOptions.SyslogNetwork,
+			loggingOptions.SyslogAddress,
+		),
+	)
+	auditLogger := loggers.NewLogger("audit", loggingOptions.AuditLogLevel,
+		application.NewTimedFileHandler(loggingOptions.LogDir, "audit"),
+		application.NewSyslogHandler(
+			loggingOptions.AuditSyslogFacility,
+			loggingOptions.AuditSyslogTag,
+			loggingOptions.SyslogNetwork,
+			loggingOptions.SyslogAddress,
+		),
+	)
+	packageAccessLogger := loggers.NewLogger("package-access", loggingOptions.PackageAccessLogLevel,
+		application.NewTimedFileHandler(loggingOptions.LogDir, "package-access"),
+		application.NewSyslogHandler(
+			loggingOptions.PackageAccessSyslogFacility,
+			loggingOptions.PackageAccessSyslogTag,
+			loggingOptions.SyslogNetwork,
+			loggingOptions.SyslogAddress,
+		),
+	)
 
 	// Initialize services required for server to function.
 
@@ -124,6 +150,15 @@ func startCmd(daemon bool) {
 		LogFunc:   logger.Error,
 		Notifier:  emailService,
 	}
+	// Create maintenance service.
+	maintenanceFilename := options.MaintenanceFilename
+	if !filepath.IsAbs(maintenanceFilename) {
+		maintenanceFilename = filepath.Join(options.StorageDir, options.MaintenanceFilename)
+	}
+	maintenanceService := maintenance.New(
+		maintenance.WithLogger(logger),
+		maintenance.WithStore(maintenance.NewFileStore(maintenanceFilename)),
+	)
 
 	// Session service can be configured to use different implementations.
 	// If session endpoint in services options is not blank, use http service.
@@ -326,7 +361,7 @@ func startCmd(daemon bool) {
 	}
 
 	// Initialize server.
-	if err = server.Configure(
+	s, err := server.New(
 		server.Options{
 			Name:                    config.Name,
 			Version:                 config.Version,
@@ -340,13 +375,11 @@ func startCmd(daemon bool) {
 			TLSKey:                  options.TLSKey,
 			TLSCert:                 options.TLSCert,
 			Headers:                 options.Headers,
-			XSRFCookieName:          options.XSRFCookieName,
 			SessionCookieName:       options.SessionCookieName,
 			AssetsDir:               options.AssetsDir,
 			StaticDir:               options.StaticDir,
 			TemplatesDir:            options.TemplatesDir,
 			StorageDir:              options.StorageDir,
-			MaintenanceFilename:     options.MaintenanceFilename,
 			GoogleAnalyticsID:       options.GoogleAnalyticsID,
 			RememberMeDays:          userOptions.RememberMeDays,
 			DefaultFrom:             emailOptions.DefaultFrom,
@@ -367,8 +400,9 @@ func startCmd(daemon bool) {
 			AuditLogger:         auditLogger,
 			PackageAccessLogger: packageAccessLogger,
 
-			EmailService:        *emailService,
-			RecoveryService:     *recoveryService,
+			EmailService:        emailService,
+			RecoveryService:     recoveryService,
+			MaintenanceService:  maintenanceService,
 			SessionService:      sessionService,
 			UserService:         userService,
 			NotificationService: notificationService,
@@ -377,7 +411,8 @@ func startCmd(daemon bool) {
 			KeyService:          keyService,
 			GCRAStoreService:    gcraStoreService,
 		},
-	); err != nil {
+	)
+	if err != nil {
 		fmt.Fprintln(os.Stderr, "Error:", err)
 		os.Exit(2)
 	}
@@ -385,9 +420,7 @@ func startCmd(daemon bool) {
 	// Append Server functions.
 	// All functions must be non-blocking or short-lived.
 	// They will be executed in the same goroutine in the same order.
-	app.Functions = append(app.Functions, func() error {
-		return server.Serve()
-	})
+	app.Functions = append(app.Functions, s.Serve)
 	if service, ok := sessionService.(*boltSession.Service); ok {
 		// Start session cleanup.
 		app.Functions = append(app.Functions, func() error {
@@ -415,7 +448,7 @@ func startCmd(daemon bool) {
 
 	app.ShutdownFunc = func() error {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		server.Shutdown(ctx)
+		s.Shutdown(ctx)
 		cancel()
 		return nil
 	}
@@ -428,7 +461,7 @@ func startCmd(daemon bool) {
 
 	// Finally start the server.
 	// This is blocking function.
-	if err := app.Start(); err != nil {
+	if err := app.Start(logger); err != nil {
 		fmt.Fprintln(os.Stderr, "Error:", err)
 		os.Exit(2)
 	}

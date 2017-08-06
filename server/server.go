@@ -9,11 +9,9 @@ import (
 	"context"
 	"crypto/rand"
 	"crypto/tls"
-	"errors"
+	"encoding/base32"
 	"fmt"
-	"html/template"
 	"io/ioutil"
-	"net"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -24,8 +22,10 @@ import (
 	"resenje.org/logging"
 	"resenje.org/recovery"
 	"resenje.org/web/file-server"
+	"resenje.org/web/maintenance"
 	"resenje.org/web/servers"
 	"resenje.org/web/servers/http"
+	"resenje.org/web/templates"
 
 	"gopherpit.com/gopherpit/pkg/certificate-cache"
 	"gopherpit.com/gopherpit/services/certificate"
@@ -37,19 +37,15 @@ import (
 	"gopherpit.com/gopherpit/services/user"
 )
 
-// Only one server is needed, so it is global to this package.
-var srv *server
+type options = Options
 
 // Server contains all required properties, services and functions
 // to provide core functionality.
-type server struct {
-	Options
+type Server struct {
+	options
+	servers *servers.Servers
 
-	handler         http.Handler
-	internalHandler http.Handler
-
-	startTime    time.Time
-	assetsServer *fileServer.Server
+	startTime time.Time
 
 	certificateCache certificateCache.Cache
 
@@ -58,9 +54,7 @@ type server struct {
 	tlsEnabled       bool
 	registerACMEUser bool
 
-	servers *servers.Servers
-
-	templates map[string]*template.Template
+	html *templates.Templates
 
 	apiRateLimiter *throttled.GCRARateLimiter
 }
@@ -85,13 +79,11 @@ type Options struct {
 	TLSCert                 string
 	Domain                  string
 	Headers                 map[string]string
-	XSRFCookieName          string
 	SessionCookieName       string
 	AssetsDir               string
 	StaticDir               string
 	TemplatesDir            string
 	StorageDir              string
-	MaintenanceFilename     string
 	GoogleAnalyticsID       string
 	RememberMeDays          int
 	DefaultFrom             string
@@ -112,8 +104,9 @@ type Options struct {
 	AuditLogger         *logging.Logger
 	PackageAccessLogger *logging.Logger
 
-	EmailService    EmailService
-	RecoveryService recovery.Service
+	EmailService       EmailService
+	RecoveryService    *recovery.Service
+	MaintenanceService *maintenance.Service
 
 	SessionService      session.Service
 	UserService         user.Service
@@ -124,8 +117,15 @@ type Options struct {
 	GCRAStoreService    gcrastore.Service
 }
 
-// Configure initializes http server with provided options.
-func Configure(o Options) (err error) {
+func (o *Options) version() string {
+	if o.BuildInfo != "" {
+		return fmt.Sprintf("%s-%s", o.Version, o.BuildInfo)
+	}
+	return o.Version
+}
+
+// New initializes new server with provided options.
+func New(o Options) (s *Server, err error) {
 	if o.Name == "" {
 		o.Name = "server"
 	}
@@ -133,13 +133,12 @@ func Configure(o Options) (err error) {
 		o.Version = "0"
 	}
 	if o.VerificationSubdomain == "" {
-		o.VerificationSubdomain = "_" + srv.Name
+		o.VerificationSubdomain = "_" + o.Name
 	}
-	s := &server{
-		Options:          o,
+	s = &Server{
+		options:          o,
 		certificateCache: certificateCache.NewCache(o.CertificateService, 15*time.Minute, time.Minute),
 		startTime:        time.Now(),
-		templates:        map[string]*template.Template{},
 		tlsEnabled:       o.ListenTLS != "",
 		registerACMEUser: o.ListenTLS != "",
 		servers: servers.New(
@@ -147,6 +146,7 @@ func Configure(o Options) (err error) {
 			servers.WithRecoverFunc(o.RecoveryService.Recover),
 		),
 	}
+
 	// Load or generate a salt value.
 	saltFilename := filepath.Join(s.StorageDir, s.Name+".salt")
 	s.salt, err = ioutil.ReadFile(saltFilename)
@@ -170,77 +170,64 @@ func Configure(o Options) (err error) {
 	}
 
 	// Create assets server
-	s.assetsServer = fileServer.New("/assets", s.AssetsDir, &fileServer.Options{
-		Hasher:                fileServer.MD5Hasher{HashLength: 8},
-		NoHashQueryStrings:    true,
-		RedirectTrailingSlash: true,
-		IndexPage:             "index.html",
+	assetsServer := fileServer.New("/assets", s.AssetsDir, &fileServer.Options{
+		Hasher:                     fileServer.MD5Hasher{HashLength: 8},
+		NoHashQueryStrings:         true,
+		RedirectTrailingSlash:      true,
+		IndexPage:                  "index.html",
+		NotFoundHandler:            http.HandlerFunc(s.htmlNotFoundHandler),
+		ForbiddenHandler:           http.HandlerFunc(s.htmlForbiddenHandler),
+		InternalServerErrorHandler: http.HandlerFunc(s.htmlInternalServerErrorHandler),
 	})
 
 	// Parse static HTML documents used as loadable fragments in templates
-	fragments := map[string]interface{}{}
-	fragmentsPath := filepath.Join(s.TemplatesDir, "fragments")
-	_, err = os.Stat(fragmentsPath)
-	switch {
-	case os.IsNotExist(err):
-	case err == nil:
-		if err = filepath.Walk(fragmentsPath, func(path string, _ os.FileInfo, err error) error {
-			if err != nil {
-				return err
-			}
-			if !strings.HasSuffix(path, ".md") {
-				return nil
-			}
-			data, err := ioutil.ReadFile(path)
-			if err != nil {
-				return err
-			}
-			name := strings.TrimPrefix(path, fragmentsPath+"/")
-			name = strings.TrimSuffix(name, ".md")
-			fragments[name] = markdown(data)
-			return nil
-		}); err != nil {
-			return
-		}
-	default:
-		return
+	fragments, err := parseMarkdown(filepath.Join(s.TemplatesDir, "fragments"))
+	if err != nil {
+		return nil, fmt.Errorf("parse fragments: %v", err)
 	}
 
-	// Populate template functions
-	templateFunctions := template.FuncMap{
-		"asset":           assetFunc,
-		"relative_time":   relativeTimeFunc,
-		"safehtml":        safeHTMLFunc,
-		"year_range":      yearRangeFunc,
-		"contains_string": containsStringFunc,
-		"html_br":         htmlBrFunc,
-		"map":             mapFunc,
-		"base32encode":    base32encodeFunc,
-		"is_gopherpit_domain": func(domain string) bool {
-			return strings.HasSuffix(domain, "."+o.Domain)
-		},
-		"context": newContext(map[string]interface{}{
+	s.html, err = templates.New(
+		templates.WithContentType("text/html; charset=utf-8"),
+		templates.WithDelims("[[", "]]"),
+		templates.WithLogFunc(s.Logger.Errorf),
+		templates.WithFunction("asset", func(str string) string {
+			p, err := assetsServer.HashedPath(str)
+			if err != nil {
+				s.Logger.Errorf("html response: asset func: hashed path: %s", err)
+				return str
+			}
+			return p
+		}),
+		templates.WithFunction("context", templates.NewContextFunc(map[string]interface{}{
 			"GoogleAnalyticsID": o.GoogleAnalyticsID,
 			"AliasCNAME":        "alias." + o.Domain,
+		})),
+		templates.WithFunction("fragment", templates.NewContextFunc(fragments)),
+		templates.WithFunction("base32encode", func(text string) string {
+			return strings.TrimRight(base32.StdEncoding.EncodeToString([]byte(text)), "=")
 		}),
-		"fragment": newContext(fragments),
+		templates.WithFunction("is_gopherpit_domain", func(domain string) bool {
+			return strings.HasSuffix(domain, "."+o.Domain)
+		}),
+		templates.WithBaseDir(o.TemplatesDir),
+		templates.WithTemplatesFromFiles(htmlTemplates),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("templates: %v", err)
 	}
 
-	// Parse template files
-	for name, files := range templates {
-		fs := []string{}
-		for _, f := range files {
-			fs = append(fs, filepath.Join(s.TemplatesDir, f))
-		}
-		s.templates[name], err = template.New("").Funcs(templateFunctions).Delims("[[", "]]").ParseFiles(fs...)
+	s.MaintenanceService.JSON.Body = `{"message":"maintenance","code":503}`
+	s.MaintenanceService.Text.Body = "Maintenance"
+	s.MaintenanceService.HTML.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		m, err := s.html.Render("Maintenance", nil)
 		if err != nil {
-			return
+			s.Logger.Errorf("html maintenance render: %s", err)
+			m = "Maintenance"
 		}
-	}
-
-	s.assetsServer.NotFoundHandler = http.HandlerFunc(htmlNotFoundHandler)
-	s.assetsServer.ForbiddenHandler = http.HandlerFunc(htmlForbiddenHandler)
-	s.assetsServer.InternalServerErrorHandler = http.HandlerFunc(htmlInternalServerErrorHandler)
+		w.Header().Set("Content-Type", maintenance.HTMLContentType)
+		w.WriteHeader(http.StatusServiceUnavailable)
+		fmt.Fprintln(w, m)
+	})
 
 	// API rate limiter
 	if s.APIHourlyRateLimit > 0 {
@@ -252,12 +239,50 @@ func Configure(o Options) (err error) {
 			},
 		)
 		if err != nil {
-			return fmt.Errorf("api rate limiter: %s", err)
+			return nil, fmt.Errorf("api rate limiter: %s", err)
 		}
 	}
 
-	// Configure TLS
-	tlsConfig := &tls.Config{
+	tlsConfig, err := newTLSConfig(s)
+	if err != nil {
+		return nil, fmt.Errorf("TLS config: %v", err)
+	}
+
+	handler := newRouter(s, assetsServer)
+	internalHandler := newInternalRouter(s)
+
+	if o.Listen != "" {
+		h, err := s.redirectHandler(handler)
+		if err != nil {
+			return nil, err
+		}
+		s.servers.Add("HTTP", o.Listen, httpServer.New(
+			s.nilRecoveryHandler(s.packageHandler(h)),
+		))
+	}
+	if o.ListenTLS != "" {
+		s.servers.Add("TLS HTTP", o.ListenTLS, httpServer.New(
+			s.nilRecoveryHandler(s.packageHandler(handler)),
+			httpServer.WithTLSConfig(tlsConfig),
+		))
+	}
+	if o.ListenInternal != "" {
+		s.servers.Add("internal HTTP", o.ListenInternal, httpServer.New(
+			s.nilRecoveryHandler(internalHandler),
+		))
+	}
+	if o.ListenInternalTLS != "" {
+		s.servers.Add("internal TLS HTTP", o.ListenInternalTLS, httpServer.New(
+			s.nilRecoveryHandler(internalHandler),
+			httpServer.WithTLSConfig(tlsConfig),
+		))
+	}
+
+	return
+}
+
+func newTLSConfig(s *Server) (tlsConfig *tls.Config, err error) {
+	tlsConfig = &tls.Config{
 		MinVersion:         tls.VersionTLS10,
 		NextProtos:         []string{"h2"},
 		ClientSessionCache: tls.NewLRUClientSessionCache(-1),
@@ -265,20 +290,20 @@ func Configure(o Options) (err error) {
 	tlsConfig.GetCertificate = func(clientHello *tls.ClientHelloInfo) (*tls.Certificate, error) {
 		// If ServerName is defined in Options as Domain and there is TLSCert in Options
 		// use static configuration by returning nil or both cert and err
-		if clientHello.ServerName == srv.Domain && srv.TLSCert != "" {
+		if clientHello.ServerName == s.Domain && s.TLSCert != "" {
 			return nil, nil
 		}
 		// Get certificate for this ServerName
-		c, err := srv.certificateCache.Certificate(clientHello.ServerName)
+		c, err := s.certificateCache.Certificate(clientHello.ServerName)
 		switch err {
 		case certificateCache.ErrCertificateNotFound, certificate.ErrCertificateNotFound:
 			// If ServerName is the same as configured domain or it's www subdomain
 			// and tls listener is on https port 443, try to obtain the certificate.
-			if strings.HasSuffix(srv.ListenTLS, ":443") && (clientHello.ServerName == srv.Domain || clientHello.ServerName == "www."+srv.Domain) {
+			if strings.HasSuffix(s.ListenTLS, ":443") && (clientHello.ServerName == s.Domain || clientHello.ServerName == "www."+s.Domain) {
 				obtainCertificate := false
 				// Check if there is not already a request for new certificate active.
 				for i := 0; i < 50; i++ {
-					yes, err := srv.CertificateService.IsCertificateBeingObtained(clientHello.ServerName)
+					yes, err := s.CertificateService.IsCertificateBeingObtained(clientHello.ServerName)
 					if err != nil {
 						return nil, fmt.Errorf("get certificate %s: is certificate being obtained: %s", clientHello.ServerName, err)
 					}
@@ -291,8 +316,8 @@ func Configure(o Options) (err error) {
 				}
 
 				if obtainCertificate {
-					srv.Logger.Debugf("get certificate: %s: obtaining certificate for domain", clientHello.ServerName)
-					cert, err := srv.CertificateService.ObtainCertificate(clientHello.ServerName)
+					s.Logger.Debugf("get certificate: %s: obtaining certificate for domain", clientHello.ServerName)
+					cert, err := s.CertificateService.ObtainCertificate(clientHello.ServerName)
 					if err != nil {
 						return nil, fmt.Errorf("get certificate %s: obtain certificate: %s", clientHello.ServerName, err)
 					}
@@ -302,9 +327,9 @@ func Configure(o Options) (err error) {
 						return nil, fmt.Errorf("get certificate: %s: tls X509KeyPair: %s", clientHello.ServerName, err)
 					}
 					// Clean cached empty certificate.
-					srv.certificateCache.InvalidateCertificate(clientHello.ServerName)
+					s.certificateCache.InvalidateCertificate(clientHello.ServerName)
 				} else {
-					c, err = srv.certificateCache.Certificate(clientHello.ServerName)
+					c, err = s.certificateCache.Certificate(clientHello.ServerName)
 					if err != nil {
 						return nil, fmt.Errorf("get certificate: %s: certificate cache: %s", clientHello.ServerName, err)
 					}
@@ -342,103 +367,21 @@ func Configure(o Options) (err error) {
 	if s.TLSCert != "" && s.TLSKey != "" {
 		cert, err := tls.LoadX509KeyPair(s.TLSCert, s.TLSKey)
 		if err != nil {
-			return fmt.Errorf("TLS Certificates: %s", err)
+			return nil, fmt.Errorf("load certificates: %s", err)
 		}
 		tlsConfig.Certificates = []tls.Certificate{cert}
 		tlsConfig.BuildNameToCertificate()
 	}
 
-	// Set the global srv variable
-	srv = s
-
-	setupRouters()
-	setupInternalRouters()
-
-	if srv.Listen != "" {
-		var handler http.Handler
-		if srv.ListenTLS != "" && srv.Domain != "" {
-			// Initialize handler that will redirect http:// to https:// only if
-			// certificate for configured domain or it's www subdomain is available.
-			_, tlsPort, err := net.SplitHostPort(srv.ListenTLS)
-			if err != nil {
-				return fmt.Errorf("invalid tls: %s", err)
-			}
-			if tlsPort == "443" {
-				tlsPort = ""
-			} else {
-				tlsPort = ":" + tlsPort
-			}
-			var altDomain string
-			if strings.HasPrefix("www.", srv.Domain) {
-				altDomain = strings.TrimPrefix(srv.Domain, "www.")
-			} else {
-				altDomain = "www." + srv.Domain
-			}
-			handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				domain, _, err := net.SplitHostPort(r.Host)
-				if err != nil {
-					domain = r.Host
-				}
-				if (domain == srv.Domain || domain == altDomain) && !strings.HasPrefix(r.URL.Path, acmeURLPrefix) {
-					c, _ := srv.certificateCache.Certificate(srv.Domain)
-					if c != nil {
-						http.Redirect(w, r, strings.Join([]string{"https://", srv.Domain, tlsPort, r.RequestURI}, ""), http.StatusMovedPermanently)
-						return
-					}
-				}
-				srv.handler.ServeHTTP(w, r)
-			})
-		} else {
-			handler = srv.handler
-		}
-		srv.servers.Add("HTTP", srv.Listen, httpServer.New(
-			nilRecoveryHandler(packageHandler(handler)),
-		))
-	}
-	if srv.ListenTLS != "" {
-		srv.servers.Add("TLS HTTP", srv.ListenTLS, httpServer.New(
-			nilRecoveryHandler(packageHandler(srv.handler)),
-			httpServer.WithTLSConfig(tlsConfig),
-		))
-	}
-	if srv.ListenInternal != "" {
-		srv.servers.Add("internal HTTP", srv.ListenInternal, httpServer.New(
-			nilRecoveryHandler(srv.internalHandler),
-		))
-	}
-	if srv.ListenInternalTLS != "" {
-		srv.servers.Add("internal TLS HTTP", srv.ListenInternalTLS, httpServer.New(
-			nilRecoveryHandler(srv.internalHandler),
-			httpServer.WithTLSConfig(tlsConfig),
-		))
-	}
-
 	return
 }
 
-// Serve starts HTTP servers.
-func Serve() error {
-	if srv == nil {
-		return errors.New("server not configured")
-	}
-
-	return srv.servers.Serve()
+// Serve starts servers.
+func (s *Server) Serve() error {
+	return s.servers.Serve()
 }
 
-// Shutdown gracefully terminates HTTP servers.
-func Shutdown(ctx context.Context) {
-	if srv == nil {
-		return
-	}
-
-	srv.servers.Shutdown(ctx)
-}
-
-// Version returns service version based on values from version and
-// build information.
-func version() string {
-	if srv.BuildInfo != "" {
-		return fmt.Sprintf("%s-%s", srv.Options.Version, srv.BuildInfo)
-	}
-	return srv.Options.Version
+// Shutdown gracefully terminates servers.
+func (s *Server) Shutdown(ctx context.Context) {
+	s.servers.Shutdown(ctx)
 }

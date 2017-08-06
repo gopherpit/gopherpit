@@ -11,7 +11,7 @@ import (
 
 	"resenje.org/daemon"
 
-	"gopherpit.com/gopherpit/pkg/application"
+	"resenje.org/x/application"
 )
 
 func stopCmd() {

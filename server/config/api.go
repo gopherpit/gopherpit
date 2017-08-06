@@ -5,16 +5,6 @@
 
 package config
 
-import (
-	"fmt"
-	"os"
-	"path/filepath"
-	"strings"
-
-	"github.com/kelseyhightower/envconfig"
-	yaml "gopkg.in/yaml.v2"
-)
-
 // APIOptions defines parameters related to service's API functionality.
 type APIOptions struct {
 	TrustedProxyCIDRs []string `json:"trusted-proxy-cidrs" yaml:"trusted-proxy-cidrs" envconfig:"TRUSTED_PROXY_CIDRS"`
@@ -36,40 +26,5 @@ func NewAPIOptions() *APIOptions {
 	}
 }
 
-// Update updates options by loading api.json and api.yaml files.
-func (o *APIOptions) Update(dirs ...string) error {
-	for _, dir := range dirs {
-		f := filepath.Join(dir, "api.yaml")
-		if _, err := os.Stat(f); !os.IsNotExist(err) {
-			if err := loadYAML(f, o); err != nil {
-				return fmt.Errorf("load yaml config: %s", err)
-			}
-		}
-		f = filepath.Join(dir, "api.json")
-		if _, err := os.Stat(f); !os.IsNotExist(err) {
-			if err := loadJSON(f, o); err != nil {
-				return fmt.Errorf("load json config: %s", err)
-			}
-		}
-	}
-	if err := envconfig.Process(strings.Replace(Name, "-", "_", -1)+"_api", o); err != nil {
-		return fmt.Errorf("load env valiables: %s", err)
-	}
-	return nil
-}
-
-// String returns a YAML representation of the options.
-func (o *APIOptions) String() string {
-	data, _ := yaml.Marshal(o)
-	return string(data)
-}
-
-// Verify doesn't do anything, just provides method for Options interface.
-func (o *APIOptions) Verify() (help string, err error) {
-	return
-}
-
-// Prepare doesn't do anything, just provides method for Options interface.
-func (o *APIOptions) Prepare() error {
-	return nil
-}
+// VerifyAndPrepare implements application.Options interface.
+func (o *APIOptions) VerifyAndPrepare() error { return nil }

@@ -8,22 +8,12 @@ package server
 import (
 	"net/http"
 
-	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"resenje.org/web"
 )
 
-func setupFrontendRouter(baseRouter *http.ServeMux) {
+func newFrontendRouter(s *Server) http.Handler {
 	frontendRouter := mux.NewRouter().StrictSlash(true)
-	baseRouter.Handle("/", web.ChainHandlers(
-		handlers.CompressHandler,
-		htmlRecoveryHandler,
-		accessLogHandler,
-		htmlMaintenanceHandler,
-		htmlMaxBodyBytesHandler,
-		acmeUserHandler,
-		web.FinalHandler(frontendRouter),
-	))
 	// Frontend routes start
 	frontendRouter.NotFoundHandler = web.ChainHandlers(
 		func(h http.Handler) http.Handler {
@@ -32,152 +22,153 @@ func setupFrontendRouter(baseRouter *http.ServeMux) {
 			})
 		},
 		func(h http.Handler) http.Handler {
-			return web.NewStaticFilesHandler(h, "/", http.Dir(srv.StaticDir))
+			return web.NewStaticFilesHandler(h, "/", http.Dir(s.StaticDir))
 		},
-		web.FinalHandlerFunc(htmlNotFoundHandler),
+		web.FinalHandlerFunc(s.htmlNotFoundHandler),
 	)
-	frontendRouter.Handle("/", htmlLoginAltHandler(
+	frontendRouter.Handle("/", s.htmlLoginAltHandler(
 		web.ChainHandlers(
-			htmlValidatedEmailRequiredHandler,
-			web.FinalHandlerFunc(dashboardHandler),
+			s.htmlValidatedEmailRequiredHandler,
+			web.FinalHandlerFunc(s.dashboardHandler),
 		),
 		web.ChainHandlers(
 			generateAntiXSRFCookieHandler,
-			web.FinalHandlerFunc(landingPageHandler),
+			web.FinalHandlerFunc(s.landingPageHandler),
 		),
 	))
-	frontendRouter.Handle("/about", http.HandlerFunc(aboutHandler))
-	frontendRouter.Handle("/license", http.HandlerFunc(licenseHandler))
-	frontendRouter.Handle("/docs/api", http.HandlerFunc(apiDocsHandler))
+	frontendRouter.Handle("/about", http.HandlerFunc(s.aboutHandler))
+	frontendRouter.Handle("/license", http.HandlerFunc(s.licenseHandler))
+	frontendRouter.Handle("/docs/api", http.HandlerFunc(s.apiDocsHandler))
 	frontendRouter.Handle("/contact", web.ChainHandlers(
 		generateAntiXSRFCookieHandler,
-		web.FinalHandlerFunc(contactHandler),
+		web.FinalHandlerFunc(s.contactHandler),
 	))
 	frontendRouter.Handle("/login", web.ChainHandlers(
-		htmlLoginRequiredHandler,
+		s.htmlLoginRequiredHandler,
 		web.FinalHandler(http.RedirectHandler("/", http.StatusSeeOther)),
 	))
-	frontendRouter.Handle("/logout", http.HandlerFunc(logoutHandler))
-	frontendRouter.Handle("/registration", htmlLoginAltHandler(
+	frontendRouter.Handle("/logout", http.HandlerFunc(s.logoutHandler))
+	frontendRouter.Handle("/registration", s.htmlLoginAltHandler(
 		http.RedirectHandler("/", http.StatusSeeOther),
 		web.ChainHandlers(
 			generateAntiXSRFCookieHandler,
-			web.FinalHandlerFunc(registrationHandler),
+			web.FinalHandlerFunc(s.registrationHandler),
 		),
 	))
-	frontendRouter.Handle("/password-reset", htmlLoginAltHandler(
+	frontendRouter.Handle("/password-reset", s.htmlLoginAltHandler(
 		http.RedirectHandler("/", http.StatusSeeOther),
 		web.ChainHandlers(
 			generateAntiXSRFCookieHandler,
-			web.FinalHandlerFunc(passwordResetTokenHandler),
+			web.FinalHandlerFunc(s.passwordResetTokenHandler),
 		),
 	))
 	frontendRouter.Handle(`/password-reset/{token}`, web.ChainHandlers(
 		generateAntiXSRFCookieHandler,
-		web.FinalHandlerFunc(passwordResetHandler),
+		web.FinalHandlerFunc(s.passwordResetHandler),
 	))
 	frontendRouter.Handle(`/email/{token}`, web.ChainHandlers(
 		generateAntiXSRFCookieHandler,
-		web.FinalHandlerFunc(publicEmailSettingsHandler),
+		web.FinalHandlerFunc(s.publicEmailSettingsHandler),
 	))
 	frontendRouter.Handle(`/email-validation/{token}`, web.ChainHandlers(
-		htmlLoginRequiredHandler,
+		s.htmlLoginRequiredHandler,
 		generateAntiXSRFCookieHandler,
-		web.FinalHandlerFunc(emailValidationHandler),
+		web.FinalHandlerFunc(s.emailValidationHandler),
 	))
 	frontendRouter.Handle("/settings", web.ChainHandlers(
-		htmlLoginRequiredHandler,
+		s.htmlLoginRequiredHandler,
 		generateAntiXSRFCookieHandler,
-		web.FinalHandlerFunc(settingsHandler),
+		web.FinalHandlerFunc(s.settingsHandler),
 	))
 	frontendRouter.Handle("/settings/email", web.ChainHandlers(
-		htmlLoginRequiredHandler,
+		s.htmlLoginRequiredHandler,
 		generateAntiXSRFCookieHandler,
-		web.FinalHandlerFunc(settingsEmailHandler),
+		web.FinalHandlerFunc(s.settingsEmailHandler),
 	))
 	frontendRouter.Handle("/settings/notifications", web.ChainHandlers(
-		htmlLoginRequiredHandler,
+		s.htmlLoginRequiredHandler,
 		generateAntiXSRFCookieHandler,
-		web.FinalHandlerFunc(settingsNotificationsHandler),
+		web.FinalHandlerFunc(s.settingsNotificationsHandler),
 	))
 	frontendRouter.Handle("/settings/password", web.ChainHandlers(
-		htmlLoginRequiredHandler,
+		s.htmlLoginRequiredHandler,
 		generateAntiXSRFCookieHandler,
-		web.FinalHandlerFunc(settingsPasswordHandler),
+		web.FinalHandlerFunc(s.settingsPasswordHandler),
 	))
 	frontendRouter.Handle("/settings/api", web.ChainHandlers(
-		htmlLoginRequiredHandler,
+		s.htmlLoginRequiredHandler,
 		generateAntiXSRFCookieHandler,
-		web.FinalHandlerFunc(apiAccessSettingsHandler),
+		web.FinalHandlerFunc(s.apiAccessSettingsHandler),
 	))
 	frontendRouter.Handle("/settings/delete-account", web.ChainHandlers(
-		htmlLoginRequiredHandler,
+		s.htmlLoginRequiredHandler,
 		generateAntiXSRFCookieHandler,
-		web.FinalHandlerFunc(settingsDeleteAccountHandler),
+		web.FinalHandlerFunc(s.settingsDeleteAccountHandler),
 	))
 
 	frontendRouter.Handle("/domain", web.ChainHandlers(
-		htmlLoginRequiredHandler,
-		htmlValidatedEmailRequiredHandler,
+		s.htmlLoginRequiredHandler,
+		s.htmlValidatedEmailRequiredHandler,
 		generateAntiXSRFCookieHandler,
-		web.FinalHandlerFunc(domainAddHandler),
+		web.FinalHandlerFunc(s.domainAddHandler),
 	))
 	frontendRouter.Handle("/domain/{id}", web.ChainHandlers(
-		htmlLoginRequiredHandler,
-		htmlValidatedEmailRequiredHandler,
-		web.FinalHandlerFunc(domainPackagesHandler),
+		s.htmlLoginRequiredHandler,
+		s.htmlValidatedEmailRequiredHandler,
+		web.FinalHandlerFunc(s.domainPackagesHandler),
 	))
 	frontendRouter.Handle("/domain/{id}/settings", web.ChainHandlers(
-		htmlLoginRequiredHandler,
-		htmlValidatedEmailRequiredHandler,
+		s.htmlLoginRequiredHandler,
+		s.htmlValidatedEmailRequiredHandler,
 		generateAntiXSRFCookieHandler,
-		web.FinalHandlerFunc(domainSettingsHandler),
+		web.FinalHandlerFunc(s.domainSettingsHandler),
 	))
 	frontendRouter.Handle("/domain/{id}/team", web.ChainHandlers(
-		htmlLoginRequiredHandler,
-		htmlValidatedEmailRequiredHandler,
+		s.htmlLoginRequiredHandler,
+		s.htmlValidatedEmailRequiredHandler,
 		generateAntiXSRFCookieHandler,
-		web.FinalHandlerFunc(domainTeamHandler),
+		web.FinalHandlerFunc(s.domainTeamHandler),
 	))
 	frontendRouter.Handle("/domain/{id}/changelog", web.ChainHandlers(
-		htmlLoginRequiredHandler,
-		htmlValidatedEmailRequiredHandler,
+		s.htmlLoginRequiredHandler,
+		s.htmlValidatedEmailRequiredHandler,
 		generateAntiXSRFCookieHandler,
-		web.FinalHandlerFunc(domainChangelogHandler),
+		web.FinalHandlerFunc(s.domainChangelogHandler),
 	))
 	frontendRouter.Handle("/domain/{id}/user", web.ChainHandlers(
-		htmlLoginRequiredHandler,
-		htmlValidatedEmailRequiredHandler,
+		s.htmlLoginRequiredHandler,
+		s.htmlValidatedEmailRequiredHandler,
 		generateAntiXSRFCookieHandler,
-		web.FinalHandlerFunc(domainDomainUserGrantHandler),
+		web.FinalHandlerFunc(s.domainDomainUserGrantHandler),
 	))
 	frontendRouter.Handle("/domain/{id}/user/{user-id}/revoke", web.ChainHandlers(
-		htmlLoginRequiredHandler,
-		htmlValidatedEmailRequiredHandler,
+		s.htmlLoginRequiredHandler,
+		s.htmlValidatedEmailRequiredHandler,
 		generateAntiXSRFCookieHandler,
-		web.FinalHandlerFunc(domainDomainUserRevokeHandler),
+		web.FinalHandlerFunc(s.domainDomainUserRevokeHandler),
 	))
 	frontendRouter.Handle("/domain/{id}/owner", web.ChainHandlers(
-		htmlLoginRequiredHandler,
-		htmlValidatedEmailRequiredHandler,
+		s.htmlLoginRequiredHandler,
+		s.htmlValidatedEmailRequiredHandler,
 		generateAntiXSRFCookieHandler,
-		web.FinalHandlerFunc(domainDomainOwnerChangeHandler),
+		web.FinalHandlerFunc(s.domainDomainOwnerChangeHandler),
 	))
 	frontendRouter.Handle("/domain/{domain-id}/package", web.ChainHandlers(
-		htmlLoginRequiredHandler,
-		htmlValidatedEmailRequiredHandler,
+		s.htmlLoginRequiredHandler,
+		s.htmlValidatedEmailRequiredHandler,
 		generateAntiXSRFCookieHandler,
-		web.FinalHandlerFunc(domainPackageEditHandler),
+		web.FinalHandlerFunc(s.domainPackageEditHandler),
 	))
 	frontendRouter.Handle("/package/{package-id}", web.ChainHandlers(
-		htmlLoginRequiredHandler,
-		htmlValidatedEmailRequiredHandler,
+		s.htmlLoginRequiredHandler,
+		s.htmlValidatedEmailRequiredHandler,
 		generateAntiXSRFCookieHandler,
-		web.FinalHandlerFunc(domainPackageEditHandler),
+		web.FinalHandlerFunc(s.domainPackageEditHandler),
 	))
 	frontendRouter.Handle("/user/{id}", web.ChainHandlers(
-		htmlLoginRequiredHandler,
-		web.FinalHandlerFunc(userPageHandler),
+		s.htmlLoginRequiredHandler,
+		web.FinalHandlerFunc(s.userPageHandler),
 	))
 	// Frontend routes end
+	return frontendRouter
 }

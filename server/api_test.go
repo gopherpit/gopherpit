@@ -17,14 +17,15 @@ import (
 )
 
 func TestAPIAccess(t *testing.T) {
-	if err := startTestServer(nil); err != nil {
+	s, err := newTestServer(nil)
+	if err != nil {
 		t.Fatal(err)
 	}
-	defer stopTestServer()
+	defer s.stopTestServer()
 
 	t.Run("invalid key", func(t *testing.T) {
 		c := api.NewClientWithEndpoint(
-			"localhost:"+strconv.Itoa(srv.servers.Addr("HTTP").Port)+"/api/v1",
+			"localhost:"+strconv.Itoa(s.servers.Addr("HTTP").Port)+"/api/v1",
 			"INVALIDKEY",
 		)
 		c.UserAgent = "gopherpit-test-client"
@@ -35,7 +36,7 @@ func TestAPIAccess(t *testing.T) {
 		}
 
 		c = api.NewClientWithEndpoint(
-			"localhost:"+strconv.Itoa(srv.servers.Addr("HTTP").Port)+"/api/v1",
+			"localhost:"+strconv.Itoa(s.servers.Addr("HTTP").Port)+"/api/v1",
 			"",
 		)
 		c.UserAgent = "gopherpit-test-client"
@@ -50,7 +51,7 @@ func TestAPIAccess(t *testing.T) {
 		username := "alice"
 		email := username + "@localhost.loc"
 		name := strings.ToUpper(username)
-		u, err := srv.UserService.CreateUser(&user.Options{
+		u, err := s.UserService.CreateUser(&user.Options{
 			Email:    &email,
 			Username: &username,
 			Name:     &name,
@@ -64,7 +65,7 @@ func TestAPIAccess(t *testing.T) {
 			t.Fatalf("parse IPv4 net: %s", err)
 		}
 
-		k, err := srv.KeyService.CreateKey(u.ID, &key.Options{
+		k, err := s.KeyService.CreateKey(u.ID, &key.Options{
 			AuthorizedNetworks: &[]net.IPNet{
 				*ipV4Net,
 			},
@@ -74,7 +75,7 @@ func TestAPIAccess(t *testing.T) {
 		}
 
 		c := api.NewClientWithEndpoint(
-			"localhost:"+strconv.Itoa(srv.servers.Addr("HTTP").Port)+"/api/v1",
+			"localhost:"+strconv.Itoa(s.servers.Addr("HTTP").Port)+"/api/v1",
 			k.Secret,
 		)
 		c.UserAgent = username + "-gopherpit-test-client"
@@ -89,7 +90,7 @@ func TestAPIAccess(t *testing.T) {
 		username := "bob"
 		email := username + "@localhost.loc"
 		name := strings.ToUpper(username)
-		u, err := srv.UserService.CreateUser(&user.Options{
+		u, err := s.UserService.CreateUser(&user.Options{
 			Email:    &email,
 			Username: &username,
 			Name:     &name,
@@ -107,7 +108,7 @@ func TestAPIAccess(t *testing.T) {
 			t.Fatalf("parse IPv6 net: %s", err)
 		}
 
-		k, err := srv.KeyService.CreateKey(u.ID, &key.Options{
+		k, err := s.KeyService.CreateKey(u.ID, &key.Options{
 			AuthorizedNetworks: &[]net.IPNet{
 				*ipV4Net,
 				*ipV6Net,
@@ -118,7 +119,7 @@ func TestAPIAccess(t *testing.T) {
 		}
 
 		c := api.NewClientWithEndpoint(
-			"localhost:"+strconv.Itoa(srv.servers.Addr("HTTP").Port)+"/api/",
+			"localhost:"+strconv.Itoa(s.servers.Addr("HTTP").Port)+"/api/",
 			k.Secret,
 		)
 		c.UserAgent = username + "-gopherpit-test-client"
@@ -129,7 +130,7 @@ func TestAPIAccess(t *testing.T) {
 		}
 
 		c = api.NewClientWithEndpoint(
-			"localhost:"+strconv.Itoa(srv.servers.Addr("HTTP").Port)+"/api/v2/",
+			"localhost:"+strconv.Itoa(s.servers.Addr("HTTP").Port)+"/api/v2/",
 			k.Secret,
 		)
 		c.UserAgent = username + "-gopherpit-test-client"
@@ -142,17 +143,18 @@ func TestAPIAccess(t *testing.T) {
 }
 
 func TestAPIRateLimit(t *testing.T) {
-	if err := startTestServer(map[string]interface{}{
+	s, err := newTestServer(map[string]interface{}{
 		"APIHourlyRateLimit": 5,
-	}); err != nil {
+	})
+	if err != nil {
 		t.Fatal(err)
 	}
-	defer stopTestServer()
+	defer s.stopTestServer()
 
 	username := "alice"
 	email := username + "@localhost.loc"
 	name := strings.ToUpper(username)
-	u, err := srv.UserService.CreateUser(&user.Options{
+	u, err := s.UserService.CreateUser(&user.Options{
 		Email:    &email,
 		Username: &username,
 		Name:     &name,
@@ -170,7 +172,7 @@ func TestAPIRateLimit(t *testing.T) {
 		t.Fatalf("parse IPv6 net: %s", err)
 	}
 
-	k, err := srv.KeyService.CreateKey(u.ID, &key.Options{
+	k, err := s.KeyService.CreateKey(u.ID, &key.Options{
 		AuthorizedNetworks: &[]net.IPNet{
 			*ipV4Net,
 			*ipV6Net,
@@ -181,7 +183,7 @@ func TestAPIRateLimit(t *testing.T) {
 	}
 
 	c := api.NewClientWithEndpoint(
-		"localhost:"+strconv.Itoa(srv.servers.Addr("HTTP").Port)+"/api/v1",
+		"localhost:"+strconv.Itoa(s.servers.Addr("HTTP").Port)+"/api/v1",
 		k.Secret,
 	)
 	c.UserAgent = username + "-gopherpit-test-client"

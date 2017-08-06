@@ -11,25 +11,25 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func publicEmailSettingsHandler(w http.ResponseWriter, r *http.Request) {
+func (s *Server) publicEmailSettingsHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	token := vars["token"]
 
-	email, err := emailFromToken(token)
+	email, err := s.emailFromToken(token)
 	if err != nil {
-		srv.Logger.Errorf("public email settings: email from token %s: %s", token, err)
-		htmlNotFoundHandler(w, r)
+		s.Logger.Errorf("public email settings: email from token %s: %s", token, err)
+		s.htmlServerError(w, r, err)
 		return
 	}
 
-	optedOut, err := srv.NotificationService.IsEmailOptedOut(email)
+	optedOut, err := s.NotificationService.IsEmailOptedOut(email)
 	if err != nil {
-		srv.Logger.Errorf("public email settings: is email %s opted-out: %s", email, err)
-		htmlServerError(w, r, err)
+		s.Logger.Errorf("public email settings: is email %s opted-out: %s", email, err)
+		s.htmlServerError(w, r, err)
 		return
 	}
 
-	respond(w, "PublicEmailSettings", map[string]interface{}{
+	s.html.Respond(w, "PublicEmailSettings", map[string]interface{}{
 		"Email":    email,
 		"OptedOut": optedOut,
 		"Token":    token,

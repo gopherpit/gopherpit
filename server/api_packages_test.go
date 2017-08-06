@@ -18,10 +18,11 @@ import (
 )
 
 func TestPackagesAPI(t *testing.T) {
-	if err := startTestServer(nil); err != nil {
+	s, err := newTestServer(nil)
+	if err != nil {
 		t.Fatal(err)
 	}
-	defer stopTestServer()
+	defer s.stopTestServer()
 
 	httpClients := map[string]*api.Client{}
 	users := map[string]*user.User{}
@@ -29,7 +30,7 @@ func TestPackagesAPI(t *testing.T) {
 		t.Run(fmt.Sprintf("create account %s", username), func(t *testing.T) {
 			email := username + "@localhost.loc"
 			name := strings.ToUpper(username)
-			u, err := srv.UserService.CreateUser(&user.Options{
+			u, err := s.UserService.CreateUser(&user.Options{
 				Email:    &email,
 				Username: &username,
 				Name:     &name,
@@ -49,7 +50,7 @@ func TestPackagesAPI(t *testing.T) {
 				t.Fatalf("parse IPv6 net: %s", err)
 			}
 
-			k, err := srv.KeyService.CreateKey(u.ID, &key.Options{
+			k, err := s.KeyService.CreateKey(u.ID, &key.Options{
 				AuthorizedNetworks: &[]net.IPNet{
 					*ipV4Net,
 					*ipV6Net,
@@ -60,7 +61,7 @@ func TestPackagesAPI(t *testing.T) {
 			}
 
 			httpClients[username] = api.NewClientWithEndpoint(
-				"localhost:"+strconv.Itoa(srv.servers.Addr("HTTP").Port)+"/api/v1",
+				"localhost:"+strconv.Itoa(s.servers.Addr("HTTP").Port)+"/api/v1",
 				k.Secret,
 			)
 			httpClients[username].UserAgent = username + "-gopherpit-test-client"

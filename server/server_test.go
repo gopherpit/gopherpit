@@ -20,6 +20,7 @@ import (
 	"gopkg.in/throttled/throttled.v2/store/memstore"
 	"resenje.org/logging"
 	"resenje.org/recovery"
+	"resenje.org/web/maintenance"
 
 	"gopherpit.com/gopherpit/server/config"
 	"gopherpit.com/gopherpit/services/key/bolt"
@@ -92,30 +93,30 @@ func (r emailRecorder) Notify(subject, body string) error {
 	return r.SendEmail(r.DefaultFrom, r.NotifyAddresses, r.SubjectPrefix+subject, body)
 }
 
-// startTestServer requires stopping it:
+// newTestServer requires stopping it:
 //
 // Example:
 //
-//     startTestServer(nil)
-//     defer stopTestServer()
+//     newTestServer(nil)
+//     defer s.stopTestServer()
 //
-func startTestServer(options map[string]interface{}) error {
+func newTestServer(options map[string]interface{}) (*Server, error) {
 	logger, err := logging.GetLogger("default")
 	if err != nil {
-		return fmt.Errorf("get default logger: %s", err)
+		return nil, fmt.Errorf("get default logger: %s", err)
 	}
 
 	storageDir, err := ioutil.TempDir("", "gopherpit-test-")
 	if err != nil {
-		return fmt.Errorf("temp storage dir: %s", err)
+		return nil, fmt.Errorf("temp storage dir: %s", err)
 	}
 
-	emailService := emailRecorder{
+	emailService := &emailRecorder{
 		DefaultFrom:     "gopherpit-test@localhost",
 		NotifyAddresses: []string{"gopherpit@localhost"},
 		SubjectPrefix:   "GopherPitTest",
 	}
-	recoveryService := recovery.Service{
+	recoveryService := &recovery.Service{
 		Version:   config.Version,
 		BuildInfo: config.BuildInfo,
 		LogFunc:   logging.Error,
@@ -124,7 +125,7 @@ func startTestServer(options map[string]interface{}) error {
 
 	sessionDB, err := boltSession.NewDB(filepath.Join(storageDir, "session.db"), 0666, nil)
 	if err != nil {
-		return fmt.Errorf("session service bolt database: %s", err)
+		return nil, fmt.Errorf("session service bolt database: %s", err)
 	}
 	sessionService := &boltSession.Service{
 		DB:              sessionDB,
@@ -134,7 +135,7 @@ func startTestServer(options map[string]interface{}) error {
 	}
 	userDB, err := boltUser.NewDB(filepath.Join(storageDir, "user.db"), 0666, nil)
 	if err != nil {
-		return fmt.Errorf("user service bolt database: %s", err)
+		return nil, fmt.Errorf("user service bolt database: %s", err)
 	}
 	userService := &boltUser.Service{
 		DB: userDB,
@@ -143,11 +144,11 @@ func startTestServer(options map[string]interface{}) error {
 	}
 	packagesDB, err := boltPackages.NewDB(filepath.Join(storageDir, "packages.db"), 0666, nil)
 	if err != nil {
-		return fmt.Errorf("packages service bolt database: %s", err)
+		return nil, fmt.Errorf("packages service bolt database: %s", err)
 	}
 	packagesChangelog, err := boltPackages.NewChangelogPool(filepath.Join(storageDir, "changelog"), 0666, nil)
 	if err != nil {
-		return fmt.Errorf("packages service bolt changelog database pool: %s", err)
+		return nil, fmt.Errorf("packages service bolt changelog database pool: %s", err)
 	}
 	packagesService := &boltPackages.Service{
 		DB:        packagesDB,
@@ -156,7 +157,7 @@ func startTestServer(options map[string]interface{}) error {
 	}
 	keyDB, err := boltKey.NewDB(filepath.Join(storageDir, "key.db"), 0666, nil)
 	if err != nil {
-		return fmt.Errorf("key service bolt database: %s", err)
+		return nil, fmt.Errorf("key service bolt database: %s", err)
 	}
 	keyService := &boltKey.Service{
 		DB:     keyDB,
@@ -164,7 +165,7 @@ func startTestServer(options map[string]interface{}) error {
 	}
 	gcraStoreService, err := memstore.New(65536)
 	if err != nil {
-		return fmt.Errorf("gcra memstore: %s", err)
+		return nil, fmt.Errorf("gcra memstore: %s", err)
 	}
 
 	o := testServerOptions{
@@ -181,13 +182,11 @@ func startTestServer(options map[string]interface{}) error {
 			TLSCert:                 "",
 			Domain:                  "localhost",
 			Headers:                 map[string]string{},
-			XSRFCookieName:          "testsecid",
 			SessionCookieName:       "testsesid",
 			AssetsDir:               filepath.Join(build.Default.GOPATH, "src", "gopherpit.com", "gopherpit", "assets"),
 			StaticDir:               filepath.Join(build.Default.GOPATH, "src", "gopherpit.com", "gopherpit", "static"),
 			TemplatesDir:            filepath.Join(build.Default.GOPATH, "src", "gopherpit.com", "gopherpit", "templates"),
 			StorageDir:              "",
-			MaintenanceFilename:     "maintenance",
 			GoogleAnalyticsID:       "",
 			RememberMeDays:          45,
 			DefaultFrom:             "gopherpit-test@localhost",
@@ -212,8 +211,9 @@ func startTestServer(options map[string]interface{}) error {
 			AuditLogger:         logger,
 			PackageAccessLogger: logger,
 
-			EmailService:    emailService,
-			RecoveryService: recoveryService,
+			EmailService:       emailService,
+			RecoveryService:    recoveryService,
+			MaintenanceService: maintenance.New(),
 
 			SessionService:      sessionService,
 			UserService:         userService,
@@ -226,29 +226,30 @@ func startTestServer(options map[string]interface{}) error {
 	}
 
 	if notSet := o.update(options); notSet != nil {
-		return fmt.Errorf("options not set: %s", strings.Join(notSet, ", "))
+		return nil, fmt.Errorf("options not set: %s", strings.Join(notSet, ", "))
 	}
 
 	// StorageDir must be set explicitly by overriding any configured
-	// path as it is removed in stopTestServer().
+	// path as it is removed in s.stopTestServer().
 	o.StorageDir = storageDir
 
-	if err := Configure(o.Options); err != nil {
-		return fmt.Errorf("configure: %s", err)
+	s, err := New(o.Options)
+	if err != nil {
+		return nil, fmt.Errorf("configure: %s", err)
 	}
 
-	if err := Serve(); err != nil {
-		return fmt.Errorf("serve %s", err)
+	if err := s.Serve(); err != nil {
+		return nil, fmt.Errorf("serve %s", err)
 	}
 
-	return nil
+	return s, nil
 }
 
-// stopTestServer must be called to shut down HTTP servers and remove storage dir.
-func stopTestServer() {
-	storageDir := srv.StorageDir
+// s.stopTestServer must be called to shut down HTTP servers and remove storage dir.
+func (s *Server) stopTestServer() {
+	storageDir := s.StorageDir
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	Shutdown(ctx)
+	s.Shutdown(ctx)
 	cancel()
 	if storageDir != "" {
 		if err := os.RemoveAll(storageDir); err != nil {
@@ -260,39 +261,48 @@ func stopTestServer() {
 func TestVersionFunc(t *testing.T) {
 	t.Run("no version", func(t *testing.T) {
 		Version := "0"
-		startTestServer(map[string]interface{}{
+		s, err := newTestServer(map[string]interface{}{
 			"Version":   "",
 			"BuildInfo": "",
 		})
-		defer stopTestServer()
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer s.stopTestServer()
 
-		v := version()
+		v := s.version()
 		if v != Version {
 			t.Errorf("expected %q, got %q", Version, v)
 		}
 	})
 	t.Run("without build info", func(t *testing.T) {
 		Version := "1.25.84"
-		startTestServer(map[string]interface{}{
+		s, err := newTestServer(map[string]interface{}{
 			"Version":   Version,
 			"BuildInfo": "",
 		})
-		defer stopTestServer()
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer s.stopTestServer()
 
-		v := version()
+		v := s.version()
 		if v != Version {
 			t.Errorf("expected %q, got %q", Version, v)
 		}
 	})
 	t.Run("with build info", func(t *testing.T) {
 		Version := "1.25.84-123456"
-		startTestServer(map[string]interface{}{
+		s, err := newTestServer(map[string]interface{}{
 			"Version":   "1.25.84",
 			"BuildInfo": "123456",
 		})
-		defer stopTestServer()
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer s.stopTestServer()
 
-		v := version()
+		v := s.version()
 		if v != Version {
 			t.Errorf("expected %q, got %q", Version, v)
 		}

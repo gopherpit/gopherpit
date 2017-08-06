@@ -12,7 +12,7 @@ var (
 	checkboxFalse = []byte(`false`)
 )
 
-// Checkbox is a helper type to unmarshal value from HTML checkobox
+// Checkbox is a helper type to unmarshal value from HTML checkbox
 // into boolean.
 type Checkbox bool
 

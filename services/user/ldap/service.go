@@ -15,8 +15,8 @@ import (
 	"time"
 
 	ldap "gopkg.in/ldap.v2"
+	"resenje.org/x/data-dump"
 
-	"gopherpit.com/gopherpit/pkg/data-dump"
 	"gopherpit.com/gopherpit/services/user"
 )
 

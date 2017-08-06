@@ -46,18 +46,18 @@ func packagesPackageToAPIPackage(p packages.Package, d *packages.Domain) api.Pac
 	}
 }
 
-func jsonAPIRateLimiterHandler(h http.Handler) http.Handler {
+func (s *Server) jsonAPIRateLimiterHandler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if srv.APIHourlyRateLimit > 0 {
+		if s.APIHourlyRateLimit > 0 {
 			var u *user.User
 			var err error
-			u, r, err = getRequestUser(r)
+			u, r, err = s.getRequestUser(r)
 			if err != nil {
 				panic(err)
 			}
-			limited, result, err := srv.apiRateLimiter.RateLimit(fmt.Sprintf("userID:%s", u.ID), 1)
+			limited, result, err := s.apiRateLimiter.RateLimit(fmt.Sprintf("userID:%s", u.ID), 1)
 			if err != nil {
-				srv.Logger.Errorf("api rate limiter: rate limit: %s", err)
+				s.Logger.Errorf("api rate limiter: rate limit: %s", err)
 				jsonresponse.InternalServerError(w, nil)
 				return
 			}
@@ -72,7 +72,7 @@ func jsonAPIRateLimiterHandler(h http.Handler) http.Handler {
 				}
 			}
 			if limited {
-				srv.Logger.Warningf("api rate limiter: blocked %s: retry after %s", u.ID, result.RetryAfter)
+				s.Logger.Warningf("api rate limiter: blocked %s: retry after %s", u.ID, result.RetryAfter)
 				jsonresponse.BadRequest(w, api.ErrTooManyRequests)
 				return
 			}

@@ -19,7 +19,6 @@ import (
 	"resenje.org/web/log/access"
 	"resenje.org/web/recovery"
 
-	"gopherpit.com/gopherpit/pkg/info"
 	"gopherpit.com/gopherpit/services/key"
 	"gopherpit.com/gopherpit/services/user"
 )
@@ -33,13 +32,32 @@ func jsonServerError(w http.ResponseWriter, err error) {
 	jsonresponse.InternalServerError(w, nil)
 }
 
-// Helper function for raising unexpected errors in HTML frontend handlers.
-func htmlServerError(w http.ResponseWriter, r *http.Request, err error) {
-	if _, ok := err.(net.Error); ok {
-		htmlServiceUnavailableHandler(w, r)
+func (s *Server) htmlError(w http.ResponseWriter, r *http.Request, c int) {
+	u, r, err := s.getRequestUser(r)
+	if err != nil {
+		s.Logger.Errorf("get user: %s", err)
+		if _, ok := err.(net.Error); ok {
+			s.html.RespondWithStatus(w, http.StatusText(http.StatusServiceUnavailable), nil, http.StatusServiceUnavailable)
+			return
+		}
+		s.html.RespondWithStatus(w, http.StatusText(http.StatusInternalServerError), nil, http.StatusInternalServerError)
 		return
 	}
-	htmlInternalServerErrorHandler(w, r)
+	if u == nil {
+		s.html.RespondWithStatus(w, http.StatusText(c), nil, c)
+		return
+	}
+	s.html.RespondWithStatus(w, http.StatusText(c)+" Private", map[string]interface{}{
+		"User": u,
+	}, c)
+}
+
+func (s *Server) htmlServerError(w http.ResponseWriter, r *http.Request, err error) {
+	if _, ok := err.(net.Error); ok {
+		s.htmlError(w, r, http.StatusServiceUnavailable)
+		return
+	}
+	s.htmlError(w, r, http.StatusInternalServerError)
 }
 
 func textServerError(w http.ResponseWriter, err error) {
@@ -54,48 +72,58 @@ func textServerError(w http.ResponseWriter, err error) {
 	fmt.Fprintln(w, http.StatusText(http.StatusInternalServerError))
 }
 
+func (s *Server) htmlNotFoundHandler(w http.ResponseWriter, r *http.Request) {
+	s.htmlError(w, r, http.StatusNotFound)
+}
+
+func (s *Server) htmlForbiddenHandler(w http.ResponseWriter, r *http.Request) {
+	s.htmlError(w, r, http.StatusForbidden)
+}
+
+func (s *Server) htmlInternalServerErrorHandler(w http.ResponseWriter, r *http.Request) {
+	s.htmlError(w, r, http.StatusInternalServerError)
+}
+
 // statusResponse is a response of a status API handler.
 type statusResponse struct {
 	Name    string `json:"name"`
 	Version string `json:"version"`
 	Uptime  string `json:"uptime"`
-	info.Information
 }
 
-func statusAPIHandler(w http.ResponseWriter, r *http.Request) {
+func (s *Server) statusAPIHandler(w http.ResponseWriter, r *http.Request) {
 	jsonresponse.OK(w, statusResponse{
-		Name:        srv.Name,
-		Version:     version(),
-		Uptime:      time.Since(srv.startTime).String(),
-		Information: *info.NewInformation(),
+		Name:    s.Name,
+		Version: s.version(),
+		Uptime:  time.Since(s.startTime).String(),
 	})
 }
 
-func statusHandler(w http.ResponseWriter, r *http.Request) {
+func (s *Server) statusHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	fmt.Fprintf(w, "%s version %s, uptime %s", srv.Name, version(), time.Since(srv.startTime))
+	fmt.Fprintf(w, "%s version %s, uptime %s", s.Name, s.version(), time.Since(s.startTime))
 }
 
-func accessLogHandler(h http.Handler) http.Handler {
-	return accessLog.NewHandler(h, srv.AccessLogger)
+func (s *Server) accessLogHandler(h http.Handler) http.Handler {
+	return accessLog.NewHandler(h, s.AccessLogger)
 }
 
 // Recovery handler for HTML frontend routers.
-func htmlRecoveryHandler(h http.Handler) http.Handler {
+func (s *Server) htmlRecoveryHandler(h http.Handler) http.Handler {
 	return recovery.New(h,
-		recovery.WithLabel(version()),
-		recovery.WithLogFunc(srv.Logger.Errorf),
-		recovery.WithNotifier(srv.EmailService),
-		recovery.WithPanicResponseHandler(http.HandlerFunc(htmlInternalServerErrorHandler)),
+		recovery.WithLabel(s.version()),
+		recovery.WithLogFunc(s.Logger.Errorf),
+		recovery.WithNotifier(s.EmailService),
+		recovery.WithPanicResponseHandler(http.HandlerFunc(s.htmlInternalServerErrorHandler)),
 	)
 }
 
 // Recovery handler for JSON API routers.
-func jsonRecoveryHandler(h http.Handler) http.Handler {
+func (s *Server) jsonRecoveryHandler(h http.Handler) http.Handler {
 	return recovery.New(h,
-		recovery.WithLabel(version()),
-		recovery.WithLogFunc(srv.Logger.Errorf),
-		recovery.WithNotifier(srv.EmailService),
+		recovery.WithLabel(s.version()),
+		recovery.WithLogFunc(s.Logger.Errorf),
+		recovery.WithNotifier(s.EmailService),
 		recovery.WithPanicResponse(`{"message":"Internal Server Error","code":500}`, "application/json; charset=utf-8"),
 	)
 }
@@ -104,23 +132,23 @@ func jsonRecoveryHandler(h http.Handler) http.Handler {
 // It is useful as the firs handler in chain if a handler that
 // transforms response needs to be before other recovery handler,
 // like compress handler.
-func nilRecoveryHandler(h http.Handler) http.Handler {
+func (s *Server) nilRecoveryHandler(h http.Handler) http.Handler {
 	return recovery.New(h,
-		recovery.WithLabel(version()),
-		recovery.WithLogFunc(srv.Logger.Errorf),
-		recovery.WithNotifier(srv.EmailService),
+		recovery.WithLabel(s.version()),
+		recovery.WithLogFunc(s.Logger.Errorf),
+		recovery.WithNotifier(s.EmailService),
 	)
 }
 
-func htmlMaxBodyBytesHandler(h http.Handler) http.Handler {
+func (s *Server) htmlMaxBodyBytesHandler(h http.Handler) http.Handler {
 	return web.MaxBodyBytesHandler{
 		Handler: h,
 		Limit:   2 * 1024 * 1024,
 		BodyFunc: func(r *http.Request) (string, error) {
-			return renderToString(srv.templates["RequestEntityTooLarge"], "", nil)
+			return s.html.Render("RequestEntityTooLarge", nil)
 		},
 		ContentType:  "text/html; charset=utf-8",
-		ErrorHandler: htmlServerError,
+		ErrorHandler: s.htmlServerError,
 	}
 }
 
@@ -160,17 +188,17 @@ func jsonNotFoundHandler(w http.ResponseWriter, r *http.Request) {
 
 func generateAntiXSRFCookieHandler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Header.Get(srv.XSRFCookieName) == "" {
+		if r.Header.Get(antixsrf.XSRFCookieName) == "" {
 			antixsrf.Generate(w, r, "/")
 		}
 		h.ServeHTTP(w, r)
 	})
 }
 
-func jsonAntiXSRFHandler(h http.Handler) http.Handler {
+func (s *Server) jsonAntiXSRFHandler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := antixsrf.Verify(r); err != nil {
-			srv.Logger.Warningf("xsrf %s: %s", r.RequestURI, err)
+			s.Logger.Warningf("xsrf %s: %s", r.RequestURI, err)
 			jsonresponse.Forbidden(w, nil)
 			return
 		}
@@ -178,49 +206,49 @@ func jsonAntiXSRFHandler(h http.Handler) http.Handler {
 	})
 }
 
-func htmlLoginRequiredHandler(h http.Handler) http.Handler {
+func (s *Server) htmlLoginRequiredHandler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		u, r, err := getRequestUser(r)
+		u, r, err := s.getRequestUser(r)
 		if err != nil && err != user.ErrUserNotFound {
 			go func() {
-				defer srv.RecoveryService.Recover()
-				if err := srv.EmailService.Notify("Get user error", fmt.Sprint(err)); err != nil {
-					srv.Logger.Errorf("email notify: %s", err)
+				defer s.RecoveryService.Recover()
+				if err := s.EmailService.Notify("Get user error", fmt.Sprint(err)); err != nil {
+					s.Logger.Errorf("email notify: %s", err)
 				}
 			}()
-			htmlServerError(w, r, err)
+			s.htmlServerError(w, r, err)
 			return
 		}
-		if r.Header.Get(srv.XSRFCookieName) == "" {
+		if r.Header.Get(antixsrf.XSRFCookieName) == "" {
 			antixsrf.Generate(w, r, "/")
 		}
 		if u == nil || u.Disabled {
-			if r.Header.Get(srv.SessionCookieName) != "" {
-				logout(w, r)
+			if r.Header.Get(s.SessionCookieName) != "" {
+				s.logout(w, r)
 			}
-			respond(w, "Login", nil)
+			s.html.Respond(w, "Login", nil)
 			return
 		}
 		h.ServeHTTP(w, r)
 	})
 }
 
-func jsonLoginRequiredHandler(h http.Handler) http.Handler {
+func (s *Server) jsonLoginRequiredHandler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		u, r, err := getRequestUser(r)
+		u, r, err := s.getRequestUser(r)
 		if err != nil && err != user.ErrUserNotFound {
 			go func() {
-				defer srv.RecoveryService.Recover()
-				if err := srv.EmailService.Notify("Get user error", fmt.Sprint(err)); err != nil {
-					srv.Logger.Errorf("email notify: %s", err)
+				defer s.RecoveryService.Recover()
+				if err := s.EmailService.Notify("Get user error", fmt.Sprint(err)); err != nil {
+					s.Logger.Errorf("email notify: %s", err)
 				}
 			}()
 			jsonServerError(w, err)
 			return
 		}
 		if u == nil || u.Disabled {
-			if r.Header.Get(srv.SessionCookieName) != "" {
-				logout(w, r)
+			if r.Header.Get(s.SessionCookieName) != "" {
+				s.logout(w, r)
 			}
 			jsonresponse.Unauthorized(w, nil)
 			return
@@ -232,22 +260,22 @@ func jsonLoginRequiredHandler(h http.Handler) http.Handler {
 // Handlers that acts as a splitter in a handler chain.
 // If user is logged in, first argument handler will be executed,
 // otherwise the second one will.
-func htmlLoginAltHandler(h, alt http.Handler) http.Handler {
+func (s *Server) htmlLoginAltHandler(h, alt http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		u, r, err := getRequestUser(r)
+		u, r, err := s.getRequestUser(r)
 		if err != nil && err != user.ErrUserNotFound {
 			go func() {
-				defer srv.RecoveryService.Recover()
-				if err := srv.EmailService.Notify("Get user error", fmt.Sprint(err)); err != nil {
-					srv.Logger.Errorf("email notify: %s", err)
+				defer s.RecoveryService.Recover()
+				if err := s.EmailService.Notify("Get user error", fmt.Sprint(err)); err != nil {
+					s.Logger.Errorf("email notify: %s", err)
 				}
 			}()
-			htmlServerError(w, r, err)
+			s.htmlServerError(w, r, err)
 			return
 		}
 		if u == nil || u.Disabled {
-			if r.Header.Get(srv.SessionCookieName) != "" {
-				logout(w, r)
+			if r.Header.Get(s.SessionCookieName) != "" {
+				s.logout(w, r)
 			}
 			alt.ServeHTTP(w, r)
 			return
@@ -256,21 +284,21 @@ func htmlLoginAltHandler(h, alt http.Handler) http.Handler {
 	})
 }
 
-func htmlValidatedEmailRequiredHandler(h http.Handler) http.Handler {
+func (s *Server) htmlValidatedEmailRequiredHandler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		u, r, err := getRequestUser(r)
+		u, r, err := s.getRequestUser(r)
 		if err != nil {
 			go func() {
-				defer srv.RecoveryService.Recover()
-				if err := srv.EmailService.Notify("Get user error", fmt.Sprint(err)); err != nil {
-					srv.Logger.Errorf("email notify: %s", err)
+				defer s.RecoveryService.Recover()
+				if err := s.EmailService.Notify("Get user error", fmt.Sprint(err)); err != nil {
+					s.Logger.Errorf("email notify: %s", err)
 				}
 			}()
-			htmlServerError(w, r, err)
+			s.htmlServerError(w, r, err)
 			return
 		}
 		if u.EmailUnvalidated {
-			respond(w, "EmailUnvalidated", map[string]interface{}{
+			s.html.Respond(w, "EmailUnvalidated", map[string]interface{}{
 				"User": u,
 			})
 			return
@@ -279,14 +307,14 @@ func htmlValidatedEmailRequiredHandler(h http.Handler) http.Handler {
 	})
 }
 
-func jsonValidatedEmailRequiredHandler(h http.Handler) http.Handler {
+func (s *Server) jsonValidatedEmailRequiredHandler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		u, r, err := getRequestUser(r)
+		u, r, err := s.getRequestUser(r)
 		if err != nil && err != user.ErrUserNotFound {
 			go func() {
-				defer srv.RecoveryService.Recover()
-				if err := srv.EmailService.Notify("Get user error", fmt.Sprint(err)); err != nil {
-					srv.Logger.Errorf("email notify: %s", err)
+				defer s.RecoveryService.Recover()
+				if err := s.EmailService.Notify("Get user error", fmt.Sprint(err)); err != nil {
+					s.Logger.Errorf("email notify: %s", err)
 				}
 			}()
 			jsonServerError(w, err)
@@ -319,9 +347,9 @@ func noCacheHeaderHandler(h http.Handler) http.Handler {
 	})
 }
 
-func apiDisabledHandler(h http.Handler) http.Handler {
+func (s *Server) apiDisabledHandler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if !srv.APIEnabled {
+		if !s.APIEnabled {
 			jsonresponse.NotFound(w, nil)
 			return
 		}
@@ -329,9 +357,9 @@ func apiDisabledHandler(h http.Handler) http.Handler {
 	})
 }
 
-func apiKeyAuthHandler(h http.Handler, body, contentType string) http.Handler {
+func (s *Server) apiKeyAuthHandler(h http.Handler, body, contentType string) http.Handler {
 	trustedProxyNetworks := []net.IPNet{}
-	for _, cidr := range srv.APITrustedProxyCIDRs {
+	for _, cidr := range s.APITrustedProxyCIDRs {
 		if cidr == "" {
 			continue
 		}
@@ -353,7 +381,7 @@ func apiKeyAuthHandler(h http.Handler, body, contentType string) http.Handler {
 			if field1 == "" {
 				return
 			}
-			k, err := srv.KeyService.KeyBySecret(field1)
+			k, err := s.KeyService.KeyBySecret(field1)
 			switch err {
 			case nil:
 			case key.ErrKeyNotFound:
@@ -361,7 +389,7 @@ func apiKeyAuthHandler(h http.Handler, body, contentType string) http.Handler {
 				return
 			default:
 				err = nil
-				srv.Logger.Errorf("api key auth: get key: %s", err)
+				s.Logger.Errorf("api key auth: get key: %s", err)
 				return
 			}
 
@@ -372,11 +400,11 @@ func apiKeyAuthHandler(h http.Handler, body, contentType string) http.Handler {
 			}
 			ip := net.ParseIP(host)
 			if ip == nil {
-				srv.Logger.Warningf("api key auth: key ref %s: unable to parse ip: %s", k.Ref, host)
+				s.Logger.Warningf("api key auth: key ref %s: unable to parse ip: %s", k.Ref, host)
 				return
 			}
 
-			if len(trustedProxyNetworks) > 0 && srv.APIProxyRealIPHeader != "" {
+			if len(trustedProxyNetworks) > 0 && s.APIProxyRealIPHeader != "" {
 				proxied := false
 				for _, network := range trustedProxyNetworks {
 					if network.Contains(ip) {
@@ -385,12 +413,12 @@ func apiKeyAuthHandler(h http.Handler, body, contentType string) http.Handler {
 					}
 				}
 				if proxied {
-					header := r.Header.Get(srv.APIProxyRealIPHeader)
+					header := r.Header.Get(s.APIProxyRealIPHeader)
 					if header != "" {
 						header = strings.TrimSpace(strings.SplitN(header, ",", 2)[0])
 						ip = net.ParseIP(header)
 						if ip == nil {
-							srv.Logger.Warningf("api key auth: key ref %s: unable to parse %s header as ip: %s", k.Ref, srv.APIProxyRealIPHeader, header)
+							s.Logger.Warningf("api key auth: key ref %s: unable to parse %s header as ip: %s", k.Ref, s.APIProxyRealIPHeader, header)
 							return
 						}
 					}
@@ -405,14 +433,14 @@ func apiKeyAuthHandler(h http.Handler, body, contentType string) http.Handler {
 				}
 			}
 			if !found {
-				srv.Logger.Warningf("api key auth: key ref %s: unauthorized network: %s", k.Ref, ip)
+				s.Logger.Warningf("api key auth: key ref %s: unauthorized network: %s", k.Ref, ip)
 				return
 			}
 
-			entity, err = srv.UserService.UserByID(k.Ref)
+			entity, err = s.UserService.UserByID(k.Ref)
 			if err != nil {
 				err = nil
-				srv.Logger.Errorf("api key auth: get user by id %s: %s", k.Ref, err)
+				s.Logger.Errorf("api key auth: get user by id %s: %s", k.Ref, err)
 				return
 			}
 			valid = true
@@ -429,6 +457,43 @@ func apiKeyAuthHandler(h http.Handler, body, contentType string) http.Handler {
 	}
 }
 
-func jsonAPIKeyAuthHandler(h http.Handler) http.Handler {
-	return apiKeyAuthHandler(h, `{"message":"Unauthorized","code":401}`, "application/json; charset=utf-8")
+func (s *Server) jsonAPIKeyAuthHandler(h http.Handler) http.Handler {
+	return s.apiKeyAuthHandler(h, `{"message":"Unauthorized","code":401}`, "application/json; charset=utf-8")
+}
+
+func (s *Server) redirectHandler(h http.Handler) (http.Handler, error) {
+	if s.ListenTLS == "" || s.Domain == "" {
+		return h, nil
+	}
+	// Initialize handler that will redirect http:// to https:// only if
+	// certificate for configured domain or it's www subdomain is available.
+	_, tlsPort, err := net.SplitHostPort(s.ListenTLS)
+	if err != nil {
+		return nil, fmt.Errorf("invalid tls: %s", err)
+	}
+	if tlsPort == "443" {
+		tlsPort = ""
+	} else {
+		tlsPort = ":" + tlsPort
+	}
+	var altDomain string
+	if strings.HasPrefix("www.", s.Domain) {
+		altDomain = strings.TrimPrefix(s.Domain, "www.")
+	} else {
+		altDomain = "www." + s.Domain
+	}
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		domain, _, err := net.SplitHostPort(r.Host)
+		if err != nil {
+			domain = r.Host
+		}
+		if (domain == s.Domain || domain == altDomain) && !strings.HasPrefix(r.URL.Path, acmeURLPrefix) {
+			c, _ := s.certificateCache.Certificate(s.Domain)
+			if c != nil {
+				http.Redirect(w, r, strings.Join([]string{"https://", s.Domain, tlsPort, r.RequestURI}, ""), http.StatusMovedPermanently)
+				return
+			}
+		}
+		h.ServeHTTP(w, r)
+	}), nil
 }

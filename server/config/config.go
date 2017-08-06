@@ -8,14 +8,9 @@
 package config // import "gopherpit.com/gopherpit/server/config"
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
-
-	yaml "gopkg.in/yaml.v2"
 )
 
 var (
@@ -61,76 +56,3 @@ var (
 	// Set the version on build with: go build -ldflags "-X gopherpit.com/gopherpit/server/config.Dir=$(CONFIG_DIR)"
 	Dir = "/etc/gopherpit"
 )
-
-// Options interface defines functionality to update, verify, prepare
-// and display configuration.
-type Options interface {
-	Update(dirs ...string) error
-	Verify() (help string, err error)
-	Prepare() error
-	String() string
-}
-
-// Prepare prepares directories provided in configuration options.
-func Prepare(options []Options) error {
-	for _, o := range options {
-		if err := o.Prepare(); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-// Update updates configuration options from external files.
-func Update(options []Options, dirs ...string) error {
-	for _, o := range options {
-		if err := o.Update(dirs...); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-// Verify verifies configuration values.
-func Verify(options []Options) (help string, err error) {
-	for _, o := range options {
-		if help, err = o.Verify(); err != nil {
-			return
-		}
-	}
-	return
-}
-
-func loadJSON(filename string, o Options) error {
-	data, err := ioutil.ReadFile(filename)
-	if err != nil {
-		return fmt.Errorf("%s: %v", filename, err)
-	}
-	if err = json.Unmarshal(data, o); err != nil {
-		getLineColFromOffset := func(data []byte, offset int64) (line, col int) {
-			start := bytes.LastIndex(data[:offset], []byte{10}) + 1
-			return bytes.Count(data[:start], []byte{10}) + 1, int(offset) - start
-		}
-		switch e := err.(type) {
-		case *json.SyntaxError:
-			line, col := getLineColFromOffset(data, e.Offset)
-			return fmt.Errorf("%s:%d:%d: %v", filename, line, col, err)
-		case *json.UnmarshalTypeError:
-			line, col := getLineColFromOffset(data, e.Offset)
-			return fmt.Errorf("%s:%d:%d: expected json %s value but got %s", filename, line, col, e.Type, e.Value)
-		}
-		return fmt.Errorf("%s: %v", filename, err)
-	}
-	return nil
-}
-
-func loadYAML(filename string, o Options) error {
-	data, err := ioutil.ReadFile(filename)
-	if err != nil {
-		return fmt.Errorf("%s: %v", filename, err)
-	}
-	if err = yaml.Unmarshal(data, o); err != nil {
-		return fmt.Errorf("%s: %v", filename, err)
-	}
-	return nil
-}

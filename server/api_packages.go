@@ -20,8 +20,8 @@ import (
 	"gopherpit.com/gopherpit/services/packages"
 )
 
-func packageAPIHandler(w http.ResponseWriter, r *http.Request) {
-	u, r, err := getRequestUser(r)
+func (s *Server) packageAPIHandler(w http.ResponseWriter, r *http.Request) {
+	u, r, err := s.getRequestUser(r)
 	if err != nil {
 		panic(err)
 	}
@@ -29,14 +29,14 @@ func packageAPIHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
 
-	p, err := srv.PackagesService.Package(id)
+	p, err := s.PackagesService.Package(id)
 	if err != nil {
 		if err == packages.ErrPackageNotFound {
-			srv.Logger.Warningf("package api: package %s: %s", id, err)
+			s.Logger.Warningf("package api: package %s: %s", id, err)
 			jsonresponse.BadRequest(w, api.ErrPackageNotFound)
 			return
 		}
-		srv.Logger.Errorf("package api: package %s: %s", id, err)
+		s.Logger.Errorf("package api: package %s: %s", id, err)
 		jsonresponse.InternalServerError(w, nil)
 		return
 	}
@@ -44,17 +44,17 @@ func packageAPIHandler(w http.ResponseWriter, r *http.Request) {
 	token := ""
 	authorized := false
 	for {
-		response, err := srv.PackagesService.DomainsByUser(u.ID, token, 0)
+		response, err := s.PackagesService.DomainsByUser(u.ID, token, 0)
 		if err != nil {
 			if err == packages.ErrUserDoesNotExist {
-				srv.Logger.Warningf("package api: domains by user %s: %s", u.ID, err)
+				s.Logger.Warningf("package api: domains by user %s: %s", u.ID, err)
 				break
 			}
 			if err == packages.ErrDomainNotFound {
-				srv.Logger.Warningf("package api: domains by user %s: %s", u.ID, err)
+				s.Logger.Warningf("package api: domains by user %s: %s", u.ID, err)
 				break
 			}
-			srv.Logger.Errorf("package api: domains by user %s: %s", u.ID, err)
+			s.Logger.Errorf("package api: domains by user %s: %s", u.ID, err)
 			jsonresponse.InternalServerError(w, nil)
 			return
 		}
@@ -71,7 +71,7 @@ func packageAPIHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !authorized {
-		srv.Logger.Errorf("package api: package %s: does not belong to user %s", id, u.ID)
+		s.Logger.Errorf("package api: package %s: does not belong to user %s", id, u.ID)
 		jsonresponse.Forbidden(w, nil)
 		return
 	}
@@ -79,8 +79,8 @@ func packageAPIHandler(w http.ResponseWriter, r *http.Request) {
 	jsonresponse.OK(w, packagesPackageToAPIPackage(*p, nil))
 }
 
-func updatePackageAPIHandler(w http.ResponseWriter, r *http.Request) {
-	u, r, err := getRequestUser(r)
+func (s *Server) updatePackageAPIHandler(w http.ResponseWriter, r *http.Request) {
+	u, r, err := s.getRequestUser(r)
 	if err != nil {
 		panic(err)
 	}
@@ -88,10 +88,10 @@ func updatePackageAPIHandler(w http.ResponseWriter, r *http.Request) {
 	id := mux.Vars(r)["id"]
 
 	warningf := func(format string, a ...interface{}) {
-		srv.Logger.Warningf("update package api: %q: user %s: %s", id, u.ID, fmt.Sprintf(format, a...))
+		s.Logger.Warningf("update package api: %q: user %s: %s", id, u.ID, fmt.Sprintf(format, a...))
 	}
 	errorf := func(format string, a ...interface{}) {
-		srv.Logger.Errorf("update package api: %q: user %s: %s", id, u.ID, fmt.Sprintf(format, a...))
+		s.Logger.Errorf("update package api: %q: user %s: %s", id, u.ID, fmt.Sprintf(format, a...))
 	}
 
 	request := api.PackageOptions{}
@@ -222,9 +222,9 @@ func updatePackageAPIHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	var p *packages.Package
 	if id == "" {
-		p, err = srv.PackagesService.AddPackage(o, u.ID)
+		p, err = s.PackagesService.AddPackage(o, u.ID)
 	} else {
-		p, err = srv.PackagesService.UpdatePackage(id, o, u.ID)
+		p, err = s.PackagesService.UpdatePackage(id, o, u.ID)
 	}
 	switch err {
 	case packages.ErrForbidden:
@@ -290,13 +290,13 @@ func updatePackageAPIHandler(w http.ResponseWriter, r *http.Request) {
 	if id == "" {
 		action = "package add"
 	}
-	auditf(r, request, action, "%s %s (domain: %s)", p.ID, p.ImportPrefix(), p.Domain.ID)
+	s.auditf(r, request, action, "%s %s (domain: %s)", p.ID, p.ImportPrefix(), p.Domain.ID)
 
 	jsonresponse.OK(w, packagesPackageToAPIPackage(*p, nil))
 }
 
-func deletePackageAPIHandler(w http.ResponseWriter, r *http.Request) {
-	u, r, err := getRequestUser(r)
+func (s *Server) deletePackageAPIHandler(w http.ResponseWriter, r *http.Request) {
+	u, r, err := s.getRequestUser(r)
 	if err != nil {
 		panic(err)
 	}
@@ -304,32 +304,32 @@ func deletePackageAPIHandler(w http.ResponseWriter, r *http.Request) {
 	id := mux.Vars(r)["id"]
 
 	// Delete package checks permissions.
-	p, err := srv.PackagesService.DeletePackage(id, u.ID)
+	p, err := s.PackagesService.DeletePackage(id, u.ID)
 	switch err {
 	case packages.ErrForbidden:
-		srv.Logger.Warningf("package delete api: user %s: delete package %s: %s", u.ID, id, err)
+		s.Logger.Warningf("package delete api: user %s: delete package %s: %s", u.ID, id, err)
 		jsonresponse.Forbidden(w, nil)
 		return
 	case packages.ErrPackageNotFound:
-		srv.Logger.Warningf("package delete api: user %s: delete package %s: %s", u.ID, id, err)
+		s.Logger.Warningf("package delete api: user %s: delete package %s: %s", u.ID, id, err)
 		jsonresponse.BadRequest(w, api.ErrPackageNotFound)
 		return
 	case nil:
 	default:
-		srv.Logger.Errorf("package delete api: user %s: delete package %s: %s", u.ID, id, err)
+		s.Logger.Errorf("package delete api: user %s: delete package %s: %s", u.ID, id, err)
 		jsonresponse.InternalServerError(w, nil)
 		return
 	}
 
-	srv.Logger.Debugf("package delete api: %s deleted by %s", p.ID, u.ID)
+	s.Logger.Debugf("package delete api: %s deleted by %s", p.ID, u.ID)
 
-	auditf(r, nil, "package delete", "%s: %s", p.ID, p.ImportPrefix)
+	s.auditf(r, nil, "package delete", "%s: %s", p.ID, p.ImportPrefix)
 
 	jsonresponse.OK(w, packagesPackageToAPIPackage(*p, nil))
 }
 
-func domainPackagesAPIHandler(w http.ResponseWriter, r *http.Request) {
-	u, r, err := getRequestUser(r)
+func (s *Server) domainPackagesAPIHandler(w http.ResponseWriter, r *http.Request) {
+	u, r, err := s.getRequestUser(r)
 	if err != nil {
 		panic(err)
 	}
@@ -348,19 +348,19 @@ func domainPackagesAPIHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	pkgs, err := srv.PackagesService.PackagesByDomain(id, start, limit)
+	pkgs, err := s.PackagesService.PackagesByDomain(id, start, limit)
 	if err != nil {
 		if err == packages.ErrDomainNotFound {
-			srv.Logger.Warningf("domain packages api: packages by domain %s: %s", id, err)
+			s.Logger.Warningf("domain packages api: packages by domain %s: %s", id, err)
 			jsonresponse.BadRequest(w, api.ErrDomainNotFound)
 			return
 		}
 		if err == packages.ErrPackageNotFound {
-			srv.Logger.Warningf("domain packages api: packages by domain %s: %s", id, err)
+			s.Logger.Warningf("domain packages api: packages by domain %s: %s", id, err)
 			jsonresponse.BadRequest(w, api.ErrPackageNotFound)
 			return
 		}
-		srv.Logger.Errorf("domain packages api: packages by domain %s: %s", id, err)
+		s.Logger.Errorf("domain packages api: packages by domain %s: %s", id, err)
 		jsonresponse.InternalServerError(w, nil)
 		return
 	}
@@ -368,17 +368,17 @@ func domainPackagesAPIHandler(w http.ResponseWriter, r *http.Request) {
 	token := ""
 	authorized := false
 	for {
-		response, err := srv.PackagesService.DomainsByUser(u.ID, token, 0)
+		response, err := s.PackagesService.DomainsByUser(u.ID, token, 0)
 		if err != nil {
 			if err == packages.ErrUserDoesNotExist {
-				srv.Logger.Warningf("domain packages api: user domains %s: %s", u.ID, err)
+				s.Logger.Warningf("domain packages api: user domains %s: %s", u.ID, err)
 				break
 			}
 			if err == packages.ErrDomainNotFound {
-				srv.Logger.Warningf("domain packages api: user domains %s: %s", u.ID, err)
+				s.Logger.Warningf("domain packages api: user domains %s: %s", u.ID, err)
 				break
 			}
-			srv.Logger.Errorf("domain packages api: user domains %s: %s", u.ID, err)
+			s.Logger.Errorf("domain packages api: user domains %s: %s", u.ID, err)
 			jsonresponse.InternalServerError(w, nil)
 			return
 		}
@@ -394,7 +394,7 @@ func domainPackagesAPIHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !authorized {
-		srv.Logger.Errorf("domain packages api: domain %s: not allowed for user %s", id, u.ID)
+		s.Logger.Errorf("domain packages api: domain %s: not allowed for user %s", id, u.ID)
 		jsonresponse.Forbidden(w, nil)
 		return
 	}

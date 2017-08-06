@@ -26,7 +26,7 @@ func (d Duration) MarshalJSON() ([]byte, error) {
 	return json.Marshal(d.Duration().String())
 }
 
-// UnmarshalJSON implements json.Unamrshaler interface.
+// UnmarshalJSON implements json.Unmarshaler interface.
 // It parses time.Duration string.
 func (d *Duration) UnmarshalJSON(data []byte) error {
 	if len(data) <= 2 || data[0] != '"' || data[len(data)-1] != '"' {
@@ -44,7 +44,7 @@ func (d Duration) MarshalText() ([]byte, error) {
 	return []byte(d.Duration().String()), nil
 }
 
-// UnmarshalText implements encoding.TextUnamrshaler interface.
+// UnmarshalText implements encoding.TextUnmarshaler interface.
 // It parses time.Duration string.
 func (d *Duration) UnmarshalText(data []byte) error {
 	x, err := time.ParseDuration(string(data))

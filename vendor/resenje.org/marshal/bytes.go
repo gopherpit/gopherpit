@@ -54,7 +54,7 @@ func (b Bytes) MarshalJSON() ([]byte, error) {
 	return append([]byte{'"'}, append(x, '"')...), nil
 }
 
-// UnmarshalJSON implements json.Unamrshaler interface.
+// UnmarshalJSON implements json.Unmarshaler interface.
 // It parses length of bytes string.
 func (b *Bytes) UnmarshalJSON(data []byte) error {
 	return b.UnmarshalText(bytes.Trim(data, "\""))
@@ -80,7 +80,7 @@ func (b Bytes) MarshalText() ([]byte, error) {
 	return buf.Bytes(), err
 }
 
-// UnmarshalText implements encoding.TextUnamrshaler interface.
+// UnmarshalText implements encoding.TextUnmarshaler interface.
 // It parses length of bytes string.
 func (b *Bytes) UnmarshalText(data []byte) error {
 	lastDigit := 0

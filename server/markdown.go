@@ -7,6 +7,10 @@ package server
 
 import (
 	"html/template"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/russross/blackfriday"
@@ -20,4 +24,32 @@ func markdown(md []byte) template.HTML {
 
 func markdownSanitized(md []byte) template.HTML {
 	return template.HTML(htmlSanitizer.SanitizeBytes(blackfriday.MarkdownCommon(md)))
+}
+
+func parseMarkdown(dir string) (fragments map[string]interface{}, err error) {
+	fragments = map[string]interface{}{}
+	_, err = os.Stat(dir)
+	switch {
+	case os.IsNotExist(err):
+	case err == nil:
+		if err = filepath.Walk(dir, func(path string, _ os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+			if !strings.HasSuffix(path, ".md") {
+				return nil
+			}
+			data, err := ioutil.ReadFile(path)
+			if err != nil {
+				return err
+			}
+			name := strings.TrimPrefix(path, dir+"/")
+			name = strings.TrimSuffix(name, ".md")
+			fragments[name] = markdown(data)
+			return nil
+		}); err != nil {
+			return
+		}
+	}
+	return
 }

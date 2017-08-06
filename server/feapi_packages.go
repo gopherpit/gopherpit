@@ -32,8 +32,8 @@ var (
 	urlRegex         = regexp.MustCompile(`^((([A-Za-z]{3,9}:(?:\/\/)?)(?:[\-;:&=\+\$,\w]+@)?[A-Za-z0-9\.\-]+|(?:www\.|[\-;:&=\+\$,\w]+@)[A-Za-z0-9\.\-]+)((?:\/[\+~%\/\.\w\-_]*)?\??(?:[\-\+=&;%@\.\w_]*)#?(?:[\.\!\/\\\w]*))?)$`)
 )
 
-func certificateFEAPIHandler(w http.ResponseWriter, r *http.Request) {
-	u, r, err := getRequestUser(r)
+func (s *Server) certificateFEAPIHandler(w http.ResponseWriter, r *http.Request) {
+	u, r, err := s.getRequestUser(r)
 	if err != nil {
 		panic(err)
 	}
@@ -41,14 +41,14 @@ func certificateFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
 
-	domain, err := srv.PackagesService.Domain(id)
+	domain, err := s.PackagesService.Domain(id)
 	switch err {
 	case packages.ErrDomainNotFound:
 		jsonresponse.BadRequest(w, web.NewError("Unknown domain."))
 		return
 	case nil:
 	default:
-		srv.Logger.Errorf("certificate fe api: domain %s: %s", id, err)
+		s.Logger.Errorf("certificate fe api: domain %s: %s", id, err)
 		jsonServerError(w, err)
 		return
 	}
@@ -62,10 +62,10 @@ func certificateFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			False := false
 			for {
-				if _, err = srv.PackagesService.UpdateDomain(domain.ID, &packages.DomainOptions{
+				if _, err = s.PackagesService.UpdateDomain(domain.ID, &packages.DomainOptions{
 					CertificateIgnoreMissing: &False,
 				}, u.ID); err != nil {
-					srv.Logger.Errorf("certificate fe api: update domain %s: certificate ignore missing false: %s", domain.FQDN, err)
+					s.Logger.Errorf("certificate fe api: update domain %s: certificate ignore missing false: %s", domain.FQDN, err)
 					time.Sleep(60 * time.Second)
 					continue
 				}
@@ -74,15 +74,15 @@ func certificateFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 		}()
 	}
 
-	certificate, err := srv.CertificateService.ObtainCertificate(domain.FQDN)
+	certificate, err := s.CertificateService.ObtainCertificate(domain.FQDN)
 	if err != nil {
-		srv.Logger.Warningf("certificate fe api: obtain certificate: %s: %s", domain.FQDN, err)
+		s.Logger.Warningf("certificate fe api: obtain certificate: %s: %s", domain.FQDN, err)
 		jsonresponse.BadRequest(w, web.NewError("Unable to obtain TLS certificate."))
 		return
 	}
-	srv.Logger.Infof("certificate api: obtain certificate: success for %s: expiration time: %s", certificate.FQDN, certificate.ExpirationTime)
+	s.Logger.Infof("certificate api: obtain certificate: success for %s: expiration time: %s", certificate.FQDN, certificate.ExpirationTime)
 
-	auditf(r, nil, "obtain certificate", "%s: %s", certificate.FQDN, certificate.ExpirationTime)
+	s.auditf(r, nil, "obtain certificate", "%s: %s", certificate.FQDN, certificate.ExpirationTime)
 
 	jsonresponse.OK(w, nil)
 }
@@ -103,8 +103,8 @@ type validationFormErrorResponse struct {
 	Tokens []domainToken `json:"tokens"`
 }
 
-func domainFEAPIHandler(w http.ResponseWriter, r *http.Request) {
-	u, r, err := getRequestUser(r)
+func (s *Server) domainFEAPIHandler(w http.ResponseWriter, r *http.Request) {
+	u, r, err := s.getRequestUser(r)
 	if err != nil {
 		panic(err)
 	}
@@ -114,26 +114,26 @@ func domainFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 
 	request := domainFEAPIRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		srv.Logger.Warningf("domain fe api: request decode: %s", err)
+		s.Logger.Warningf("domain fe api: request decode: %s", err)
 		jsonresponse.BadRequest(w, web.NewError("Invalid data."))
 		return
 	}
 
 	fqdn := strings.TrimSpace(request.FQDN)
 	if fqdn == "" {
-		srv.Logger.Warning("domain fe api: request: fqdn empty")
+		s.Logger.Warning("domain fe api: request: fqdn empty")
 		jsonresponse.BadRequest(w, web.NewFieldError("fqdn", "Fully qualified domain name is required."))
 		return
 	}
 
-	if !fqdnRegex.MatchString(fqdn) && fqdn != srv.Domain {
+	if !fqdnRegex.MatchString(fqdn) && fqdn != s.Domain {
 		jsonresponse.BadRequest(w, web.NewFieldError("fqdn", "Fully qualified domain name is invalid."))
 		return
 	}
 
 	var domain *packages.Domain
 	if id != "" {
-		domain, err = srv.PackagesService.Domain(id)
+		domain, err = s.PackagesService.Domain(id)
 		if err != nil {
 			switch err {
 			case packages.ErrDomainNotFound:
@@ -141,23 +141,23 @@ func domainFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 				return
 			case nil:
 			default:
-				srv.Logger.Errorf("domain fe api: domain %s: %s", id, err)
+				s.Logger.Errorf("domain fe api: domain %s: %s", id, err)
 				jsonServerError(w, err)
 				return
 			}
 		}
 	}
 
-	for _, d := range srv.ForbiddenDomains {
+	for _, d := range s.ForbiddenDomains {
 		if d == fqdn || strings.HasSuffix(fqdn, "."+d) {
 			jsonresponse.BadRequest(w, web.NewFieldError("fqdn", "Domain is not available"))
 			return
 		}
 	}
 
-	skipDomainVerification := srv.SkipDomainVerification
+	skipDomainVerification := s.SkipDomainVerification
 	if !skipDomainVerification {
-		for _, d := range srv.TrustedDomains {
+		for _, d := range s.TrustedDomains {
 			if fqdn == d || strings.HasSuffix(fqdn, "."+d) {
 				skipDomainVerification = true
 				break
@@ -166,11 +166,11 @@ func domainFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// New or changed domain fqdn verification.
-	if (domain == nil || domain.FQDN != fqdn) && srv.Domain != "" && !skipDomainVerification {
+	if (domain == nil || domain.FQDN != fqdn) && s.Domain != "" && !skipDomainVerification {
 		switch {
-		case fqdn == srv.Domain, strings.HasSuffix(fqdn, "."+srv.Domain):
-			if strings.Count(fqdn, ".") > strings.Count(srv.Domain, ".")+1 {
-				jsonresponse.BadRequest(w, web.NewFieldError("fqdn", fmt.Sprintf("Only one subdomain is allowed for domain %s", srv.Domain)))
+		case fqdn == s.Domain, strings.HasSuffix(fqdn, "."+s.Domain):
+			if strings.Count(fqdn, ".") > strings.Count(s.Domain, ".")+1 {
+				jsonresponse.BadRequest(w, web.NewFieldError("fqdn", fmt.Sprintf("Only one subdomain is allowed for domain %s", s.Domain)))
 				return
 			}
 		default:
@@ -192,10 +192,10 @@ func domainFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			domain, err = srv.PackagesService.Domain(fqdn)
+			domain, err = s.PackagesService.Domain(fqdn)
 			if err != nil {
 				if err != packages.ErrDomainNotFound {
-					srv.Logger.Errorf("domain fe api: domain %s: %s", fqdn, err)
+					s.Logger.Errorf("domain fe api: domain %s: %s", fqdn, err)
 					jsonServerError(w, err)
 					return
 				}
@@ -211,14 +211,14 @@ func domainFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 			for i := startIndex; i >= 0; i-- {
 				d = fmt.Sprintf("%s.%s", domainParts[i], d)
 
-				x = sha1.Sum(append(srv.salt, []byte(u.ID+d)...))
+				x = sha1.Sum(append(s.salt, []byte(u.ID+d)...))
 				token = base64.URLEncoding.EncodeToString(x[:])
 
-				verificationDomain = srv.VerificationSubdomain + "." + d
+				verificationDomain = s.VerificationSubdomain + "." + d
 
 				verified, err = verifyDomain(verificationDomain, token)
 				if err != nil {
-					srv.Logger.Errorf("domain fe api: verify domain: %s: %s", verificationDomain, err)
+					s.Logger.Errorf("domain fe api: verify domain: %s: %s", verificationDomain, err)
 				}
 				if verified {
 					break
@@ -245,7 +245,7 @@ func domainFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 	var editedDomain *packages.Domain
 	if id == "" {
 		t := true
-		editedDomain, err = srv.PackagesService.AddDomain(&packages.DomainOptions{
+		editedDomain, err = s.PackagesService.AddDomain(&packages.DomainOptions{
 			FQDN:        &request.FQDN,
 			OwnerUserID: &u.ID,
 			Disabled:    &disabled,
@@ -254,7 +254,7 @@ func domainFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 		}, u.ID)
 	} else {
 		certificateIgnore := request.CertificateIgnore.Bool()
-		editedDomain, err = srv.PackagesService.UpdateDomain(id, &packages.DomainOptions{
+		editedDomain, err = s.PackagesService.UpdateDomain(id, &packages.DomainOptions{
 			FQDN:              &request.FQDN,
 			CertificateIgnore: &certificateIgnore,
 			Disabled:          &disabled,
@@ -276,7 +276,7 @@ func domainFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		case nil:
 		default:
-			srv.Logger.Errorf("domain fe api: add/update domain %s: %s", id, err)
+			s.Logger.Errorf("domain fe api: add/update domain %s: %s", id, err)
 			jsonServerError(w, err)
 			return
 		}
@@ -286,28 +286,28 @@ func domainFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 	// - it is the new domain (id == "")
 	// - TLS server is active (s.tlsEnabled == true)
 	// - the domain as actually created (editedDomain != nil)
-	if id == "" && srv.tlsEnabled && editedDomain != nil {
+	if id == "" && s.tlsEnabled && editedDomain != nil {
 		go func() {
-			defer srv.RecoveryService.Recover()
+			defer s.RecoveryService.Recover()
 			defer func() {
 				f := false
 				for {
-					if _, err = srv.PackagesService.UpdateDomain(editedDomain.ID, &packages.DomainOptions{
+					if _, err = s.PackagesService.UpdateDomain(editedDomain.ID, &packages.DomainOptions{
 						CertificateIgnoreMissing: &f,
 					}, u.ID); err != nil {
-						srv.Logger.Errorf("domain fe api: update domain %s: certificate ignore missing false: %s", editedDomain.FQDN, err)
+						s.Logger.Errorf("domain fe api: update domain %s: certificate ignore missing false: %s", editedDomain.FQDN, err)
 						time.Sleep(60 * time.Second)
 						continue
 					}
 					return
 				}
 			}()
-			certificate, err := srv.CertificateService.ObtainCertificate(editedDomain.FQDN)
+			certificate, err := s.CertificateService.ObtainCertificate(editedDomain.FQDN)
 			if err != nil {
-				srv.Logger.Errorf("domain fe api: obtain certificate: %s: %s", editedDomain.FQDN, err)
+				s.Logger.Errorf("domain fe api: obtain certificate: %s: %s", editedDomain.FQDN, err)
 				return
 			}
-			srv.Logger.Infof("domain fe api: obtain certificate: success for %s: expiration time: %s", certificate.FQDN, certificate.ExpirationTime)
+			s.Logger.Infof("domain fe api: obtain certificate: success for %s: expiration time: %s", certificate.FQDN, certificate.ExpirationTime)
 		}()
 	}
 
@@ -315,13 +315,13 @@ func domainFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 	if id == "" {
 		action = "domain add"
 	}
-	auditf(r, request, action, "%s: %s", editedDomain.ID, editedDomain.FQDN)
+	s.auditf(r, request, action, "%s: %s", editedDomain.ID, editedDomain.FQDN)
 
 	jsonresponse.OK(w, editedDomain)
 }
 
-func domainDeleteFEAPIHandler(w http.ResponseWriter, r *http.Request) {
-	u, r, err := getRequestUser(r)
+func (s *Server) domainDeleteFEAPIHandler(w http.ResponseWriter, r *http.Request) {
+	u, r, err := s.getRequestUser(r)
 	if err != nil {
 		panic(err)
 	}
@@ -329,7 +329,7 @@ func domainDeleteFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
 
-	deletedDomain, err := srv.PackagesService.DeleteDomain(id, u.ID)
+	deletedDomain, err := s.PackagesService.DeleteDomain(id, u.ID)
 	if err != nil {
 		switch err {
 		case packages.ErrDomainNotFound:
@@ -337,15 +337,15 @@ func domainDeleteFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		case nil:
 		default:
-			srv.Logger.Errorf("domain delete fe api: domain %s: %s", id, err)
+			s.Logger.Errorf("domain delete fe api: domain %s: %s", id, err)
 			jsonServerError(w, err)
 			return
 		}
 	}
 
-	srv.Logger.Debugf("domain delete fe api: %s deleted by %s", deletedDomain.ID, u.ID)
+	s.Logger.Debugf("domain delete fe api: %s deleted by %s", deletedDomain.ID, u.ID)
 
-	auditf(r, nil, "domain delete", "%s: %s", deletedDomain.ID, deletedDomain.FQDN)
+	s.auditf(r, nil, "domain delete", "%s: %s", deletedDomain.ID, deletedDomain.FQDN)
 
 	jsonresponse.OK(w, deletedDomain)
 }
@@ -354,15 +354,15 @@ type userIDRequest struct {
 	ID string `json:"id"`
 }
 
-func domainUserGrantFEAPIHandler(w http.ResponseWriter, r *http.Request) {
-	u, r, err := getRequestUser(r)
+func (s *Server) domainUserGrantFEAPIHandler(w http.ResponseWriter, r *http.Request) {
+	u, r, err := s.getRequestUser(r)
 	if err != nil {
 		panic(err)
 	}
 
 	request := userIDRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		srv.Logger.Warningf("domain user grant fe api: request decode: %s", err)
+		s.Logger.Warningf("domain user grant fe api: request decode: %s", err)
 		jsonresponse.BadRequest(w, web.NewError("Invalid data."))
 		return
 	}
@@ -379,18 +379,18 @@ func domainUserGrantFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	grantUser, err := srv.UserService.User(request.ID)
+	grantUser, err := s.UserService.User(request.ID)
 	if err != nil {
 		if err == user.ErrUserNotFound {
-			srv.Logger.Warningf("domain user grant fe api: user %s: %s", request.ID, err)
+			s.Logger.Warningf("domain user grant fe api: user %s: %s", request.ID, err)
 			jsonresponse.BadRequest(w, web.NewFieldError("id", "Unknown user."))
 			return
 		}
-		srv.Logger.Errorf("domain user grant fe api: user %s: %s", request.ID, err)
+		s.Logger.Errorf("domain user grant fe api: user %s: %s", request.ID, err)
 		jsonServerError(w, err)
 		return
 	}
-	err = srv.PackagesService.AddUserToDomain(domainID, grantUser.ID, u.ID)
+	err = s.PackagesService.AddUserToDomain(domainID, grantUser.ID, u.ID)
 	switch err {
 	case packages.ErrDomainNotFound:
 		jsonresponse.BadRequest(w, web.NewError("Unknown domain."))
@@ -403,25 +403,25 @@ func domainUserGrantFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	case nil:
 	default:
-		srv.Logger.Errorf("domain user grant fe api: add user to domain %s: %s", domainID, err)
+		s.Logger.Errorf("domain user grant fe api: add user to domain %s: %s", domainID, err)
 		jsonServerError(w, err)
 		return
 	}
 
-	audit(r, grantUser.ID, "domain user grant", domainID)
+	s.audit(r, grantUser.ID, "domain user grant", domainID)
 
 	jsonresponse.OK(w, nil)
 }
 
-func domainUserRevokeFEAPIHandler(w http.ResponseWriter, r *http.Request) {
-	u, r, err := getRequestUser(r)
+func (s *Server) domainUserRevokeFEAPIHandler(w http.ResponseWriter, r *http.Request) {
+	u, r, err := s.getRequestUser(r)
 	if err != nil {
 		panic(err)
 	}
 
 	request := userIDRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		srv.Logger.Warningf("domain user grant fe api: request decode: %s", err)
+		s.Logger.Warningf("domain user grant fe api: request decode: %s", err)
 		jsonresponse.BadRequest(w, web.NewError("Invalid data."))
 		return
 	}
@@ -438,18 +438,18 @@ func domainUserRevokeFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	revokeUser, err := srv.UserService.User(request.ID)
+	revokeUser, err := s.UserService.User(request.ID)
 	if err != nil {
 		if err == user.ErrUserNotFound {
-			srv.Logger.Warningf("domain user revoke fe api: user %s: %s", request.ID, err)
+			s.Logger.Warningf("domain user revoke fe api: user %s: %s", request.ID, err)
 			jsonresponse.BadRequest(w, web.NewFieldError("id", "Unknown user."))
 			return
 		}
-		srv.Logger.Errorf("domain user revoke fe api: user %s: %s", request.ID, err)
+		s.Logger.Errorf("domain user revoke fe api: user %s: %s", request.ID, err)
 		jsonServerError(w, err)
 		return
 	}
-	err = srv.PackagesService.RemoveUserFromDomain(domainID, revokeUser.ID, u.ID)
+	err = s.PackagesService.RemoveUserFromDomain(domainID, revokeUser.ID, u.ID)
 	switch err {
 	case packages.ErrDomainNotFound:
 		jsonresponse.BadRequest(w, web.NewError("Unknown domain."))
@@ -462,12 +462,12 @@ func domainUserRevokeFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	case nil:
 	default:
-		srv.Logger.Errorf("domain user revoke fe api: revoke user form domain %s: %s", domainID, err)
+		s.Logger.Errorf("domain user revoke fe api: revoke user form domain %s: %s", domainID, err)
 		jsonServerError(w, err)
 		return
 	}
 
-	audit(r, revokeUser.ID, "domain user revoke", domainID)
+	s.audit(r, revokeUser.ID, "domain user revoke", domainID)
 
 	jsonresponse.OK(w, nil)
 }
@@ -476,8 +476,8 @@ type domainOwnerChangeFEAPIRequest struct {
 	ID string `json:"id"`
 }
 
-func domainOwnerChangeFEAPIHandler(w http.ResponseWriter, r *http.Request) {
-	u, r, err := getRequestUser(r)
+func (s *Server) domainOwnerChangeFEAPIHandler(w http.ResponseWriter, r *http.Request) {
+	u, r, err := s.getRequestUser(r)
 	if err != nil {
 		panic(err)
 	}
@@ -486,18 +486,18 @@ func domainOwnerChangeFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 
 	request := domainOwnerChangeFEAPIRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		srv.Logger.Warningf("domain owner change fe api: request decode: %s", err)
+		s.Logger.Warningf("domain owner change fe api: request decode: %s", err)
 		jsonresponse.BadRequest(w, web.NewError("Invalid data."))
 		return
 	}
 
 	if request.ID == "" {
-		srv.Logger.Warning("domain owner change fe api: request: id empty")
+		s.Logger.Warning("domain owner change fe api: request: id empty")
 		jsonresponse.BadRequest(w, web.NewFieldError("id", "User ID is required."))
 		return
 	}
 
-	domain, err := srv.PackagesService.Domain(domainID)
+	domain, err := s.PackagesService.Domain(domainID)
 	if err != nil {
 		switch err {
 		case packages.ErrDomainNotFound:
@@ -505,7 +505,7 @@ func domainOwnerChangeFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		case nil:
 		default:
-			srv.Logger.Errorf("domain fe api: domain %s: %s", domainID, err)
+			s.Logger.Errorf("domain fe api: domain %s: %s", domainID, err)
 			jsonServerError(w, err)
 			return
 		}
@@ -521,18 +521,18 @@ func domainOwnerChangeFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	owner, err := srv.UserService.User(request.ID)
+	owner, err := s.UserService.User(request.ID)
 	if err != nil {
 		if err == user.ErrUserNotFound {
-			srv.Logger.Warningf("domain owner change fe api: user %s: %s", request.ID, err)
+			s.Logger.Warningf("domain owner change fe api: user %s: %s", request.ID, err)
 			jsonresponse.BadRequest(w, web.NewFieldError("id", "Unknown user."))
 			return
 		}
-		srv.Logger.Errorf("domain user revoke fe api: user %s: %s", request.ID, err)
+		s.Logger.Errorf("domain user revoke fe api: user %s: %s", request.ID, err)
 		jsonServerError(w, err)
 		return
 	}
-	domain, err = srv.PackagesService.UpdateDomain(domainID, &packages.DomainOptions{
+	domain, err = s.PackagesService.UpdateDomain(domainID, &packages.DomainOptions{
 		OwnerUserID: &owner.ID,
 	}, u.ID)
 	switch err {
@@ -541,12 +541,12 @@ func domainOwnerChangeFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	case nil:
 	default:
-		srv.Logger.Errorf("domain owner change fe api: update domain %s: %s", domainID, err)
+		s.Logger.Errorf("domain owner change fe api: update domain %s: %s", domainID, err)
 		jsonServerError(w, err)
 		return
 	}
 
-	auditf(r, request, "domain owner change", "%s: %s to %s: %s", domain.ID, domain.FQDN, owner.ID, owner.Email)
+	s.auditf(r, request, "domain owner change", "%s: %s to %s: %s", domain.ID, domain.FQDN, owner.ID, owner.Email)
 
 	jsonresponse.OK(w, domain)
 }
@@ -563,8 +563,8 @@ type packageFEAPIRequest struct {
 	Disabled    marshal.Checkbox `json:"disabled"`
 }
 
-func packageFEAPIHandler(w http.ResponseWriter, r *http.Request) {
-	u, r, err := getRequestUser(r)
+func (s *Server) packageFEAPIHandler(w http.ResponseWriter, r *http.Request) {
+	u, r, err := s.getRequestUser(r)
 	if err != nil {
 		panic(err)
 	}
@@ -573,7 +573,7 @@ func packageFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 
 	request := packageFEAPIRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		srv.Logger.Warningf("package fe api: request decode: %s", err)
+		s.Logger.Warningf("package fe api: request decode: %s", err)
 		jsonresponse.BadRequest(w, web.NewError("Invalid data."))
 		return
 	}
@@ -603,7 +603,7 @@ func packageFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 		repoRoot, err = url.Parse(request.RepoRoot)
 		switch {
 		case err != nil:
-			srv.Logger.Warningf("package fe api: %s %s: invalid repository url: %s: %s", request.DomainID, request.Path, request.RepoRoot, err)
+			s.Logger.Warningf("package fe api: %s %s: invalid repository url: %s: %s", request.DomainID, request.Path, request.RepoRoot, err)
 			errors.AddFieldError("repoRoot", "Invalid Repository URL.")
 		case request.VCS != "":
 			if repoRoot.Scheme == "" {
@@ -664,7 +664,7 @@ func packageFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 
 	var p *packages.Package
 	if id == "" {
-		p, err = srv.PackagesService.AddPackage(&packages.PackageOptions{
+		p, err = s.PackagesService.AddPackage(&packages.PackageOptions{
 			Domain:      &request.DomainID,
 			Path:        &request.Path,
 			VCS:         &request.VCS,
@@ -676,7 +676,7 @@ func packageFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 			Disabled:    &disabled,
 		}, u.ID)
 	} else {
-		p, err = srv.PackagesService.UpdatePackage(id, &packages.PackageOptions{
+		p, err = s.PackagesService.UpdatePackage(id, &packages.PackageOptions{
 			Domain:      &request.DomainID,
 			Path:        &request.Path,
 			VCS:         &request.VCS,
@@ -730,7 +730,7 @@ func packageFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	case nil:
 	default:
-		srv.Logger.Errorf("package fe api: add/update package %s: %s", id, err)
+		s.Logger.Errorf("package fe api: add/update package %s: %s", id, err)
 		jsonServerError(w, err)
 		return
 	}
@@ -739,13 +739,13 @@ func packageFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 	if id == "" {
 		action = "package add"
 	}
-	auditf(r, request, action, "%s %s (domain: %s)", p.ID, p.ImportPrefix(), p.Domain.ID)
+	s.auditf(r, request, action, "%s %s (domain: %s)", p.ID, p.ImportPrefix(), p.Domain.ID)
 
 	jsonresponse.OK(w, p)
 }
 
-func packageDeleteFEAPIHandler(w http.ResponseWriter, r *http.Request) {
-	u, r, err := getRequestUser(r)
+func (s *Server) packageDeleteFEAPIHandler(w http.ResponseWriter, r *http.Request) {
+	u, r, err := s.getRequestUser(r)
 	if err != nil {
 		panic(err)
 	}
@@ -753,7 +753,7 @@ func packageDeleteFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 	id := mux.Vars(r)["id"]
 
 	// Delete package checks permissions.
-	p, err := srv.PackagesService.DeletePackage(id, u.ID)
+	p, err := s.PackagesService.DeletePackage(id, u.ID)
 	switch err {
 	case packages.ErrForbidden:
 		jsonresponse.BadRequest(w, web.NewError("You do not have permission to add packages to this domain."))
@@ -766,14 +766,14 @@ func packageDeleteFEAPIHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	case nil:
 	default:
-		srv.Logger.Errorf("package delete fe api: delete package %s: %s", id, err)
+		s.Logger.Errorf("package delete fe api: delete package %s: %s", id, err)
 		jsonServerError(w, err)
 		return
 	}
 
-	srv.Logger.Debugf("package delete fe api: %s deleted by %s", p.ID, u.ID)
+	s.Logger.Debugf("package delete fe api: %s deleted by %s", p.ID, u.ID)
 
-	auditf(r, nil, "package delete", "%s: %s", p.ID, p.ImportPrefix)
+	s.auditf(r, nil, "package delete", "%s: %s", p.ID, p.ImportPrefix)
 
 	jsonresponse.OK(w, p)
 }

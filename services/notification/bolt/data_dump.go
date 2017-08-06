@@ -13,8 +13,7 @@ import (
 	"time"
 
 	"github.com/boltdb/bolt"
-
-	"gopherpit.com/gopherpit/pkg/data-dump"
+	"resenje.org/x/data-dump"
 )
 
 // DataDump implements dataDump.Interface interface to extract

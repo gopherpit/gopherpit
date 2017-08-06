@@ -79,9 +79,9 @@ func (c changelogs) Less(i, j int) bool {
 	return c[i].Records[0].Time.After(c[j].Records[0].Time)
 }
 
-func updateChangelogRecords(u user.User, record packages.ChangelogRecord, records *[]changelogRecord, users *map[string]*user.User) (err error) {
+func (s *Server) updateChangelogRecords(u user.User, record packages.ChangelogRecord, records *[]changelogRecord, users *map[string]*user.User) (err error) {
 	if _, ok := (*users)[record.UserID]; !ok {
-		ru, err := srv.UserService.UserByID(record.UserID)
+		ru, err := s.UserService.UserByID(record.UserID)
 		switch err {
 		case nil:
 			(*users)[record.UserID] = ru
@@ -121,7 +121,7 @@ func updateChangelogRecords(u user.User, record packages.ChangelogRecord, record
 				c.Field = "Owner"
 				if change.To != nil {
 					if _, ok := (*users)[*change.To]; !ok {
-						ru, err := srv.UserService.UserByID(*change.To)
+						ru, err := s.UserService.UserByID(*change.To)
 						switch err {
 						case nil:
 							(*users)[*change.To] = ru
@@ -146,7 +146,7 @@ func updateChangelogRecords(u user.User, record packages.ChangelogRecord, record
 
 				if change.From != nil {
 					if _, ok := (*users)[*change.From]; !ok {
-						ru, err := srv.UserService.UserByID(*change.From)
+						ru, err := s.UserService.UserByID(*change.From)
 						switch err {
 						case nil:
 							(*users)[*change.From] = ru
@@ -198,7 +198,7 @@ func updateChangelogRecords(u user.User, record packages.ChangelogRecord, record
 				c.Field = "User"
 				if change.To != nil {
 					if _, ok := (*users)[*change.To]; !ok {
-						ru, err := srv.UserService.UserByID(*change.To)
+						ru, err := s.UserService.UserByID(*change.To)
 						switch err {
 						case nil:
 							(*users)[*change.To] = ru
@@ -221,7 +221,7 @@ func updateChangelogRecords(u user.User, record packages.ChangelogRecord, record
 
 				if change.From != nil {
 					if _, ok := (*users)[*change.From]; !ok {
-						ru, err := srv.UserService.User(*change.From)
+						ru, err := s.UserService.User(*change.From)
 						if err != nil {
 							if err != user.ErrUserNotFound {
 								(*users)[*change.From] = nil
