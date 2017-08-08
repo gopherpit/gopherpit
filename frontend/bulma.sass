@@ -1,58 +1,63 @@
-// Copyright (c) 2016, Janoš Guljaš <janos@resenje.org>
+// Copyright (c) 2017, Janoš Guljaš <janos@resenje.org>
 // All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
+
+$black:         hsl(0, 0%, 17%);
+$black-bis:     hsl(0, 0%, 21%);
+$black-ter:     hsl(0, 0%, 28%);
+
+$grey-darker:   hsl(210, 3%, 14%);
+$grey-dark:     hsl(215, 7%, 45%);
+$grey:          hsl(214, 5%, 70%);
+$grey-light:    hsl(217, 10%, 84%);
+$grey-lighter:  hsl(216, 33%, 97%);
+
+$white-ter:     hsl(0, 0%, 96%);
+$white-bis:     hsl(0, 0%, 98%);
+$white:         hsl(0, 0%, 100%);
+
+$orange:        hsl(26, 91%, 59%);
+$yellow:        hsl(49, 96%, 72%);
+$green:         hsl(97, 47%, 63%);
+$turquoise:     hsl(186, 75%, 49%);
+$blue:          hsl(199, 74%, 57%);
+$purple:        hsl(249, 31%, 60%);
+$red:           hsl(4, 79%, 66%);
 
 $body-size: 14px;
 
-$black:        hsl(0, 0%, 17%)
-$black-bis:    hsl(0, 0%, 21%)
-$black-ter:    hsl(0, 0%, 28%)
+$primary: $turquoise;
 
-$grey-darker:  hsl(210, 3%, 14%)
-$grey-dark:    hsl(215, 7%, 45%)
-$grey:         hsl(214, 5%, 70%)
-$grey-light:   hsl(217, 10%, 84%)
-$grey-lighter: hsl(216, 33%, 97%)
+$light: $grey-lighter;
+$dark: $grey-dark;
 
-$orange:       hsl(26, 91%, 59%)
-$yellow:       hsl(49, 96%, 72%)
-$green:        hsl(97, 47%, 63%)
-$turquoise:    hsl(186, 75%, 49%)
-$blue:         hsl(199, 74%, 57%)
-$purple:       hsl(249, 31%, 60%)
-$red:          hsl(4, 79%, 66%)
+$light-invert: $dark;
+$dark-invert: $light;
 
-$family-sans-serif: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", "Helvetica", "Arial", sans-serif
-$family-monospace: "Inconsolata", "Consolas", "Monaco", monospace
+$link: $primary;
+$link-visited: $link;
+$link-hover-border: $grey;
 
-$primary: $turquoise
+$body-background: $grey-lighter;
 
-$light: $grey-lighter
-$dark: $grey-dark
+$background: $grey-lighter;
 
-$light-invert: $dark
-$dark-invert: $light
+$border: $grey-light;
+$border-hover: $grey;
 
-$link: $primary
-$link-visited: $link
-$link-hover-border: $grey
+$input-border-color: $grey-light;
+$input-hover-border-color: $grey;
 
-$button-border: $grey
+$input-icon-color: $input-border-color;
+$input-icon-active-color: $input-hover-border-color;
 
-$body-background: $grey-lighter
+$button-border-color: $grey-light;
 
-$background: $grey-lighter
+$weight-light:    300;
+$weight-normal:   400;
+$weight-medium:   400;
+$weight-semibold: 500;
+$weight-bold:	  500;
 
-$border: $grey-light
-$border-hover: $grey
+$gap: 0px;
 
-$control-icon: $grey-light
-
-$input-border: $grey-light
-$input-hover-border: $grey
-
-$input-icon: $grey-light
-$input-icon-active: $grey
-
-$button-border: $grey-light
+$text-strong: grey-darker;

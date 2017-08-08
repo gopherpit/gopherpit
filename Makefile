@@ -19,9 +19,9 @@ LDFLAGS += -X $(GO_PACKAGE_PATH)/server/config.Dir="$(CONFIG_DIR)"
 endif
 LDFLAGS += -X $(GO_PACKAGE_PATH)/server/config.BuildInfo="$(shell git describe --long --dirty --always || true)"
 
-BULMA_VERSION ?= 0.4.2
+BULMA_VERSION ?= 0.5.1
 FONTAWESOME_VERSION ?= 4.7.0
-VUE_VERSION ?= 2.3.4
+VUE_VERSION ?= 2.4.2
 AXIOS_VERSION ?= 0.15.3
 LODASH_VERSION ?= 4.17.4
 LODASH_INCLUDE ?= debounce,throttle,includes
@@ -69,6 +69,12 @@ assets:
 	echo "" > assets/vendor.css
 	echo "" > assets/vendor.js
 
+	# Lodash
+	cd dist/frontend && \
+		$(NODEJS) npm install lodash-cli@$(LODASH_VERSION) && \
+		$(NODEJS) node_modules/lodash-cli/bin/lodash include=$(LODASH_INCLUDE)
+	cat dist/frontend/lodash.custom.min.js >> assets/vendor.js
+
 	# Bulma
 	cd dist/frontend && \
 		$(NODEJS) npm install bulma@$(BULMA_VERSION)
@@ -99,12 +105,6 @@ assets:
 	# axios
 	curl -sSL https://unpkg.com/axios@$(AXIOS_VERSION)/dist/axios.min.js >> assets/vendor.js
 	echo "\n" >> assets/vendor.js
-
-	# Lodash
-	cd dist/frontend && \
-		$(NODEJS) npm install lodash-cli@$(LODASH_VERSION) && \
-		$(NODEJS) node_modules/lodash-cli/bin/lodash include=$(LODASH_INCLUDE)
-	cat dist/frontend/lodash.custom.min.js >> assets/vendor.js
 
 	rm -rf dist/frontend
 
