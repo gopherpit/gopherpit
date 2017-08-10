@@ -11,7 +11,7 @@ import (
 	"runtime/debug"
 )
 
-var defualtLogFunc = log.Print
+var defaultLogFunc = log.Print
 
 // Notifier defines interface to inject into Service for panic notifications.
 type Notifier interface {
@@ -45,7 +45,7 @@ func (s Service) Recover() {
 		)
 		logFunc := s.LogFunc
 		if logFunc == nil {
-			logFunc = defualtLogFunc
+			logFunc = defaultLogFunc
 		}
 
 		logFunc(debugInfo)

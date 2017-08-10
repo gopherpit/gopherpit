@@ -8,6 +8,7 @@ package application
 import (
 	"io"
 	"log"
+	"log/syslog"
 
 	"resenje.org/logging"
 )
@@ -65,6 +66,7 @@ func NewSyslogHandler(facility logging.SyslogFacility, tag, network, address str
 			Formatter: &logging.MessageFormatter{},
 			Tag:       tag,
 			Facility:  facility.Priority(),
+			Severity:  syslog.Priority(logging.DEBUG),
 			Network:   network,
 			Address:   address,
 		}
@@ -80,6 +82,7 @@ func NewTimedFileHandler(dir, tag string) logging.Handler {
 			Formatter:      &logging.StandardFormatter{TimeFormat: logging.StandardTimeFormat},
 			Directory:      dir,
 			FilenameLayout: "2006/01/02/" + tag + ".log",
+			Level:          logging.DEBUG,
 		}
 	}
 	return nil

@@ -45,24 +45,32 @@ func DomainRedirectHandler(h http.Handler, domain, httpsPort string) http.Handle
 		if err != nil {
 			d = r.Host
 		}
-		if d == domain && r.URL.Scheme == scheme {
+		rs := r.URL.Scheme
+		if fs := r.Header.Get("X-Forwarded-Proto"); fs != "" {
+			rs = strings.ToLower(fs)
+		}
+		s := scheme
+		if rs == "https" {
+			s = "https"
+		}
+		if d == domain && rs == s {
 			h.ServeHTTP(w, r)
 			return
 		}
 		switch {
-		case scheme == "http" && p == "80":
+		case s == "http" && p == "80":
 			p = ""
-		case scheme == "https" && p == "443":
+		case s == "https" && p == "443":
 			p = ""
 		case port != "":
 			p = ":" + port
-		default:
+		case p != "":
 			p = ":" + p
 		}
 		if d == altDomain {
-			http.Redirect(w, r, strings.Join([]string{scheme, "://", domain, p, r.RequestURI}, ""), http.StatusMovedPermanently)
+			http.Redirect(w, r, strings.Join([]string{s, "://", domain, p, r.RequestURI}, ""), http.StatusMovedPermanently)
 			return
 		}
-		http.Redirect(w, r, strings.Join([]string{scheme, "://", domain, p, r.RequestURI}, ""), http.StatusFound)
+		http.Redirect(w, r, strings.Join([]string{s, "://", domain, p, r.RequestURI}, ""), http.StatusFound)
 	})
 }
