@@ -39,16 +39,16 @@
 			"revisionTime": "2017-05-23T19:07:22Z"
 		},
 		{
-			"checksumSHA1": "VPUgGhqIAF+O3oiIaYO6xvbkphE=",
+			"checksumSHA1": "iL+lTZ1VQuKOh3eFEc5WUY2sanM=",
 			"path": "github.com/microcosm-cc/bluemonday",
-			"revision": "336935e80c959bde96101771af9857fd4b7df450",
-			"revisionTime": "2017-08-03T15:52:34Z"
+			"revision": "f0d1606e9e60cb2428f85ddcbfcccfeb6b507586",
+			"revisionTime": "2017-08-10T23:28:33Z"
 		},
 		{
-			"checksumSHA1": "Jo+pItYOocIRdoFL0fc4nHhUEJY=",
+			"checksumSHA1": "IGDVCyHsNcSuVtQ1wH9Pp5ukaQs=",
 			"path": "github.com/miekg/dns",
-			"revision": "bbca4873b326f5dc54bfe31148446d4ed79a5a02",
-			"revisionTime": "2017-08-08T22:19:10Z"
+			"revision": "0598bd43cf51d0375c5bcd3a42e807cc19b3b7d9",
+			"revisionTime": "2017-08-12T19:21:44Z"
 		},
 		{
 			"checksumSHA1": "OZpv1QDSDG23bzSk/7auPQRB2Qg=",
@@ -57,10 +57,10 @@
 			"revisionTime": "2017-07-28T17:53:26Z"
 		},
 		{
-			"checksumSHA1": "SUqsBrTO59yWzM/rOhlGieAJrzI=",
+			"checksumSHA1": "sADbB8ocnnsfR2KN/VWQm8TgD5o=",
 			"path": "github.com/xenolf/lego/acme",
-			"revision": "4dde48a9b9916926a8dd4f69639c8dba40930355",
-			"revisionTime": "2017-07-19T22:54:35Z"
+			"revision": "92ed20909982bc411971291622e8d379e1627a0b",
+			"revisionTime": "2017-08-10T17:47:37Z"
 		},
 		{
 			"checksumSHA1": "oCfh/l3RnxEBL1Sa98CMyWu4FF0=",
@@ -131,26 +131,26 @@
 		{
 			"checksumSHA1": "faFDXp++cLjLBlvsr+izZ+go1WU=",
 			"path": "golang.org/x/text/secure/bidirule",
-			"revision": "3bd178b88a8180be2df394a1fbb81313916f0e7b",
-			"revisionTime": "2017-07-29T23:24:55Z"
+			"revision": "e56139fd9c5bc7244c76116c68e500765bb6db6b",
+			"revisionTime": "2017-07-04T19:41:35Z"
 		},
 		{
 			"checksumSHA1": "ziMb9+ANGRJSSIuxYdRbA+cDRBQ=",
 			"path": "golang.org/x/text/transform",
-			"revision": "3bd178b88a8180be2df394a1fbb81313916f0e7b",
-			"revisionTime": "2017-07-29T23:24:55Z"
+			"revision": "e56139fd9c5bc7244c76116c68e500765bb6db6b",
+			"revisionTime": "2017-07-04T19:41:35Z"
 		},
 		{
 			"checksumSHA1": "MRLtTu/vpd18le8/HPLxOdjO5RE=",
 			"path": "golang.org/x/text/unicode/bidi",
-			"revision": "3bd178b88a8180be2df394a1fbb81313916f0e7b",
-			"revisionTime": "2017-07-29T23:24:55Z"
+			"revision": "e56139fd9c5bc7244c76116c68e500765bb6db6b",
+			"revisionTime": "2017-07-04T19:41:35Z"
 		},
 		{
 			"checksumSHA1": "kKylzIrLEnH8NKyeVAL0dq5gjVQ=",
 			"path": "golang.org/x/text/unicode/norm",
-			"revision": "3bd178b88a8180be2df394a1fbb81313916f0e7b",
-			"revisionTime": "2017-07-29T23:24:55Z"
+			"revision": "e56139fd9c5bc7244c76116c68e500765bb6db6b",
+			"revisionTime": "2017-07-04T19:41:35Z"
 		},
 		{
 			"checksumSHA1": "xsaHqy6/sonLV6xIxTNh4FfkWbU=",
@@ -201,16 +201,16 @@
 			"revisionTime": "2015-09-10T05:17:05Z"
 		},
 		{
-			"checksumSHA1": "o20lmjzBQyKD5LfLZ3OhUoMkLds=",
+			"checksumSHA1": "RDJpJQwkF012L6m/2BJizyOksNw=",
 			"path": "gopkg.in/yaml.v2",
-			"revision": "25c4ec802a7d637f88d584ab26798e94ad14c13b",
-			"revisionTime": "2017-07-21T12:20:51Z"
+			"revision": "eb3733d160e74a9c7e442f435eb3bea458e1d19f",
+			"revisionTime": "2017-08-12T16:00:11Z"
 		},
 		{
-			"checksumSHA1": "qzZkLLKAJOEFiRCJfnc4LPbSD5g=",
+			"checksumSHA1": "Gt3NgPkdmw99N0CjfnH+XtRKjXg=",
 			"path": "resenje.org/antixsrf",
-			"revision": "5b260614d9b174042d03f55159d174274cf90d17",
-			"revisionTime": "2016-11-05T10:29:30Z"
+			"revision": "d905c42c13b7c26bfcf3323a6f12932434e0fe81",
+			"revisionTime": "2017-08-16T19:09:12Z"
 		},
 		{
 			"checksumSHA1": "K5q7uFKst1bC/HOt4aHEJpJmHAQ=",
@@ -327,16 +327,16 @@
 			"revisionTime": "2017-08-08T18:57:58Z"
 		},
 		{
-			"checksumSHA1": "Vdojz+FLySs9xyalKeYsYtK1JiQ=",
+			"checksumSHA1": "F0DJAYYKxD++nsD/GL8UPZ6DnP4=",
 			"path": "resenje.org/x/application",
-			"revision": "20b0f145767299c4897ce8031a9edb1ec5dddd6d",
-			"revisionTime": "2017-08-10T20:29:03Z"
+			"revision": "ec05f81f600ff3722dd2aab3f3cf50c95c93e5eb",
+			"revisionTime": "2017-08-16T19:20:27Z"
 		},
 		{
 			"checksumSHA1": "0xu9rsMpK0CDWPmH4Uem7m28IZk=",
 			"path": "resenje.org/x/data-dump",
-			"revision": "20b0f145767299c4897ce8031a9edb1ec5dddd6d",
-			"revisionTime": "2017-08-10T20:29:03Z"
+			"revision": "ec05f81f600ff3722dd2aab3f3cf50c95c93e5eb",
+			"revisionTime": "2017-08-16T19:20:27Z"
 		}
 	],
 	"rootPath": "gopherpit.com/gopherpit"

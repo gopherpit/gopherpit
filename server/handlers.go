@@ -186,15 +186,6 @@ func jsonNotFoundHandler(w http.ResponseWriter, r *http.Request) {
 	jsonresponse.NotFound(w, nil)
 }
 
-func generateAntiXSRFCookieHandler(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Header.Get(antixsrf.XSRFCookieName) == "" {
-			antixsrf.Generate(w, r, "/")
-		}
-		h.ServeHTTP(w, r)
-	})
-}
-
 func (s *Server) jsonAntiXSRFHandler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := antixsrf.Verify(r); err != nil {
@@ -219,9 +210,7 @@ func (s *Server) htmlLoginRequiredHandler(h http.Handler) http.Handler {
 			s.htmlServerError(w, r, err)
 			return
 		}
-		if r.Header.Get(antixsrf.XSRFCookieName) == "" {
-			antixsrf.Generate(w, r, "/")
-		}
+		antixsrf.Generate(w, r)
 		if u == nil || u.Disabled {
 			if r.Header.Get(s.SessionCookieName) != "" {
 				s.logout(w, r)

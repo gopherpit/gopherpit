@@ -95,9 +95,7 @@ func (s *Server) acmeUserHandler(h http.Handler) http.Handler {
 			au, err := s.CertificateService.ACMEUser()
 			if err != nil {
 				if err == certificate.ErrACMEUserNotFound {
-					if r.Header.Get(antixsrf.XSRFCookieName) == "" {
-						antixsrf.Generate(w, r, "/")
-					}
+					antixsrf.Generate(w, r)
 					if u != nil {
 						s.html.Respond(w, "RegisterACMEUserPrivate", map[string]interface{}{
 							"User":                u,

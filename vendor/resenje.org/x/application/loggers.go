@@ -81,7 +81,8 @@ func NewTimedFileHandler(dir, tag string) logging.Handler {
 		return &logging.TimedFileHandler{
 			Formatter:      &logging.StandardFormatter{TimeFormat: logging.StandardTimeFormat},
 			Directory:      dir,
-			FilenameLayout: "2006/01/02/" + tag + ".log",
+			FilenameLayout: "2006/01/02",
+			FileExtension:  "/" + tag + ".log",
 			Level:          logging.DEBUG,
 		}
 	}
