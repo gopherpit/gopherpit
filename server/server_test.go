@@ -8,7 +8,6 @@ package server
 import (
 	"context"
 	"fmt"
-	"go/build"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -183,9 +182,6 @@ func newTestServer(options map[string]interface{}) (*Server, error) {
 			Domain:                  "localhost",
 			Headers:                 map[string]string{},
 			SessionCookieName:       "testsesid",
-			AssetsDir:               filepath.Join(build.Default.GOPATH, "src", "gopherpit.com", "gopherpit", "assets"),
-			StaticDir:               filepath.Join(build.Default.GOPATH, "src", "gopherpit.com", "gopherpit", "static"),
-			TemplatesDir:            filepath.Join(build.Default.GOPATH, "src", "gopherpit.com", "gopherpit", "templates"),
 			StorageDir:              "",
 			GoogleAnalyticsID:       "",
 			RememberMeDays:          45,
