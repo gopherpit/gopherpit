@@ -29,32 +29,18 @@ LODASH_INCLUDE ?= debounce,throttle,includes
 NODEJS ?= docker run -it --rm -v $$(pwd):/usr/src/app -w /usr/src/app node
 
 .PHONY: all
-all: dist/$(NAME) dist/version dist/assets dist/static dist/templates dist/docker
-
-.PHONY: binary
-binary: dist/$(NAME)
+all: binary dist/version dist/docker
 
 dist:
 	mkdir $@
 
-dist/$(NAME): dist FORCE
+.PHONY: binary
+binary: dist FORCE
 	$(GO) version
 ifndef CGO_ENABLED
 	$(eval export CGO_ENABLED=0)
 endif
-	$(GO) build -ldflags "$(LDFLAGS)" -o $@ ./cmd/$(NAME)
-
-dist/assets: FORCE
-	rm -rf dist/assets
-	cp -a assets dist/.
-
-dist/static: FORCE
-	rm -rf dist/static
-	cp -a static dist/.
-
-dist/templates: FORCE
-	rm -rf dist/templates
-	cp -a templates dist/.
+	$(GO) build -ldflags "$(LDFLAGS)" -o dist/$(NAME) ./cmd/$(NAME)
 
 dist/docker: FORCE
 	rm -rf dist/docker
@@ -113,28 +99,15 @@ clean:
 	rm -rf \
 		dist/$(NAME) \
 		dist/version \
-		dist/static \
-		dist/assets \
-		dist/templates \
 		dist/frontend
 
 .PHONY: test
 test:
-	$(GO) test -race -v ./api/...
-	$(GO) test -race -v ./cmd/...
-	$(GO) test -race -v ./pkg/...
-	$(GO) test -race -v ./server/...
-	$(GO) test -race -v ./services/...
-	$(GO) test -race -v *.go
+	$(GO) test -race -v ./...
 
 .PHONY: vet
 vet:
-	$(GO) vet ./api/...
-	$(GO) vet ./cmd/...
-	$(GO) vet ./pkg/...
-	$(GO) vet ./server/...
-	$(GO) vet ./services/...
-	$(GO) vet *.go
+	$(GO) vet ./...
 
 .PHONY: lint
 lint:
@@ -145,26 +118,26 @@ lint:
 	$(GOLINT) ./services/...
 	$(GOLINT) *.go
 
-.PHONY: autoreload
-autoreload:
-	echo -n -e "\033]0;$(NAME) - $@\007"
-	rm -rf dist/static dist/assets dist/templates
-	ln -s ../static dist/static
-	ln -s ../assets dist/assets
-	ln -s ../templates dist/templates
-	reflex --only-files -s -r '(\.html|\.md|dist/$(NAME))$$' -- ./dist/$(NAME) --debug
+.PHONY: run
+run:
+	./dist/$(NAME) --debug
 
-.PHONY: autobuild
-autobuild:
+.PHONY: develop
+develop:
 	echo -n -e "\033]0;$(NAME) - $@\007"
-	reflex -r '\.go$$' -- make binary
+	reflex --only-files -s -r '(\.html|\.md|\.css|\.js|\.txt)$$' -- make generate-data all run
+
+.PHONY: generate-data
+generate-data:
+	$(GO) generate .
 
 .PHONY: reflex
 reflex:
-	$(GO) get github.com/cespare/reflex
+	$(GO) get -u github.com/cespare/reflex
 
-.PHONY: develop
-develop: all autoreload
+.PHONY: go-bindata
+go-bindata:
+	$(GO) get -u github.com/jteeuwen/go-bindata/...
 
 .PHONY: package
 package: package-linux-amd64 package-linux-arm package-darwin-amd64 package-freebsd-amd64
@@ -172,26 +145,26 @@ package: package-linux-amd64 package-linux-arm package-darwin-amd64 package-free
 .PHONY: package-linux-amd64
 package-linux-amd64: dist/version dist/assets dist/static dist/templates dist/docker
 	GOOS=linux GOARCH=amd64 $(GO) build -ldflags "$(LDFLAGS)" -o dist/$(NAME) ./cmd/$(NAME)
-	tar -C dist -czf dist/$(NAME)-$(VERSION)-linux-amd64.tar.gz $(NAME) version assets static templates
-	cd dist && zip $(NAME)-$(VERSION)-linux-amd64.zip $(NAME) version assets/* static/* templates/*
+	tar -C dist -czf dist/$(NAME)-$(VERSION)-linux-amd64.tar.gz $(NAME) version
+	cd dist && zip $(NAME)-$(VERSION)-linux-amd64.zip $(NAME) version
 
 .PHONY: package-linux-arm
 package-linux-arm: dist/version dist/assets dist/static dist/templates dist/docker
 	GOOS=linux GOARCH=arm $(GO) build -ldflags "$(LDFLAGS)" -o dist/$(NAME) ./cmd/$(NAME)
-	tar -C dist -czf dist/$(NAME)-$(VERSION)-linux-arm.tar.gz $(NAME) version assets static templates
-	cd dist && zip $(NAME)-$(VERSION)-linux-arm.zip $(NAME) version assets/* static/* templates/*
+	tar -C dist -czf dist/$(NAME)-$(VERSION)-linux-arm.tar.gz $(NAME) version
+	cd dist && zip $(NAME)-$(VERSION)-linux-arm.zip $(NAME) version
 
 .PHONY: package-darwin-amd64
 package-darwin-amd64: dist/version dist/assets dist/static dist/templates dist/docker
 	GOOS=darwin GOARCH=amd64 $(GO) build -ldflags "$(LDFLAGS)" -o dist/$(NAME) ./cmd/$(NAME)
-	tar -C dist -czf dist/$(NAME)-$(VERSION)-darwin-amd64.tar.gz $(NAME) version assets static templates
-	cd dist && zip $(NAME)-$(VERSION)-darwin-amd64.zip $(NAME) version assets/* static/* templates/*
+	tar -C dist -czf dist/$(NAME)-$(VERSION)-darwin-amd64.tar.gz $(NAME) version
+	cd dist && zip $(NAME)-$(VERSION)-darwin-amd64.zip $(NAME) version
 
 .PHONY: package-freebsd-amd64
 package-freebsd-amd64: dist/version dist/assets dist/static dist/templates dist/docker
 	GOOS=freebsd GOARCH=amd64 $(GO) build -ldflags "$(LDFLAGS)" -o dist/$(NAME) ./cmd/$(NAME)
-	tar -C dist -czf dist/$(NAME)-$(VERSION)-freebsd-amd64.tar.gz $(NAME) version assets static templates
-	cd dist && zip $(NAME)-$(VERSION)-freebsd-amd64.zip $(NAME) version assets/* static/* templates/*
+	tar -C dist -czf dist/$(NAME)-$(VERSION)-freebsd-amd64.tar.gz $(NAME) version
+	cd dist && zip $(NAME)-$(VERSION)-freebsd-amd64.zip $(NAME) version
 
 .PHONY: package-in-docker
 package-in-docker:

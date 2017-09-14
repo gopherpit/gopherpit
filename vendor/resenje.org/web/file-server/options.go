@@ -42,6 +42,9 @@ type Options struct {
 	// AltDir is a directory path to look for files before the
 	// initialized directory.
 	AltDir string
+	// Filesystem is optional and is used for opening files. In case of
+	// nil, os.Open will be used to open files.
+	Filesystem http.FileSystem
 
 	// NotFoundHandler is used when no file can be found.
 	NotFoundHandler http.Handler

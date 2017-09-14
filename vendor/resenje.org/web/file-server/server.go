@@ -241,11 +241,11 @@ func (s Server) canonicalPath(p string) string {
 
 func (s Server) open(p string) (f http.File, err error) {
 	if s.AltDir == "" {
-		return open(s.dir, p)
+		return open(s.dir, p, s.Filesystem)
 	}
-	f, err = open(s.AltDir, p)
+	f, err = open(s.AltDir, p, s.Filesystem)
 	if os.IsNotExist(err) {
-		f, err = open(s.dir, p)
+		f, err = open(s.dir, p, s.Filesystem)
 	}
 	return
 }

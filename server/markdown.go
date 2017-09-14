@@ -13,7 +13,10 @@ import (
 	"strings"
 
 	"github.com/microcosm-cc/bluemonday"
+	"github.com/pkg/errors"
 	"github.com/russross/blackfriday"
+
+	"gopherpit.com/gopherpit/server/data/templates"
 )
 
 var htmlSanitizer = bluemonday.UGCPolicy().AllowAttrs("class").Globally()
@@ -50,6 +53,31 @@ func parseMarkdown(dir string) (fragments map[string]interface{}, err error) {
 		}); err != nil {
 			return
 		}
+	}
+	return
+}
+
+func parseMarkdownData(dir string) (fragments map[string]interface{}, err error) {
+	fragments = map[string]interface{}{}
+
+	files, err := templates.AssetDir(dir)
+	if err != nil {
+		return nil, errors.WithMessage(err, "asset dir")
+	}
+
+	for _, path := range files {
+		path = filepath.Join(dir, path)
+		if !strings.HasSuffix(path, ".md") {
+			continue
+		}
+		var data []byte
+		data, err = templates.Asset(path)
+		if err != nil {
+			return
+		}
+		name := strings.TrimPrefix(path, dir+"/")
+		name = strings.TrimSuffix(name, ".md")
+		fragments[name] = markdown(data)
 	}
 	return
 }

@@ -9,6 +9,12 @@
 			"revisionTime": "2017-07-17T17:11:48Z"
 		},
 		{
+			"checksumSHA1": "7DxViusFRJ7UPH0jZqYatwDrOkY=",
+			"path": "github.com/elazarl/go-bindata-assetfs",
+			"revision": "30f82fa23fd844bd5bb1e5f216db87fd77b5eb43",
+			"revisionTime": "2017-02-27T21:27:28Z"
+		},
+		{
 			"checksumSHA1": "/lWfaq/Ok+El1amGaf3wPY5JpUc=",
 			"path": "github.com/gorilla/handlers",
 			"revision": "a4d79d4487c2430a17d9dc8a1f74d1a6ed6908ca",
@@ -49,6 +55,12 @@
 			"path": "github.com/miekg/dns",
 			"revision": "0598bd43cf51d0375c5bcd3a42e807cc19b3b7d9",
 			"revisionTime": "2017-08-12T19:21:44Z"
+		},
+		{
+			"checksumSHA1": "rJab1YdNhQooDiBWNnt7TLWPyBU=",
+			"path": "github.com/pkg/errors",
+			"revision": "2b3a18b5f0fb6b4f9190549597d3f962c02bc5eb",
+			"revisionTime": "2017-09-10T13:46:14Z"
 		},
 		{
 			"checksumSHA1": "OZpv1QDSDG23bzSk/7auPQRB2Qg=",
@@ -285,10 +297,10 @@
 			"revisionTime": "2017-08-08T18:57:58Z"
 		},
 		{
-			"checksumSHA1": "4Ucax8iZMzwOMbtVWg5LRr9tLLI=",
+			"checksumSHA1": "hWwyns6N4JAPaetUQk5fMIyxra0=",
 			"path": "resenje.org/web/file-server",
-			"revision": "7bf81af22cd089bb3f9bf27f1756b9210597401d",
-			"revisionTime": "2017-08-08T18:57:58Z"
+			"revision": "0c3400190c1254ae2dc0eea3d23f4b0036546521",
+			"revisionTime": "2017-09-01T19:46:44Z"
 		},
 		{
 			"checksumSHA1": "h7OL1Si/sJe4f1h5RxLbTILJx6k=",
@@ -321,10 +333,10 @@
 			"revisionTime": "2017-08-08T18:57:58Z"
 		},
 		{
-			"checksumSHA1": "XkPT5X4APpgKUnUCyDt3/AfongI=",
+			"checksumSHA1": "H3/odgCmyd3C7OKrigm5ISSHDEg=",
 			"path": "resenje.org/web/templates",
-			"revision": "7bf81af22cd089bb3f9bf27f1756b9210597401d",
-			"revisionTime": "2017-08-08T18:57:58Z"
+			"revision": "0c3400190c1254ae2dc0eea3d23f4b0036546521",
+			"revisionTime": "2017-09-01T19:46:44Z"
 		},
 		{
 			"checksumSHA1": "F0DJAYYKxD++nsD/GL8UPZ6DnP4=",

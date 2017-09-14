@@ -18,6 +18,7 @@ import (
 	"strings"
 	"time"
 
+	assetfs "github.com/elazarl/go-bindata-assetfs"
 	throttled "gopkg.in/throttled/throttled.v2"
 	"resenje.org/logging"
 	"resenje.org/recovery"
@@ -28,6 +29,8 @@ import (
 	"resenje.org/web/templates"
 
 	"gopherpit.com/gopherpit/pkg/certificate-cache"
+	"gopherpit.com/gopherpit/server/data/assets"
+	dataTemplates "gopherpit.com/gopherpit/server/data/templates"
 	"gopherpit.com/gopherpit/services/certificate"
 	"gopherpit.com/gopherpit/services/gcrastore"
 	"gopherpit.com/gopherpit/services/key"
@@ -80,9 +83,6 @@ type Options struct {
 	Domain                  string
 	Headers                 map[string]string
 	SessionCookieName       string
-	AssetsDir               string
-	StaticDir               string
-	TemplatesDir            string
 	StorageDir              string
 	GoogleAnalyticsID       string
 	RememberMeDays          int
@@ -170,18 +170,23 @@ func New(o Options) (s *Server, err error) {
 	}
 
 	// Create assets server
-	assetsServer := fileServer.New("/assets", s.AssetsDir, &fileServer.Options{
-		Hasher:                     fileServer.MD5Hasher{HashLength: 8},
-		NoHashQueryStrings:         true,
-		RedirectTrailingSlash:      true,
-		IndexPage:                  "index.html",
+	assetsServer := fileServer.New("/assets", "", &fileServer.Options{
+		Hasher:                fileServer.MD5Hasher{HashLength: 8},
+		NoHashQueryStrings:    true,
+		RedirectTrailingSlash: true,
+		IndexPage:             "index.html",
+		Filesystem: &assetfs.AssetFS{
+			Asset:     assets.Asset,
+			AssetDir:  assets.AssetDir,
+			AssetInfo: assets.AssetInfo,
+		},
 		NotFoundHandler:            http.HandlerFunc(s.htmlNotFoundHandler),
 		ForbiddenHandler:           http.HandlerFunc(s.htmlForbiddenHandler),
 		InternalServerErrorHandler: http.HandlerFunc(s.htmlInternalServerErrorHandler),
 	})
 
 	// Parse static HTML documents used as loadable fragments in templates
-	fragments, err := parseMarkdown(filepath.Join(s.TemplatesDir, "fragments"))
+	fragments, err := parseMarkdownData("fragments")
 	if err != nil {
 		return nil, fmt.Errorf("parse fragments: %v", err)
 	}
@@ -209,7 +214,7 @@ func New(o Options) (s *Server, err error) {
 		templates.WithFunction("is_gopherpit_domain", func(domain string) bool {
 			return strings.HasSuffix(domain, "."+o.Domain)
 		}),
-		templates.WithBaseDir(o.TemplatesDir),
+		templates.WithFileReadFunc(dataTemplates.Asset),
 		templates.WithTemplatesFromFiles(htmlTemplates),
 	)
 	if err != nil {

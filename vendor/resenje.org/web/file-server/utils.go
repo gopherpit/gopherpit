@@ -21,9 +21,13 @@ func redirect(w http.ResponseWriter, r *http.Request, location string) {
 	w.WriteHeader(http.StatusFound)
 }
 
-func open(root, name string) (http.File, error) {
+func open(root, name string, fs http.FileSystem) (http.File, error) {
 	if root == "" {
 		root = "."
 	}
-	return os.Open(filepath.Join(root, filepath.FromSlash(path.Clean("/"+name))))
+	path := filepath.Join(root, filepath.FromSlash(path.Clean("/"+name)))
+	if fs != nil {
+		return fs.Open(path)
+	}
+	return os.Open(path)
 }

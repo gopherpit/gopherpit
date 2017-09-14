@@ -7,10 +7,14 @@ package server
 
 import (
 	"net/http"
+	"path/filepath"
 
+	assetfs "github.com/elazarl/go-bindata-assetfs"
 	"github.com/gorilla/mux"
 	"resenje.org/antixsrf"
 	"resenje.org/web"
+
+	"gopherpit.com/gopherpit/server/data/static"
 )
 
 func newFrontendRouter(s *Server) http.Handler {
@@ -23,7 +27,13 @@ func newFrontendRouter(s *Server) http.Handler {
 			})
 		},
 		func(h http.Handler) http.Handler {
-			return web.NewStaticFilesHandler(h, "/", http.Dir(s.StaticDir))
+			return web.NewStaticFilesHandler(h, "/", http.Dir(filepath.Join(s.StorageDir, "static")))
+		},
+		func(h http.Handler) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				fs := &assetfs.AssetFS{Asset: static.Asset, AssetDir: static.AssetDir, AssetInfo: static.AssetInfo}
+				web.NewStaticFilesHandler(h, "/", fs).ServeHTTP(w, r)
+			})
 		},
 		web.FinalHandlerFunc(s.htmlNotFoundHandler),
 	)

@@ -29,6 +29,11 @@ func (e *Error) Error() string {
 	return fmt.Sprintf("%s: %s", e.Err.Error(), e.Template)
 }
 
+// FileReadFunc returns the content of file referenced
+// by filename. It hes the same signature as ioutil.ReadFile
+// function.
+type FileReadFunc func(filename string) ([]byte, error)
+
 // ErrUnknownTemplate will be returned by Render function if
 // the template does not exist.
 var ErrUnknownTemplate = fmt.Errorf("unknown template")
@@ -36,6 +41,7 @@ var ErrUnknownTemplate = fmt.Errorf("unknown template")
 // Options holds parameters for creating Templates.
 type Options struct {
 	fileFindFunc func(filename string) string
+	fileReadFunc FileReadFunc
 	contentType  string
 	files        map[string][]string
 	strings      map[string][]string
@@ -69,6 +75,12 @@ func WithBaseDir(dir string) Option {
 // defind using WithTemplateFromFile or WithTemplateFromFiles.
 func WithFileFindFunc(fn func(filename string) string) Option {
 	return func(o *Options) { o.fileFindFunc = fn }
+}
+
+// WithFileReadFunc sets the function that will return the
+// content of template given the filename.
+func WithFileReadFunc(fn FileReadFunc) Option {
+	return func(o *Options) { o.fileReadFunc = fn }
 }
 
 // WithTemplateFromFiles adds a template parsed from files.
@@ -143,11 +155,15 @@ func New(opts ...Option) (t *Templates, err error) {
 		functions[name] = fn
 	}
 	o := &Options{
-		files:      map[string][]string{},
-		functions:  functions,
-		delimOpen:  "{{",
-		delimClose: "}}",
-		logf:       log.Printf,
+		fileFindFunc: func(f string) string {
+			return f
+		},
+		fileReadFunc: ioutil.ReadFile,
+		files:        map[string][]string{},
+		functions:    functions,
+		delimOpen:    "{{",
+		delimClose:   "}}",
+		logf:         log.Printf,
 	}
 	for _, opt := range opts {
 		opt(o)
@@ -170,7 +186,7 @@ func New(opts ...Option) (t *Templates, err error) {
 		for _, f := range files {
 			fs = append(fs, o.fileFindFunc(f))
 		}
-		tpl, err := parseFiles(template.New("").Funcs(o.functions).Delims(o.delimOpen, o.delimClose), fs...)
+		tpl, err := parseFiles(o.fileReadFunc, template.New("").Funcs(o.functions).Delims(o.delimOpen, o.delimClose), fs...)
 		if err != nil {
 			return nil, err
 		}
@@ -265,9 +281,9 @@ func (t Templates) Render(name string, data interface{}) (s string, err error) {
 	return buf.String(), nil
 }
 
-func parseFiles(t *template.Template, filenames ...string) (*template.Template, error) {
+func parseFiles(fn FileReadFunc, t *template.Template, filenames ...string) (*template.Template, error) {
 	for _, filename := range filenames {
-		b, err := ioutil.ReadFile(filename)
+		b, err := fn(filename)
 		if err != nil {
 			return nil, err
 		}
