@@ -84,6 +84,9 @@ type Options struct {
 	Headers                 map[string]string
 	SessionCookieName       string
 	StorageDir              string
+	AssetsDir               string
+	StaticDir               string
+	TemplatesDir            string
 	GoogleAnalyticsID       string
 	RememberMeDays          int
 	DefaultFrom             string
@@ -168,27 +171,44 @@ func New(o Options) (s *Server, err error) {
 		}
 		s.salt = salt
 	}
-
-	// Create assets server
-	assetsServer := fileServer.New("/assets", "", &fileServer.Options{
-		Hasher:                fileServer.MD5Hasher{HashLength: 8},
-		NoHashQueryStrings:    true,
-		RedirectTrailingSlash: true,
-		IndexPage:             "index.html",
-		Filesystem: &assetfs.AssetFS{
+	var assetsFS http.FileSystem
+	if o.AssetsDir == "" {
+		assetsFS = &assetfs.AssetFS{
 			Asset:     assets.Asset,
 			AssetDir:  assets.AssetDir,
 			AssetInfo: assets.AssetInfo,
-		},
+		}
+	} else {
+		assetsFS = http.Dir(o.AssetsDir)
+	}
+
+	// Create assets server
+	assetsServer := fileServer.New("/assets", "", &fileServer.Options{
+		Hasher:                     fileServer.MD5Hasher{HashLength: 8},
+		NoHashQueryStrings:         true,
+		RedirectTrailingSlash:      true,
+		IndexPage:                  "index.html",
+		Filesystem:                 assetsFS,
 		NotFoundHandler:            http.HandlerFunc(s.htmlNotFoundHandler),
 		ForbiddenHandler:           http.HandlerFunc(s.htmlForbiddenHandler),
 		InternalServerErrorHandler: http.HandlerFunc(s.htmlInternalServerErrorHandler),
 	})
 
 	// Parse static HTML documents used as loadable fragments in templates
-	fragments, err := parseMarkdownData("fragments")
-	if err != nil {
-		return nil, fmt.Errorf("parse fragments: %v", err)
+	var fileReadFunc templates.FileReadFunc
+	var fragments map[string]interface{}
+	if o.TemplatesDir == "" {
+		fileReadFunc = dataTemplates.Asset
+		fragments, err = parseMarkdownData("fragments")
+		if err != nil {
+			return nil, fmt.Errorf("parse fragments: %v", err)
+		}
+	} else {
+		fileReadFunc = ioutil.ReadFile
+		fragments, err = parseMarkdown(filepath.Join(o.TemplatesDir, "fragments"))
+		if err != nil {
+			return nil, fmt.Errorf("parse fragments: %v", err)
+		}
 	}
 
 	s.html, err = templates.New(
@@ -214,7 +234,8 @@ func New(o Options) (s *Server, err error) {
 		templates.WithFunction("is_gopherpit_domain", func(domain string) bool {
 			return strings.HasSuffix(domain, "."+o.Domain)
 		}),
-		templates.WithFileReadFunc(dataTemplates.Asset),
+		templates.WithBaseDir(o.TemplatesDir),
+		templates.WithFileReadFunc(fileReadFunc),
 		templates.WithTemplatesFromFiles(htmlTemplates),
 	)
 	if err != nil {

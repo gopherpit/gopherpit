@@ -4,6 +4,7 @@
 # license that can be found in the LICENSE file.
 
 NAME = gopherpit
+ENV_PREFIX = $(shell echo $(NAME) | tr '[:lower:]' '[:upper:]')
 VERSION ?= $(shell cat version)
 DOCKER_IMAGE ?= gopherpit/gopherpit
 GO_PACKAGE_PATH = gopherpit.com/gopherpit
@@ -120,12 +121,20 @@ lint:
 
 .PHONY: run
 run:
+	./dist/$(NAME) config
 	./dist/$(NAME) --debug
 
 .PHONY: develop
-develop:
+develop: generate-data all run
 	echo -n -e "\033]0;$(NAME) - $@\007"
-	reflex --only-files -s -r '(\.html|\.md|\.css|\.js|\.txt)$$' -- make generate-data all run
+
+.PHONY: autoreload
+autoreload: all
+	echo -n -e "\033]0;$(NAME) - $@\007"
+	$(eval export $(ENV_PREFIX)_ASSETS_DIR=assets)
+	$(eval export $(ENV_PREFIX)_STATIC_DIR=static)
+	$(eval export $(ENV_PREFIX)_TEMPLATES_DIR=templates)
+	reflex --only-files -s -r '(\.html|\.md|\.css|\.js|\.txt)$$' -- make generate-data run
 
 .PHONY: generate-data
 generate-data:

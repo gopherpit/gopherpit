@@ -30,8 +30,13 @@ func newFrontendRouter(s *Server) http.Handler {
 			return web.NewStaticFilesHandler(h, "/", http.Dir(filepath.Join(s.StorageDir, "static")))
 		},
 		func(h http.Handler) http.Handler {
+			var fs http.FileSystem
+			if s.StaticDir == "" {
+				fs = &assetfs.AssetFS{Asset: static.Asset, AssetDir: static.AssetDir, AssetInfo: static.AssetInfo}
+			} else {
+				fs = http.Dir(s.StaticDir)
+			}
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				fs := &assetfs.AssetFS{Asset: static.Asset, AssetDir: static.AssetDir, AssetInfo: static.AssetInfo}
 				web.NewStaticFilesHandler(h, "/", fs).ServeHTTP(w, r)
 			})
 		},

@@ -32,6 +32,9 @@ type GopherPitOptions struct {
 	PidFileMode            marshal.Mode      `json:"pid-file-mode" yaml:"pid-file-mode" envconfig:"PID_FILE_MODE"`
 	StorageFileMode        marshal.Mode      `json:"storage-file-mode" yaml:"storage-file-mode" envconfig:"STORAGE_FILE_MODE"`
 	StorageDir             string            `json:"storage-dir" yaml:"storage-dir" envconfig:"STORAGE_DIR"`
+	AssetsDir              string            `json:"assets-dir" yaml:"assets-dir" envconfig:"ASSETS_DIR"`
+	StaticDir              string            `json:"static-dir" yaml:"static-dir" envconfig:"STATIC_DIR"`
+	TemplatesDir           string            `json:"templates-dir" yaml:"templates-dir" envconfig:"TEMPLATES_DIR"`
 	MaintenanceFilename    string            `json:"maintenance-filename" yaml:"maintenance-filename" envconfig:"MAINTENANCE_FILENAME"`
 	GoogleAnalyticsID      string            `json:"google-analytics-id" yaml:"google-analytics-id" envconfig:"GOOGLE_ANALYTICS_ID"`
 	ContactRecipientEmail  string            `json:"contact-recipient-email" yaml:"contact-recipient-email" envconfig:"CONTACT_RECIPIENT_EMAIL"`
@@ -63,6 +66,9 @@ func NewGopherPitOptions() *GopherPitOptions {
 		PidFileMode:            0644,
 		StorageFileMode:        0644,
 		StorageDir:             filepath.Join(BaseDir, "storage"),
+		AssetsDir:              "",
+		StaticDir:              "",
+		TemplatesDir:           "",
 		MaintenanceFilename:    "maintenance",
 		GoogleAnalyticsID:      "",
 		ContactRecipientEmail:  Name + "@localhost",
@@ -90,6 +96,24 @@ func (o *GopherPitOptions) VerifyAndPrepare() (err error) {
 		}
 		if _, err = os.Open(o.TLSKey); err != nil {
 			err = fmt.Errorf("%s: %s", err, o.TLSKey)
+			return
+		}
+	}
+	if o.AssetsDir != "" {
+		if _, err = os.Stat(o.AssetsDir); os.IsNotExist(err) {
+			err = fmt.Errorf("Assets directory %s does not exist", o.AssetsDir)
+			return
+		}
+	}
+	if o.StaticDir != "" {
+		if _, err = os.Stat(o.StaticDir); os.IsNotExist(err) {
+			err = fmt.Errorf("Static directory %s does not exist", o.TemplatesDir)
+			return
+		}
+	}
+	if o.TemplatesDir != "" {
+		if _, err = os.Stat(o.TemplatesDir); os.IsNotExist(err) {
+			err = fmt.Errorf("Templates directory %s does not exist", o.TemplatesDir)
 			return
 		}
 	}
